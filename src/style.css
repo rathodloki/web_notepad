@@ -417,8 +417,10 @@ body {
   background-color: rgba(40, 42, 54, 0.4);
   /* #282a36 basically */
   border-radius: 6px;
-  margin: 2px 8px 2px 4px;
-  padding: 4px 2px 4px 6px;
+  margin: 0 8px 0 4px;
+  /* Ensure 0 vertical margin to keep CodeMirror alignment happy */
+  padding: 6px 2px 6px 6px;
+  /* Use padding for vertical space instead */
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-sizing: border-box;
 }
@@ -434,6 +436,8 @@ body {
 
 .cm-todo-widget svg {
   display: block;
+  margin-top: -2px;
+  /* Slight optical adjustment if needed */
 }
 
 /* -------------------------------------
