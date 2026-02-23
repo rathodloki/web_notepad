@@ -1,9 +1,23 @@
 import { createEditorState, createEditorView, getLanguageExtension } from './editor.js';
 import { EditorView } from "@codemirror/view";
 
+// Editor.js and Plugins
+import EditorJS from '@editorjs/editorjs';
+import Header from '@editorjs/header';
+import List from '@editorjs/list';
+import Checklist from '@editorjs/checklist';
+import Quote from '@editorjs/quote';
+import CodeTool from '@editorjs/code';
+import LinkTool from '@editorjs/link';
+import Marker from '@editorjs/marker';
+import InlineCode from '@editorjs/inline-code';
+import Delimiter from '@editorjs/delimiter';
+import ImageTool from '@editorjs/image';
+
 let invoke, appWindow, readTextFile, writeTextFile, openDialog, saveDialog;
 
 const editorContainer = document.getElementById('editor-container');
+const editorJsContainer = document.getElementById('editorjs-container');
 const statusText = document.getElementById('status-text');
 const statusCursor = document.getElementById('status-cursor');
 const statusEncoding = document.getElementById('status-encoding');
@@ -12,6 +26,7 @@ const tabBar = document.getElementById('tab-bar');
 let tabs = [];
 let activeTabId = null;
 let editorView = null;
+let editorJsView = null;
 let tabCounter = 0;
 let sessionTimeout = null;
 let contextMenuTargetId = null;
@@ -62,11 +77,28 @@ function saveSessionDebounced() {
     }, 1000);
 }
 
-function saveSession() {
+async function saveSession() {
+    let activeDocContent = null;
+    const activeTab = tabs.find(t => t.id === activeTabId);
+    if (activeTab && activeTab.isDoc && editorJsView) {
+        try {
+            const data = await editorJsView.save();
+            activeDocContent = JSON.stringify(data);
+            activeTab.savedContent = activeDocContent;
+        } catch (e) {
+            console.error("EditorJS save failed", e);
+        }
+    }
+
     const sessionTabs = tabs.map(tab => {
-        const content = (tab.id === activeTabId && editorView)
-            ? editorView.state.doc.toString()
-            : tab.state.doc.toString();
+        let content = null;
+        if (tab.isDoc) {
+            content = (tab.id === activeTabId && activeDocContent) ? activeDocContent : tab.savedContent;
+        } else {
+            content = (tab.id === activeTabId && editorView)
+                ? editorView.state.doc.toString()
+                : tab.state.doc.toString();
+        }
 
         return {
             id: tab.id,
@@ -80,7 +112,7 @@ function saveSession() {
     });
 
     let cursorPos = 0;
-    if (editorView) {
+    if (editorView && !activeTab?.isDoc) {
         cursorPos = editorView.state.selection.main.head;
     }
 
@@ -267,8 +299,12 @@ async function createNewTab(path = null, content = '') {
 
     const isTodo = path ? path.endsWith('.todo') : false;
     const isDoc = path ? path.endsWith('.doc') : false;
-    const extensions = await getLanguageExtension(path);
-    const state = createEditorState(content, [...extensions, createUpdateListener(id)]);
+
+    let state = null;
+    if (!isDoc) {
+        const extensions = await getLanguageExtension(path);
+        state = createEditorState(content, [...extensions, createUpdateListener(id)]);
+    }
 
     const newTab = {
         id,
@@ -289,7 +325,7 @@ async function createNewTab(path = null, content = '') {
 function switchTab(id) {
     if (editorView && activeTabId) {
         const prevTab = tabs.find(t => t.id === activeTabId);
-        if (prevTab) {
+        if (prevTab && !prevTab.isDoc) {
             prevTab.state = editorView.state;
         }
     }
@@ -300,6 +336,13 @@ function switchTab(id) {
             editorView.destroy();
             editorView = null;
         }
+        if (editorJsView) {
+            editorJsView.destroy();
+            editorJsView = null;
+        }
+        editorContainer.style.display = 'block';
+        editorJsContainer.style.display = 'none';
+
         renderTabs();
         updateTitle();
         statusCursor.textContent = '';
@@ -311,22 +354,60 @@ function switchTab(id) {
     const tab = tabs.find(t => t.id === id);
     if (!tab) return;
 
-    if (editorView) {
-        editorView.setState(tab.state);
-    } else {
-        editorView = createEditorView(tab.state, editorContainer);
-    }
-
     if (tab.isDoc) {
-        editorContainer.classList.add('is-doc-mode');
+        editorContainer.style.display = 'none';
+        editorJsContainer.style.display = 'block';
+
+        if (editorJsView) {
+            editorJsView.destroy();
+            editorJsView = null;
+        }
+
+        let defaultData = {};
+        try {
+            if (tab.savedContent) {
+                defaultData = JSON.parse(tab.savedContent);
+            }
+        } catch (e) { }
+
+        editorJsView = new EditorJS({
+            holder: 'editorjs-container',
+            data: defaultData,
+            autofocus: true,
+            tools: {
+                header: Header,
+                list: List,
+                checklist: Checklist,
+                quote: Quote,
+                code: CodeTool,
+                linkTool: LinkTool,
+                marker: Marker,
+                inlineCode: InlineCode,
+                delimiter: Delimiter,
+                image: ImageTool
+            },
+            onChange: () => {
+                tab.isUnsaved = true;
+                tab.needsRender = true;
+                renderTabs();
+                saveSessionDebounced();
+            }
+        });
     } else {
-        editorContainer.classList.remove('is-doc-mode');
+        editorContainer.style.display = 'block';
+        editorJsContainer.style.display = 'none';
+
+        if (editorView) {
+            editorView.setState(tab.state);
+        } else {
+            editorView = createEditorView(tab.state, editorContainer);
+        }
+        editorView.focus();
     }
 
     renderTabs();
     updateTitle();
     updateCursorStatus();
-    editorView.focus();
     saveSessionDebounced();
 }
 
@@ -372,9 +453,14 @@ async function closeTab(id, forceClose = false, multipleFiles = false) {
     if (tab.isUnsaved) {
         let askPrompt = true;
 
-        const content = (tab.id === activeTabId && editorView)
-            ? editorView.state.doc.toString()
-            : tab.state.doc.toString();
+        let content = '';
+        if (tab.isDoc) {
+            content = (tab.id === activeTabId && editorJsView) ? JSON.stringify(await editorJsView.save()) : tab.savedContent;
+        } else {
+            content = (tab.id === activeTabId && editorView)
+                ? editorView.state.doc.toString()
+                : tab.state.doc.toString();
+        }
 
         if (!tab.path && content.trim() === '') {
             askPrompt = false;
@@ -479,7 +565,18 @@ async function saveFile() {
         }
 
         if (pathToSave) {
-            const content = editorView.state.doc.toString();
+            let content = '';
+            if (tab.isDoc) {
+                if (editorJsView) {
+                    const data = await editorJsView.save();
+                    content = JSON.stringify(data);
+                } else {
+                    content = tab.savedContent || '{}';
+                }
+            } else {
+                content = editorView.state.doc.toString();
+            }
+
             await writeTextFile(pathToSave, content);
 
             tab.path = pathToSave;
@@ -627,41 +724,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const docToolbar = document.getElementById('doc-toolbar');
-    if (docToolbar) {
-        docToolbar.addEventListener('mousedown', (e) => {
-            e.preventDefault(); // Prevent editor from losing focus selection
-        });
 
-        docToolbar.addEventListener('click', (e) => {
-            const btn = e.target.closest('.doc-toolbar-btn');
-            if (!btn || !editorView) return;
-
-            const action = btn.dataset.action;
-            const { state, dispatch } = editorView;
-            const { main } = state.selection;
-            if (main.empty) return;
-
-            const selectedText = state.doc.sliceString(main.from, main.to);
-            let insertText = '';
-
-            switch (action) {
-                case 'bold': insertText = `**${selectedText}**`; break;
-                case 'italic': insertText = `*${selectedText}*`; break;
-                case 'strike': insertText = `~~${selectedText}~~`; break;
-                case 'h1': insertText = `# ${selectedText.replace(/^#+\s*/, '')}`; break;
-                case 'h2': insertText = `## ${selectedText.replace(/^#+\s*/, '')}`; break;
-                case 'h3': insertText = `### ${selectedText.replace(/^#+\s*/, '')}`; break;
-            }
-
-            if (insertText) {
-                dispatch({
-                    changes: { from: main.from, to: main.to, insert: insertText },
-                    selection: { anchor: main.from, head: main.from + insertText.length }
-                });
-            }
-        });
-    }
 
     const deleteBtn = document.getElementById('btn-delete');
     if (deleteBtn) {
@@ -802,14 +865,11 @@ async function spawnTodoList() {
 
 async function spawnDocProcess() {
     const defaultName = "document.doc";
-    const initialContent = "# New Document\n\n";
+    const initialContent = "{}";
 
     // Create a new doc tab
     tabCounter++;
     const id = `tab-${tabCounter}`;
-
-    const extensions = await getLanguageExtension("document.doc");
-    const state = await import("./editor.js").then(m => m.createEditorState(initialContent, [...extensions, createUpdateListener(id)]));
 
     const newTab = {
         id,
@@ -818,18 +878,12 @@ async function spawnDocProcess() {
         isUnsaved: true,
         isTodo: false,
         isDoc: true, // Explicitly tag this tab type
-        savedContent: null,
-        state
+        savedContent: initialContent,
+        state: null
     };
 
     tabs.push(newTab);
     switchTab(id);
-
-    // Auto focus at the end of the document
-    if (editorView) {
-        editorView.dispatch({ selection: { anchor: initialContent.length, head: initialContent.length } });
-        editorView.focus();
-    }
     saveSessionDebounced();
 }
 
