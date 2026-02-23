@@ -1,23 +1,13 @@
 import { createEditorState, createEditorView, getLanguageExtension } from './editor.js';
 import { EditorView } from "@codemirror/view";
 
-// Editor.js and Plugins
-import EditorJS from '@editorjs/editorjs';
-import Header from '@editorjs/header';
-import List from '@editorjs/list';
-import Checklist from '@editorjs/checklist';
-import Quote from '@editorjs/quote';
-import CodeTool from '@editorjs/code';
-import LinkTool from '@editorjs/link';
-import Marker from '@editorjs/marker';
-import InlineCode from '@editorjs/inline-code';
-import Delimiter from '@editorjs/delimiter';
-import ImageTool from '@editorjs/image';
+// Quill.js
+import Quill from 'quill';
 
 let invoke, appWindow, readTextFile, writeTextFile, openDialog, saveDialog;
 
 const editorContainer = document.getElementById('editor-container');
-const editorJsContainer = document.getElementById('editorjs-container');
+const quillWrapper = document.getElementById('quill-wrapper');
 const statusText = document.getElementById('status-text');
 const statusCursor = document.getElementById('status-cursor');
 const statusEncoding = document.getElementById('status-encoding');
@@ -26,7 +16,7 @@ const tabBar = document.getElementById('tab-bar');
 let tabs = [];
 let activeTabId = null;
 let editorView = null;
-let editorJsView = null;
+let quillView = null;
 let tabCounter = 0;
 let sessionTimeout = null;
 let contextMenuTargetId = null;
@@ -80,13 +70,12 @@ function saveSessionDebounced() {
 async function saveSession() {
     let activeDocContent = null;
     const activeTab = tabs.find(t => t.id === activeTabId);
-    if (activeTab && activeTab.isDoc && editorJsView) {
+    if (activeTab && activeTab.isDoc && quillView) {
         try {
-            const data = await editorJsView.save();
-            activeDocContent = JSON.stringify(data);
+            activeDocContent = quillView.root.innerHTML;
             activeTab.savedContent = activeDocContent;
         } catch (e) {
-            console.error("EditorJS save failed", e);
+            console.error("QuillJS save failed", e);
         }
     }
 
@@ -336,12 +325,10 @@ function switchTab(id) {
             editorView.destroy();
             editorView = null;
         }
-        if (editorJsView) {
-            editorJsView.destroy();
-            editorJsView = null;
+        if (quillView) {
+            quillWrapper.style.display = 'none';
         }
         editorContainer.style.display = 'block';
-        editorJsContainer.style.display = 'none';
 
         renderTabs();
         updateTitle();
@@ -356,49 +343,34 @@ function switchTab(id) {
 
     if (tab.isDoc) {
         editorContainer.style.display = 'none';
-        editorJsContainer.style.display = 'block';
+        quillWrapper.style.display = 'flex';
 
-        if (editorJsView) {
-            editorJsView.destroy();
-            editorJsView = null;
-        }
-
-        let defaultData = {};
-        try {
-            if (tab.savedContent) {
-                defaultData = JSON.parse(tab.savedContent);
-            }
-        } catch (e) { }
-
-        editorJsView = new EditorJS({
-            holder: 'editorjs-container',
-            data: defaultData,
-            autofocus: true,
-            tools: {
-                header: Header,
-                list: List,
-                checklist: Checklist,
-                quote: Quote,
-                code: CodeTool,
-                linkTool: LinkTool,
-                marker: Marker,
-                inlineCode: InlineCode,
-                delimiter: Delimiter,
-                image: {
-                    class: ImageTool,
-                    config: {
-                        uploader: {
-                            async uploadByFile(file) {
-                                try {
-                                    if (!window.__TAURI__) return { success: 0 };
-                                    const ext = file.name.split('.').pop() || 'png';
+        if (!quillView) {
+            quillView = new Quill('#quill-editor', {
+                theme: 'snow',
+                modules: {
+                    history: { delay: 500, maxStack: 100 },
+                    toolbar: {
+                        container: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            ['blockquote', 'code-block'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'list': 'check' }],
+                            ['link', 'image'],
+                            ['clean']
+                        ],
+                        handlers: {
+                            image: async function () {
+                                if (!window.__TAURI__) return;
+                                const selected = await openDialog({
+                                    filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }]
+                                });
+                                if (selected) {
+                                    const ext = selected.split('.').pop() || 'png';
                                     const filename = `media_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
 
-                                    const buffer = await file.arrayBuffer();
-                                    const uint8Array = new Uint8Array(buffer);
-
                                     const { appDataDir, join } = window.__TAURI__.path;
-                                    const { writeBinaryFile, createDir, exists } = window.__TAURI__.fs;
+                                    const { readBinaryFile, writeBinaryFile, createDir, exists } = window.__TAURI__.fs;
 
                                     const appDataPath = await appDataDir();
                                     const mediaDir = await join(appDataPath, 'LightPadMedia');
@@ -406,49 +378,39 @@ function switchTab(id) {
                                     try {
                                         const dirExists = await exists(mediaDir);
                                         if (!dirExists) await createDir(mediaDir, { recursive: true });
-                                    } catch (err) {
-                                        console.warn("Checking/creating media dir failed (might exist):", err);
-                                    }
+                                    } catch (err) { }
 
+                                    const uint8Array = await readBinaryFile(selected);
                                     const filePath = await join(mediaDir, filename);
                                     await writeBinaryFile(filePath, uint8Array);
 
                                     const url = window.__TAURI__.tauri.convertFileSrc(filePath);
-                                    return {
-                                        success: 1,
-                                        file: {
-                                            url: url,
-                                            path: filePath
-                                        }
-                                    };
-                                } catch (e) {
-                                    console.error('Image upload failed natively:', e);
-                                    return {
-                                        success: 0,
-                                        message: e.message || "Could not save image to disk."
-                                    };
+                                    const range = this.quill.getSelection(true) || { index: this.quill.getLength() };
+                                    this.quill.insertEmbed(range.index, 'image', url);
+                                    this.quill.setSelection(range.index + 1);
                                 }
-                            },
-                            async uploadByUrl(url) {
-                                return {
-                                    success: 1,
-                                    file: { url: url }
-                                };
                             }
                         }
                     }
                 }
-            },
-            onChange: () => {
-                tab.isUnsaved = true;
-                tab.needsRender = true;
+            });
+
+            quillView.on('text-change', () => {
+                const currentTab = tabs.find(t => t.id === activeTabId);
+                if (!currentTab || !currentTab.isDoc) return;
+                currentTab.isUnsaved = true;
+                currentTab.needsRender = true;
                 renderTabs();
                 saveSessionDebounced();
-            }
-        });
+            });
+        }
+
+        quillView.root.innerHTML = tab.savedContent || '';
+        setTimeout(() => quillView.focus(), 50);
+
     } else {
         editorContainer.style.display = 'block';
-        editorJsContainer.style.display = 'none';
+        quillWrapper.style.display = 'none';
 
         if (editorView) {
             editorView.setState(tab.state);
@@ -508,7 +470,7 @@ async function closeTab(id, forceClose = false, multipleFiles = false) {
 
         let content = '';
         if (tab.isDoc) {
-            content = (tab.id === activeTabId && editorJsView) ? JSON.stringify(await editorJsView.save()) : tab.savedContent;
+            content = (tab.id === activeTabId && quillView) ? quillView.root.innerHTML : (tab.savedContent || '');
         } else {
             content = (tab.id === activeTabId && editorView)
                 ? editorView.state.doc.toString()
@@ -620,11 +582,10 @@ async function saveFile() {
         if (pathToSave) {
             let content = '';
             if (tab.isDoc) {
-                if (editorJsView) {
-                    const data = await editorJsView.save();
-                    content = JSON.stringify(data);
+                if (quillView) {
+                    content = quillView.root.innerHTML;
                 } else {
-                    content = tab.savedContent || '{}';
+                    content = tab.savedContent || '';
                 }
             } else {
                 content = editorView.state.doc.toString();
@@ -918,7 +879,7 @@ async function spawnTodoList() {
 
 async function spawnDocProcess() {
     const defaultName = "document.doc";
-    const initialContent = "{}";
+    const initialContent = "";
 
     // Create a new doc tab
     tabCounter++;

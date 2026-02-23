@@ -482,181 +482,129 @@ body {
   overflow: hidden;
 }
 
-#editorjs-container {
+/* -------------------------------------
+   Quill.js Rich Text Overrides
+-------------------------------------- */
+#quill-wrapper {
   flex-grow: 1;
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-color);
+  overflow: hidden;
+}
+
+#quill-editor {
+  flex-grow: 1;
   overflow-y: auto;
-  box-sizing: border-box;
-  padding: 20px 80px;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 15px;
+  color: var(--text-main);
+  padding: 10px 40px;
 }
 
-/* -------------------------------------
-   Editor.js Dark Theme Overrides
--------------------------------------- */
-.codex-editor {
-  color: var(--text-main) !important;
-}
-
-.ce-block--selected .ce-block__content {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.ce-toolbar__plus,
-.ce-toolbar__settings-btn {
-  color: var(--text-main) !important;
-  background: var(--toolbar-bg) !important;
-  border: 1px solid var(--toolbar-border) !important;
-}
-
-.ce-toolbar__plus:hover,
-.ce-toolbar__settings-btn:hover {
-  background: var(--titlebar-hover) !important;
-}
-
-.ce-popover,
-.ce-popover__container {
-  background: var(--toolbar-bg) !important;
-  border: 1px solid var(--toolbar-border) !important;
-  color: var(--text-main) !important;
-}
-
-.cdx-search-field {
-  background: var(--bg-color) !important;
-}
-
-.cdx-search-field__input {
-  color: var(--text-main) !important;
-}
-
-.ce-popover-item,
-.ce-popover__item,
-.ce-popover-item__icon,
-.ce-popover__item-icon,
-.ce-popover-item__title,
-.ce-popover-item__label,
-.ce-popover__item-label {
-  color: var(--text-main) !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.ce-popover-item:hover,
-.ce-popover__item:hover,
-.ce-popover-item--active,
-.ce-popover__item--active {
-  background: var(--titlebar-hover) !important;
-  color: white !important;
-}
-
-.ce-popover-item__icon,
-.ce-popover__item-icon {
-  background: var(--bg-color) !important;
+/* Base Toolbar Styling */
+.ql-toolbar.ql-snow {
   border: none !important;
+  border-bottom: 1px solid var(--toolbar-border) !important;
+  background-color: var(--toolbar-bg);
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 8px 20px !important;
 }
 
-.ce-inline-toolbar {
-  background: var(--toolbar-bg) !important;
-  border: 1px solid var(--toolbar-border) !important;
+.ql-container.ql-snow {
+  border: none !important;
+  font-family: inherit !important;
+}
+
+/* Tool Buttons */
+.ql-snow .ql-stroke {
+  stroke: var(--text-main) !important;
+}
+
+.ql-snow .ql-fill,
+.ql-snow .ql-stroke.ql-fill {
+  fill: var(--text-main) !important;
+}
+
+.ql-snow .ql-picker {
   color: var(--text-main) !important;
 }
 
-.ce-inline-tool {
+/* Hover States */
+.ql-snow.ql-toolbar button:hover .ql-stroke,
+.ql-snow .ql-toolbar button:hover .ql-stroke,
+.ql-snow.ql-toolbar button.ql-active .ql-stroke,
+.ql-snow .ql-toolbar button.ql-active .ql-stroke {
+  stroke: var(--accent) !important;
+}
+
+.ql-snow.ql-toolbar button:hover .ql-fill,
+.ql-snow .ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button.ql-active .ql-fill,
+.ql-snow .ql-toolbar button.ql-active .ql-fill {
+  fill: var(--accent) !important;
+}
+
+.ql-snow .ql-picker-label:hover,
+.ql-snow .ql-picker-label.ql-active {
+  color: var(--accent) !important;
+}
+
+.ql-snow .ql-picker-label:hover .ql-stroke,
+.ql-snow .ql-picker-label.ql-active .ql-stroke {
+  stroke: var(--accent) !important;
+}
+
+/* Dropdown Pickers */
+.ql-snow .ql-picker-options {
+  background-color: var(--toolbar-bg) !important;
+  border-color: var(--toolbar-border) !important;
   color: var(--text-main) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 4px;
 }
 
-.ce-inline-tool:hover {
-  background: var(--titlebar-hover) !important;
+.ql-snow .ql-picker-item:hover {
+  color: var(--accent) !important;
 }
 
-.ce-conversion-tool {
-  color: var(--text-main) !important;
+/* Editable Area Constraints */
+.ql-editor {
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
 }
 
-.ce-conversion-tool:hover {
-  background: var(--titlebar-hover) !important;
-}
-
-.cdx-marker {
-  color: #000;
-}
-
-.tc-toolbox__toggler {
-  color: var(--text-main) !important;
-}
-
-.tc-wrap {
-  --color-border: var(--toolbar-border) !important;
-  --color-background: var(--toolbar-bg) !important;
-  --color-text-secondary: var(--text-muted) !important;
-}
-
-.tc-add-row,
-.tc-add-column {
-  background: var(--toolbar-bg) !important;
-}
-
-.tc-add-row:hover,
-.tc-add-column:hover {
-  background: var(--titlebar-hover) !important;
-}
-
-.image-tool__image-picture {
+.ql-editor img {
+  max-width: 100%;
   border-radius: 8px;
-  max-height: 50vh;
-  object-fit: contain;
+  margin: 10px 0;
+  display: block;
+  /* Helps with native selection/resizing handles in browsers */
 }
 
-.image-tool__caption {
-  color: var(--text-main) !important;
+.ql-editor p {
+  margin-bottom: 0.5em;
 }
 
-/* -------------------------------------
-   Notifications / Toast Styling
--------------------------------------- */
-.cdx-notify,
-.cdx-notifies {
-  background: var(--toolbar-bg) !important;
+.ql-tooltip {
+  background-color: var(--toolbar-bg) !important;
   border: 1px solid var(--toolbar-border) !important;
   color: var(--text-main) !important;
-  border-radius: 8px !important;
+  border-radius: 4px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
-.cdx-notify__message,
-.cdx-notifies__message {
+.ql-tooltip input[type=text] {
+  background-color: var(--bg-color) !important;
   color: var(--text-main) !important;
+  border: 1px solid var(--toolbar-border) !important;
 }
 
-.cdx-notify__cross,
-.cdx-notifies__cross {
-  color: var(--text-muted) !important;
-}
-
-.cdx-notify__cross::before,
-.cdx-notify__cross::after,
-.cdx-notifies__cross::before,
-.cdx-notifies__cross::after {
-  background: var(--text-muted) !important;
-}
-
-.cdx-notify__cross:hover,
-.cdx-notifies__cross:hover {
-  background: transparent !important;
-  color: var(--text-main) !important;
-}
-
-.cdx-notify__cross:hover::before,
-.cdx-notify__cross:hover::after,
-.cdx-notifies__cross:hover::before,
-.cdx-notifies__cross:hover::after {
-  background: var(--text-main) !important;
-}
-
-.ce-block__content,
-.ce-toolbar__content {
-  max-width: 800px;
-  /* Improve readability bounds */
+.ql-tooltip a.ql-action::before {
+  color: var(--accent) !important;
 }
 
 /* Custom Scrollbars for CodeMirror are handled by CM theme, but we can style webkit scrollbars globally */
