@@ -313,7 +313,7 @@ function switchTab(id) {
     saveSessionDebounced();
 }
 
-function askDiscardUI(filename, multiple) {
+function askConfirmUI(message, multiple = false) {
     return new Promise((resolve) => {
         const modal = document.getElementById('discard-modal');
         const msg = document.getElementById('discard-modal-message');
@@ -321,7 +321,7 @@ function askDiscardUI(filename, multiple) {
         const btnNo = document.getElementById('modal-btn-no');
         const btnYTA = document.getElementById('modal-btn-yestoall');
 
-        msg.textContent = `Discard unsaved changes to "${filename}"?`;
+        msg.textContent = message;
         btnYTA.style.display = multiple ? 'inline-block' : 'none';
         modal.style.display = 'flex';
 
@@ -339,6 +339,9 @@ function askDiscardUI(filename, multiple) {
         btnYes.addEventListener('click', handleYes);
         btnNo.addEventListener('click', handleNo);
         btnYTA.addEventListener('click', handleYTA);
+
+        // Auto-focus the Yes button for fluid keyboard usage
+        setTimeout(() => btnYes.focus(), 10);
     });
 }
 
@@ -375,7 +378,7 @@ async function closeTab(id, forceClose = false, multipleFiles = false) {
         }
 
         if (askPrompt && !forceClose) {
-            let answer = await askDiscardUI(getFilename(tab.path), multipleFiles);
+            let answer = await askConfirmUI(`Discard unsaved changes to "${getFilename(tab.path)}"?`, multipleFiles);
             if (answer === 'no') return false;
             if (answer === 'all') result = 'force_all';
         }
@@ -472,6 +475,25 @@ async function saveFile() {
     } catch (e) {
         console.error(e);
         showStatus('Error saving file');
+    }
+}
+
+async function deleteActiveFile() {
+    const tab = tabs.find(t => t.id === activeTabId);
+    if (!tab) return;
+
+    let answer = await askConfirmUI(`Permanently delete "${getFilename(tab.path)}"?`, false);
+    if (answer === 'yes') {
+        if (tab.path && window.__TAURI__) {
+            try {
+                await window.__TAURI__.fs.removeFile(tab.path);
+            } catch (e) {
+                console.error("Failed to delete from disk", e);
+                showStatus('Error deleting file');
+            }
+        }
+        // Force close without unsaved changes prompt
+        closeTab(tab.id, true);
     }
 }
 
@@ -584,6 +606,11 @@ window.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    const deleteBtn = document.getElementById('btn-delete');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', deleteActiveFile);
+    }
 
     const quickOpenBtn = document.getElementById('btn-quick-open');
     if (quickOpenBtn) {
