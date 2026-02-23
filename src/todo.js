@@ -1,8 +1,8 @@
 import { ViewPlugin, Decoration, WidgetType, EditorView } from "@codemirror/view";
 
 // Regular expressions to detect markdown checkboxes
-const UNCHECKED_REGEX = /^(\s*)-\s\[\s\]\s/;
-const CHECKED_REGEX = /^(\s*)-\s\[x\]\s/i;
+const UNCHECKED_REGEX = /^(\s*)-\s*\[\s*\](?:\s|$)/;
+const CHECKED_REGEX = /^(\s*)-\s*\[x\](?:\s|$)/i;
 
 // -------------------------------------------------------------
 // SVG Widget Builders
@@ -172,7 +172,14 @@ export const todoKeymap = [
                         });
                         return true;
                     } else {
-                        // First line, just delete the prefix
+                        // First line.
+                        if (state.doc.lines === 1 && line.text.substring(prefixLength).trim().length === 0) {
+                            // File has exactly 1 line and it's an empty checkbox.
+                            // Block deletion to forcibly keep at least one checkbox in the editor!
+                            return true;
+                        }
+
+                        // Otherwise, just delete the prefix
                         view.dispatch({
                             changes: { from: line.from, to: line.from + prefixLength, insert: "" }
                         });
