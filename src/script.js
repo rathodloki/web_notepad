@@ -73,6 +73,7 @@ function saveSession() {
             path: tab.path,
             title: tab.title,
             isUnsaved: tab.isUnsaved,
+            isTodo: tab.isTodo,
             content: tab.isUnsaved || !tab.path ? content : null
         };
     });
@@ -139,13 +140,17 @@ async function loadSession() {
             const num = parseInt(t.id.split('-')[1]);
             if (num > tabCounter) tabCounter = num;
 
-            const extensions = await getLanguageExtension(t.path);
+            // Enforce Todo type rendering if inherently flagged or via extension
+            const isTodo = t.isTodo || (t.path && t.path.endsWith('.todo'));
+            const langPath = isTodo ? "tasks.todo" : t.path;
+            const extensions = await getLanguageExtension(langPath);
 
             const newTab = {
                 id: t.id,
                 path: t.path,
                 title: t.title,
                 isUnsaved: t.isUnsaved,
+                isTodo: isTodo,
                 savedContent: savedContent,
                 state: createEditorState(content || '', [...extensions, createUpdateListener(t.id)])
             };
@@ -200,8 +205,12 @@ function createUpdateListener(id) {
 function renderTabs() {
     tabBar.innerHTML = '';
     tabs.forEach(tab => {
+        let classes = ['tab'];
+        if (tab.id === activeTabId) classes.push('active');
+        if (tab.isTodo) classes.push('is-todo');
+
         const tabEl = document.createElement('div');
-        tabEl.className = `tab ${tab.id === activeTabId ? 'active' : ''}`;
+        tabEl.className = classes.join(' ');
 
         const dot = document.createElement('div');
         dot.className = `tab-dot ${tab.isUnsaved ? 'unsaved' : ''}`;
@@ -247,6 +256,7 @@ async function createNewTab(path = null, content = '') {
     tabCounter++;
     const id = `tab-${tabCounter}`;
 
+    const isTodo = path ? path.endsWith('.todo') : false;
     const extensions = await getLanguageExtension(path);
     const state = createEditorState(content, [...extensions, createUpdateListener(id)]);
 
@@ -255,6 +265,7 @@ async function createNewTab(path = null, content = '') {
         path,
         title: 'Untitled',
         isUnsaved: false,
+        isTodo,
         savedContent: content,
         state
     };
@@ -435,8 +446,12 @@ async function saveFile() {
     try {
         let pathToSave = tab.path;
         if (!pathToSave) {
+            const filters = tab.isTodo
+                ? [{ name: 'Todo Checklist', extensions: ['todo'] }]
+                : [{ name: 'All Files', extensions: ['*'] }];
+
             pathToSave = await saveDialog({
-                filters: [{ name: 'All Files', extensions: ['*'] }]
+                filters: filters
             });
         }
 
@@ -681,6 +696,7 @@ async function spawnTodoList() {
         path: null,
         title: defaultName,
         isUnsaved: true,
+        isTodo: true, // Explicitly tag this tab type regardless of path/extension
         savedContent: null,
         state
     };

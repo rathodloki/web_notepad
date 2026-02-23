@@ -105,6 +105,20 @@ body {
   border-top: 2px solid var(--accent);
 }
 
+.tab.is-todo.active {
+  border-top: 2px solid #bd93f9;
+  /* Dracula purple for checklists */
+}
+
+.tab.is-todo .tab-title {
+  color: #f8f8f2;
+}
+
+.tab.is-todo .tab-dot.unsaved {
+  background-color: #bd93f9;
+  box-shadow: 0 0 5px #bd93f9;
+}
+
 .tab-title {
   white-space: nowrap;
   overflow: hidden;
