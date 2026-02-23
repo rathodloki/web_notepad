@@ -249,7 +249,8 @@ export async function getLanguageExtension(filename) {
             const { activateTodoMode, todoKeymap } = await import("./todo.js");
             // Import keymap array separately so it properly registers as a functional hotkey override
             const { keymap } = await import("@codemirror/view");
-            return [...activateTodoMode(), keymap.of(todoKeymap)];
+            const { Prec } = await import("@codemirror/state");
+            return [...activateTodoMode(), Prec.highest(keymap.of(todoKeymap))];
         default: return [];
     }
 }

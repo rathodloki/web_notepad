@@ -667,7 +667,7 @@ window.addEventListener('keydown', async (e) => {
 
 async function spawnTodoList() {
     const defaultName = "tasks.todo";
-    const initialContent = "⬜ ";
+    const initialContent = "- [ ] ";
 
     // Check if tasks.todo is already open and just switch to it
     const existingIndex = tabs.findIndex(t => t.title === defaultName && t.path === null);
@@ -704,7 +704,7 @@ async function spawnTodoList() {
 
     // Auto focus the end of the checkbox
     if (editorView) {
-        editorView.dispatch({ selection: { anchor: 2, head: 2 } });
+        editorView.dispatch({ selection: { anchor: 6, head: 6 } });
         editorView.focus();
     }
     saveSessionDebounced();

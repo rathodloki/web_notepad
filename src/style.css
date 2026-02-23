@@ -412,12 +412,28 @@ body {
    Todo Checklist Styling
    ------------------------------------- */
 
-.cm-todo-completed {
+.cm-todo-row {
+  display: block;
+  background-color: rgba(40, 42, 54, 0.4);
+  /* #282a36 basically */
+  border-radius: 6px;
+  margin: 2px 8px 2px 4px;
+  padding: 4px 2px 4px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
+}
+
+.cm-todo-completed-row {
   text-decoration: line-through;
-  text-decoration-color: var(--accent);
+  text-decoration-color: #6272A4;
   text-decoration-thickness: 2px;
-  color: var(--text-muted) !important;
-  opacity: 0.7;
+  color: #6272A4 !important;
+  opacity: 0.8;
+  background-color: rgba(30, 32, 40, 0.4);
+}
+
+.cm-todo-widget svg {
+  display: block;
 }
 
 /* -------------------------------------

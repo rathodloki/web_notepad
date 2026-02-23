@@ -1,16 +1,74 @@
-import { ViewPlugin, Decoration, EditorView } from "@codemirror/view";
-import { StateField, StateEffect } from "@codemirror/state";
+import { ViewPlugin, Decoration, WidgetType, EditorView } from "@codemirror/view";
 
-// Regular expressions to detect checkbox states at the start of lines
-const UNCHECKED_REGEX = /^(\s*)⬜\s/;
-const CHECKED_REGEX = /^(\s*)✅\s/;
+// Regular expressions to detect markdown checkboxes
+const UNCHECKED_REGEX = /^(\s*)-\s\[\s\]\s/;
+const CHECKED_REGEX = /^(\s*)-\s\[x\]\s/i;
 
-// Creates a styling decoration for lines that start with ✅
-const checkedLineDecoration = Decoration.line({
-    class: "cm-todo-completed"
+// -------------------------------------------------------------
+// SVG Widget Builders
+// -------------------------------------------------------------
+
+class CheckboxWidget extends WidgetType {
+    constructor(isChecked, from, to) {
+        super();
+        this.isChecked = isChecked;
+        this.from = from;
+        this.to = to;
+    }
+
+    eq(other) {
+        return other.isChecked === this.isChecked && other.from === this.from && other.to === this.to;
+    }
+
+    toDOM(view) {
+        const wrap = document.createElement("span");
+        wrap.className = "cm-todo-widget";
+        wrap.style.cursor = "pointer";
+        wrap.style.display = "inline-flex";
+        wrap.style.alignItems = "center";
+        wrap.style.justifyContent = "center";
+        wrap.style.transform = "translateY(2px)";
+        wrap.style.marginRight = "6px";
+
+        // Add mousedown listener directly to the widget DOM to flip state
+        wrap.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const newText = this.isChecked ? "- [ ] " : "- [x] ";
+            view.dispatch({
+                changes: { from: this.from, to: this.to, insert: newText }
+            });
+        });
+
+        if (this.isChecked) {
+            wrap.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#50FA7B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="4" fill="#50FA7B30"></rect>
+                <path d="M8 12.5l3 3 5-6"></path>
+            </svg>`;
+        } else {
+            wrap.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6272a4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+            </svg>`;
+        }
+
+        return wrap;
+    }
+
+    ignoreEvent() { return true; } // Tell CM to ignore events inside the widget so we handle clicks entirely
+}
+
+// Creates a styling decoration for the entire row block
+const rowBackgroundDecoration = Decoration.line({
+    class: "cm-todo-row"
 });
 
-// A CodeMirror ViewPlugin that provides the visual "grey-out and strikethrough" styling dynamically 
+// Creates a styling decoration for lines that start with completed tasks
+const checkedRowBackgroundDecoration = Decoration.line({
+    class: "cm-todo-row cm-todo-completed-row"
+});
+
+// A CodeMirror ViewPlugin that provides the visual widget replacements and row styling
 export const todoHighlighter = ViewPlugin.fromClass(class {
     decorations;
 
@@ -30,9 +88,28 @@ export const todoHighlighter = ViewPlugin.fromClass(class {
             let pos = from;
             while (pos <= to) {
                 let line = view.state.doc.lineAt(pos);
-                if (CHECKED_REGEX.test(line.text)) {
-                    builder.push(checkedLineDecoration.range(line.from, line.from));
+
+                const uncheckedMatch = line.text.match(UNCHECKED_REGEX);
+                const checkedMatch = line.text.match(CHECKED_REGEX);
+
+                if (uncheckedMatch) {
+                    builder.push(rowBackgroundDecoration.range(line.from, line.from));
+                    const startRawIdx = line.from + uncheckedMatch[1].length;
+                    const endRawIdx = line.from + uncheckedMatch[0].length;
+                    builder.push(Decoration.replace({
+                        widget: new CheckboxWidget(false, startRawIdx, endRawIdx),
+                        inclusive: false
+                    }).range(startRawIdx, endRawIdx));
+                } else if (checkedMatch) {
+                    builder.push(checkedRowBackgroundDecoration.range(line.from, line.from));
+                    const startRawIdx = line.from + checkedMatch[1].length;
+                    const endRawIdx = line.from + checkedMatch[0].length;
+                    builder.push(Decoration.replace({
+                        widget: new CheckboxWidget(true, startRawIdx, endRawIdx),
+                        inclusive: false
+                    }).range(startRawIdx, endRawIdx));
                 }
+
                 pos = line.to + 1;
             }
         }
@@ -42,40 +119,6 @@ export const todoHighlighter = ViewPlugin.fromClass(class {
     decorations: v => v.decorations
 });
 
-// An interaction handler that flips ⬜ to ✅ (and vice versa) when clicked
-export const todoClickHandler = EditorView.domEventHandlers({
-    mousedown(event, view) {
-        // Only intercept if we clicked exactly on a character 
-        const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
-        if (pos === null) return false;
-
-        const line = view.state.doc.lineAt(pos);
-
-        // Ensure the click was actually on the emoji part of the line (first 3-4 chars typically)
-        // by checking cursor horizontal distance from the line start
-        const headMatch = line.text.match(/^(\s*)([⬜✅])/);
-        if (!headMatch) return false;
-
-        const emojiOffset = headMatch[1].length;
-        const clickedOnEmoji = pos >= line.from + emojiOffset && pos <= line.from + emojiOffset + 1;
-
-        if (clickedOnEmoji) {
-            const isChecked = headMatch[2] === '✅';
-            const newChar = isChecked ? '⬜' : '✅';
-
-            // Dispatch transaction replacing exactly that single character
-            view.dispatch({
-                changes: {
-                    from: line.from + emojiOffset,
-                    to: line.from + emojiOffset + 1,
-                    insert: newChar
-                }
-            });
-            return true; // Stop event bubbling
-        }
-        return false;
-    }
-});
 
 // A hotkey extension that intercepts the exactly "Enter" keypress while inside a .todo file
 // It detects if the line you just pressed Enter on was a checkbox, and replicates it downward
@@ -90,11 +133,13 @@ export const todoKeymap = [
             if (!selection.empty) return false;
 
             const line = state.doc.lineAt(selection.head);
-            const match = line.text.match(/^(\s*[⬜✅]\s*)/);
+            const uncheckedMatch = line.text.match(UNCHECKED_REGEX);
+            const checkedMatch = line.text.match(CHECKED_REGEX);
+            const match = uncheckedMatch || checkedMatch;
 
             if (match) {
                 // If they pressed enter on a completely EMPTY checkbox, delete it to escape the list pattern
-                if (line.text.trim() === '⬜' || line.text.trim() === '✅') {
+                if (line.text.trim() === '- [ ]' || line.text.trim() === '- [x]' || line.text.trim() === '- [X]') {
                     view.dispatch({
                         changes: { from: line.from, to: line.to, insert: "" },
                         selection: { anchor: line.from }
@@ -102,7 +147,8 @@ export const todoKeymap = [
                     return true;
                 }
 
-                const prefix = match[1].replace('✅', '⬜'); // always convert to unchecked on new line
+                // always convert to unchecked on new line
+                const prefix = match[1] + "- [ ] ";
                 view.dispatch({
                     changes: {
                         from: selection.head,
@@ -120,7 +166,6 @@ export const todoKeymap = [
 
 export function activateTodoMode() {
     return [
-        todoHighlighter,
-        todoClickHandler
+        todoHighlighter
     ];
 }
