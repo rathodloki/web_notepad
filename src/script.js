@@ -87,7 +87,7 @@ async function saveSession() {
     const sessionTabs = tabs.map(tab => {
         let content = null;
         if (tab.isDoc) {
-            content = (tab.id === activeTabId && activeDocContent) ? activeDocContent : tab.savedContent;
+            content = (tab.id === activeTabId && activeDocContent !== null) ? activeDocContent : tab.savedContent;
         } else {
             content = (tab.id === activeTabId && editorView)
                 ? editorView.state.doc.toString()
@@ -155,6 +155,9 @@ async function loadSession() {
                 try {
                     savedContent = await readTextFile(t.path);
                 } catch (e) { }
+            } else if (!t.path && t.isDoc) {
+                savedContent = (t.content !== undefined && t.content !== null) ? t.content : '';
+                content = savedContent;
             } else if (!t.path && !t.isUnsaved) {
                 savedContent = content || '';
             }
@@ -493,7 +496,8 @@ function switchTab(id) {
             });
         }
 
-        quillView.root.innerHTML = tab.savedContent || '';
+        const fallback = tab.savedContent !== undefined && tab.savedContent !== null ? tab.savedContent : '';
+        quillView.root.innerHTML = fallback;
         setTimeout(() => quillView.focus(), 50);
 
     } else {
