@@ -129,7 +129,7 @@ export const todoHighlighter = ViewPlugin.fromClass(class {
 
                     builder.push(Decoration.widget({
                         widget: new CheckboxWidget(false, injectPos, injectPos, true),
-                        side: 1
+                        side: -1
                     }).range(injectPos, injectPos));
                 }
 
@@ -157,39 +157,24 @@ export const todoKeymap = [
             const line = state.doc.lineAt(selection.head);
             const uncheckedMatch = line.text.match(UNCHECKED_REGEX);
             const checkedMatch = line.text.match(CHECKED_REGEX);
-            const match = uncheckedMatch || checkedMatch;
+            const corruptedMatch = line.text.match(/^(\s*)-\s*\[\s*\]\s*/);
+            const match = uncheckedMatch || checkedMatch || corruptedMatch;
 
             if (match) {
                 const prefixLength = match[0].length;
 
                 // Check if cursor is immediately after the checkbox
                 if (selection.head === line.from + prefixLength) {
-                    // Check if the rest of the line is empty
-                    const restOfLine = line.text.substring(prefixLength);
-
-                    if (restOfLine.trim().length === 0) {
-                        // The entire line is just an empty checkbox. Delete the whole line.
+                    if (line.from > 0) {
+                        // Merge with previous line
                         view.dispatch({
-                            changes: { from: line.from === 0 ? 0 : line.from - 1, to: line.to, insert: "" },
+                            changes: { from: line.from - 1, to: line.from + prefixLength, insert: "" }
                         });
                         return true;
                     } else {
-                        // There is text. Just delete the prefix so it becomes a normal line.
+                        // First line, just delete the prefix
                         view.dispatch({
                             changes: { from: line.from, to: line.from + prefixLength, insert: "" }
-                        });
-                        return true;
-                    }
-                }
-            } else {
-                // Not a checked match. But maybe it's a corrupted/empty checkbox piece like `- [] `
-                const corruptedMatch = line.text.match(/^(\s*)-\s*\[\s*\]\s*/);
-                if (corruptedMatch && selection.head === line.from + corruptedMatch[0].length) {
-                    const restOfLine = line.text.substring(corruptedMatch[0].length);
-                    if (restOfLine.trim().length === 0) {
-                        // The entire line is a corrupted checkbox. Delete the whole line.
-                        view.dispatch({
-                            changes: { from: line.from === 0 ? 0 : line.from - 1, to: line.to, insert: "" },
                         });
                         return true;
                     }
@@ -204,52 +189,22 @@ export const todoKeymap = [
             const state = view.state;
             const selection = state.selection.main;
 
-            // Only auto-complete on regular typing (no giant multi-line selections)
+            // Only auto-complete on regular typing
             if (!selection.empty) return false;
 
+            // Everywhere inside a checklist file, Enter always creates a new checklist block
             const line = state.doc.lineAt(selection.head);
-            const uncheckedMatch = line.text.match(UNCHECKED_REGEX);
-            const checkedMatch = line.text.match(CHECKED_REGEX);
-            const match = uncheckedMatch || checkedMatch;
+            const whitespaceMatch = line.text.match(/^(\s*)/);
+            const prefix = (whitespaceMatch ? whitespaceMatch[1] : "") + "- [ ] ";
 
-            if (match) {
-                // If they pressed enter on a completely EMPTY checkbox, convert it back into a normal line!
-                const restOfLine = line.text.substring(match[0].length);
-                if (restOfLine.trim().length === 0) {
-                    // It's empty. Delete the checkbox part entirely so it just becomes a plain line
-                    // and insert a newline as expected for "escaping" a list.
-                    view.dispatch({
-                        changes: { from: line.from, to: line.to, insert: "\n" },
-                        selection: { anchor: line.from + 1 }
-                    });
-                    return true;
-                }
-
-                // If it has text, duplicate a new unchecked box below it
-                const prefix = match[1] + "- [ ] ";
-                view.dispatch({
-                    changes: {
-                        from: selection.head,
-                        insert: "\n" + prefix
-                    },
-                    // Move cursor down exactly after the injected prefix
-                    selection: { anchor: selection.head + 1 + prefix.length }
-                });
-                return true;
-            } else {
-                // It's a non-checkbox line (e.g., an empty line or normal text)
-                // Insert a newline with a checkbox!
-                const whitespaceMatch = line.text.match(/^(\s*)/);
-                const prefix = (whitespaceMatch ? whitespaceMatch[1] : "") + "- [ ] ";
-                view.dispatch({
-                    changes: {
-                        from: selection.head,
-                        insert: "\n" + prefix
-                    },
-                    selection: { anchor: selection.head + 1 + prefix.length }
-                });
-                return true;
-            }
+            view.dispatch({
+                changes: {
+                    from: selection.head,
+                    insert: "\n" + prefix
+                },
+                selection: { anchor: selection.head + 1 + prefix.length }
+            });
+            return true;
         }
     }
 ];
