@@ -1,0 +1,409 @@
+:root {
+  --bg-color: #0f1115;
+  --titlebar-bg: #14171c;
+  --titlebar-hover: #ffffff15;
+  --toolbar-bg: #14171c;
+  --toolbar-border: #ffffff10;
+  --text-main: #f0f0f0;
+  --text-muted: #8b92a5;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --button-hover: #ffffff0a;
+  --danger-hover: #e81123;
+  --scrollbar-bg: #0f1115;
+  --scrollbar-thumb: #2a2d36;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--toolbar-border);
+  /* subtle inner border */
+}
+
+/* Background wrapping to support border radius */
+body {
+  background-color: var(--bg-color);
+}
+
+.window-header {
+  height: 40px;
+  background: var(--titlebar-bg);
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--toolbar-border);
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  width: 120px;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.tab-bar-container {
+  flex-grow: 1;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  position: relative;
+  -webkit-app-region: drag;
+}
+
+.tab-bar {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  /* Firefox */
+  -webkit-app-region: no-drag;
+}
+
+.tab-bar::-webkit-scrollbar {
+  display: none;
+  /* Chrome */
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 0 16px;
+  border-right: 1px solid var(--toolbar-border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 120px;
+  max-width: 250px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover {
+  background: var(--titlebar-hover);
+}
+
+.tab.active {
+  background: var(--bg-color);
+  color: var(--text-main);
+  border-top: 2px solid var(--accent);
+}
+
+.tab-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1;
+}
+
+.tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: transparent;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.tab-dot.unsaved {
+  background-color: var(--accent);
+  box-shadow: 0 0 5px var(--accent);
+}
+
+.tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease, background-color 0.1s ease;
+}
+
+.tab:hover .tab-close,
+.tab.active .tab-close {
+  opacity: 1;
+}
+
+.tab-close:hover {
+  background-color: var(--button-hover);
+  color: var(--text-main);
+}
+
+.new-tab-btn {
+  margin-left: 4px;
+  align-self: center;
+}
+
+.window-controls {
+  display: flex;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.window-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  color: var(--text-muted);
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.window-btn:hover {
+  background: var(--titlebar-hover);
+  color: var(--text-main);
+}
+
+.window-btn.close-btn:hover {
+  background: var(--danger-hover);
+  color: white;
+}
+
+.window-btn svg {
+  width: 11px;
+  height: 11px;
+}
+
+.toolbar {
+  display: flex;
+  padding: 6px 16px;
+  background: var(--bg-color);
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-app-region: no-drag;
+}
+
+.icon-btn:hover {
+  background: var(--button-hover);
+  color: var(--text-main);
+}
+
+.icon-btn:active {
+  transform: translateY(1px);
+}
+
+.status-container {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-item {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  font-family: 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.2px;
+}
+
+.status-item.divider {
+  color: #2a2d36;
+  margin: 0 10px;
+  font-size: 10px;
+}
+
+.editor-container {
+  flex-grow: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  border-top: 1px solid var(--toolbar-border);
+}
+
+.editor-container {
+  flex-grow: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-color);
+}
+
+#editor-container {
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Custom Scrollbars for CodeMirror are handled by CM theme, but we can style webkit scrollbars globally */
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 8px;
+  border: 4px solid var(--scrollbar-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #434857;
+}
+
+.cm-editor {
+  height: 100%;
+}
+
+.cm-scroller {
+  font-family: 'JetBrains Mono', 'Consolas', monospace !important;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.context-menu {
+  position: absolute;
+  background: var(--toolbar-bg);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  padding: 4px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+}
+
+.menu-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-main);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.1s;
+  user-select: none;
+}
+
+.menu-item:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  -webkit-app-region: no-drag;
+}
+
+.modal {
+  background: var(--bg-color);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--titlebar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.modal-icon {
+  margin-top: -2px;
+}
+
+.modal-body {
+  padding: 24px 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.modal-footer {
+  padding: 12px 16px;
+  background: var(--titlebar-bg);
+  border-top: 1px solid var(--toolbar-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--toolbar-border);
+  background: var(--bg-color);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.modal-btn:hover {
+  background: var(--titlebar-hover);
+}
+
+.modal-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.modal-btn.primary:hover {
+  background: var(--accent-hover);
+}

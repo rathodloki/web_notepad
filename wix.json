@@ -1,0 +1,102 @@
+{
+  "description": "Configuration for the MSI bundle using WiX.\n\nSee more: https://tauri.app/v1/api/config#wixconfig",
+  "type": "object",
+  "properties": {
+    "language": {
+      "description": "The installer languages to build. See <https://docs.microsoft.com/en-us/windows/win32/msi/localizing-the-error-and-actiontext-tables>.",
+      "default": "en-US",
+      "allOf": [
+        {
+          "$ref": "#/definitions/WixLanguage"
+        }
+      ]
+    },
+    "template": {
+      "description": "A custom .wxs template to use.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "fragmentPaths": {
+      "description": "A list of paths to .wxs files with WiX fragments to use.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "componentGroupRefs": {
+      "description": "The ComponentGroup element ids you want to reference from the fragments.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "componentRefs": {
+      "description": "The Component element ids you want to reference from the fragments.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "featureGroupRefs": {
+      "description": "The FeatureGroup element ids you want to reference from the fragments.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "featureRefs": {
+      "description": "The Feature element ids you want to reference from the fragments.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mergeRefs": {
+      "description": "The Merge element ids you want to reference from the fragments.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "skipWebviewInstall": {
+      "description": "Disables the Webview2 runtime installation after app install.\n\nWill be removed in v2, prefer the [`WindowsConfig::webview_install_mode`] option.",
+      "default": false,
+      "type": "boolean"
+    },
+    "license": {
+      "description": "The path to the license file to render on the installer.\n\nMust be an RTF file, so if a different extension is provided, we convert it to the RTF format.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "enableElevatedUpdateTask": {
+      "description": "Create an elevated update task within Windows Task Scheduler.",
+      "default": false,
+      "type": "boolean"
+    },
+    "bannerPath": {
+      "description": "Path to a bitmap file to use as the installation user interface banner. This bitmap will appear at the top of all but the first page of the installer.\n\nThe required dimensions are 493px × 58px.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "dialogImagePath": {
+      "description": "Path to a bitmap file to use on the installation user interface dialogs. It is used on the welcome and completion dialogs. The required dimensions are 493px × 312px.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

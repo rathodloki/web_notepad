@@ -1,0 +1,5 @@
+
+> lightpad@1.0.0 tauri
+> tauri build
+
+       Error `tauri.conf.json` error on `tauri > bundle > windows > wix`: {"installScope":"perUser","language":"en-US"} is not valid under any of the schemas listed in the 'anyOf' keyword
