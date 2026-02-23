@@ -384,7 +384,46 @@ function switchTab(id) {
                 marker: Marker,
                 inlineCode: InlineCode,
                 delimiter: Delimiter,
-                image: ImageTool
+                image: {
+                    class: ImageTool,
+                    config: {
+                        uploader: {
+                            async uploadByFile(file) {
+                                if (!window.__TAURI__) return { success: 0 };
+                                const ext = file.name.split('.').pop() || 'png';
+                                const filename = `media_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+
+                                const buffer = await file.arrayBuffer();
+                                const uint8Array = new Uint8Array(buffer);
+
+                                const { appDataDir, join } = window.__TAURI__.path;
+                                const { writeBinaryFile, createDir, exists } = window.__TAURI__.fs;
+
+                                const appDataPath = await appDataDir();
+                                const mediaDir = await join(appDataPath, 'LightPadMedia');
+                                if (!(await exists(mediaDir))) await createDir(mediaDir, { recursive: true });
+
+                                const filePath = await join(mediaDir, filename);
+                                await writeBinaryFile(filePath, uint8Array);
+
+                                const url = window.__TAURI__.tauri.convertFileSrc(filePath);
+                                return {
+                                    success: 1,
+                                    file: {
+                                        url: url,
+                                        path: filePath
+                                    }
+                                };
+                            },
+                            async uploadByUrl(url) {
+                                return {
+                                    success: 1,
+                                    file: { url: url }
+                                };
+                            }
+                        }
+                    }
+                }
             },
             onChange: () => {
                 tab.isUnsaved = true;
@@ -556,7 +595,7 @@ async function saveFile() {
             if (tab.isTodo) {
                 filters = [{ name: 'Todo Checklist', extensions: ['todo'] }];
             } else if (tab.isDoc) {
-                filters = [{ name: 'Notion Document', extensions: ['doc'] }];
+                filters = [{ name: 'Lightpad Document', extensions: ['doc'] }];
             }
 
             pathToSave = await saveDialog({
