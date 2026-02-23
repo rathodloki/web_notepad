@@ -409,6 +409,18 @@ body {
 }
 
 /* -------------------------------------
+   Todo Checklist Styling
+   ------------------------------------- */
+
+.cm-todo-completed {
+  text-decoration: line-through;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+/* -------------------------------------
    Quick Open Palette (VS Code style)
    ------------------------------------- */
 

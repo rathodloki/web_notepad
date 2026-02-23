@@ -245,6 +245,12 @@ export async function getLanguageExtension(filename) {
         case 'rs':
             const { rust } = await import("@codemirror/legacy-modes/mode/rust");
             return [StreamLanguage.define(rust)];
+        case 'todo':
+            const { activateTodoMode, todoKeymap } = await import("./todo.js");
+            // Import keymap array separately so it properly registers as a functional hotkey override
+            const { keymap } = await import("@codemirror/view");
+            return [...activateTodoMode(), keymap.of(todoKeymap)];
         default: return [];
     }
 }
+

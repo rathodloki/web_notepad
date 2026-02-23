@@ -580,6 +580,11 @@ window.addEventListener('DOMContentLoaded', () => {
         newTabBtn.addEventListener('click', async () => await createNewTab());
     }
 
+    const todoBtn = document.getElementById('btn-todo');
+    if (todoBtn) {
+        todoBtn.addEventListener('click', spawnTodoList);
+    }
+
     const tabBarContainer = document.querySelector('.tab-bar-container');
     if (tabBarContainer) {
         tabBarContainer.addEventListener('dblclick', (e) => {
@@ -653,7 +658,57 @@ window.addEventListener('keydown', async (e) => {
             await createNewTab();
         }
     }
+    // Ctrl+1 / Cmd+1 (Quick Todo List)
+    if ((e.ctrlKey || e.metaKey) && e.key === '1') {
+        e.preventDefault();
+        spawnTodoList();
+    }
 });
+
+async function spawnTodoList() {
+    const defaultName = "tasks.todo";
+    const initialContent = "⬜ ";
+
+    // Check if tasks.todo is already open and just switch to it
+    const existingIndex = tabs.findIndex(t => t.title === defaultName && t.path === null);
+    if (existingIndex !== -1) {
+        switchTab(tabs[existingIndex].id);
+
+        // Move cursor to bottom
+        if (editorView) {
+            const length = editorView.state.doc.length;
+            editorView.dispatch({ selection: { anchor: length, head: length } });
+            editorView.focus();
+        }
+        return;
+    }
+
+    // Otherwise create a new one
+    tabCounter++;
+    const id = `tab-${tabCounter}`;
+
+    const extensions = await getLanguageExtension("tasks.todo");
+    const state = await import("./editor.js").then(m => m.createEditorState(initialContent, [...extensions, createUpdateListener(id)]));
+
+    const newTab = {
+        id,
+        path: null,
+        title: defaultName,
+        isUnsaved: true,
+        savedContent: null,
+        state
+    };
+
+    tabs.push(newTab);
+    switchTab(id);
+
+    // Auto focus the end of the checkbox
+    if (editorView) {
+        editorView.dispatch({ selection: { anchor: 2, head: 2 } });
+        editorView.focus();
+    }
+    saveSessionDebounced();
+}
 
 /* -------------------------------------------------------------------------- */
 /* Quick Open Palette Logic                                                   */
