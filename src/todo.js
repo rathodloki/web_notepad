@@ -147,6 +147,34 @@ export const todoHighlighter = ViewPlugin.fromClass(class {
 // It detects if the line you just pressed Enter on was a checkbox, and replicates it downward
 export const todoKeymap = [
     {
+        key: "Backspace",
+        run: (view) => {
+            const state = view.state;
+            const selection = state.selection.main;
+
+            if (!selection.empty) return false;
+
+            const line = state.doc.lineAt(selection.head);
+            const uncheckedMatch = line.text.match(UNCHECKED_REGEX);
+            const checkedMatch = line.text.match(CHECKED_REGEX);
+            const match = uncheckedMatch || checkedMatch;
+
+            if (match) {
+                const prefixLength = match[0].length;
+
+                // If cursor is immediately after the checkbox
+                if (selection.head === line.from + prefixLength) {
+                    // Delete the entire hidden prefix at once
+                    view.dispatch({
+                        changes: { from: line.from, to: line.from + prefixLength, insert: "" }
+                    });
+                    return true;
+                }
+            }
+            return false;
+        }
+    },
+    {
         key: "Enter",
         run: (view) => {
             const state = view.state;
