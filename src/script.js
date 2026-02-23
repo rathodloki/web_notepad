@@ -3,6 +3,9 @@ import { EditorView } from "@codemirror/view";
 
 // Quill.js
 import Quill from 'quill';
+import BlotFormatter from 'quill-blot-formatter';
+
+Quill.register('modules/blotFormatter', BlotFormatter);
 
 let invoke, appWindow, readTextFile, writeTextFile, openDialog, saveDialog;
 
@@ -349,6 +352,7 @@ function switchTab(id) {
             quillView = new Quill('#quill-editor', {
                 theme: 'snow',
                 modules: {
+                    blotFormatter: {}, // Enable image resizing and moving
                     history: { delay: 500, maxStack: 100 },
                     toolbar: {
                         container: [
@@ -360,6 +364,27 @@ function switchTab(id) {
                             ['clean']
                         ],
                         handlers: {
+                            link: async function (value) {
+                                if (value) {
+                                    const range = this.quill.getSelection(true) || { index: this.quill.getLength(), length: 0 };
+                                    const selectedText = range.length > 0 ? this.quill.getText(range.index, range.length) : '';
+
+                                    const result = await askLinkUI(selectedText);
+                                    if (result) {
+                                        if (range.length > 0) {
+                                            // Provide only the URL if text is already selected
+                                            this.quill.format('link', result.url);
+                                        } else {
+                                            // Insert text and append link if no selection exists
+                                            const insertText = result.text || result.url;
+                                            this.quill.insertText(range.index, insertText, 'link', result.url);
+                                            this.quill.setSelection(range.index + insertText.length);
+                                        }
+                                    }
+                                } else {
+                                    this.quill.format('link', false); // removes link
+                                }
+                            },
                             image: async function () {
                                 if (!window.__TAURI__) return;
                                 const selected = await openDialog({
@@ -455,6 +480,40 @@ function askConfirmUI(message, multiple = false) {
 
         // Auto-focus the Yes button for fluid keyboard usage
         setTimeout(() => btnYes.focus(), 10);
+    });
+}
+
+function askLinkUI(defaultText = '') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('link-modal');
+        const inputUrl = document.getElementById('link-modal-url');
+        const inputText = document.getElementById('link-modal-text');
+        const btnInsert = document.getElementById('link-modal-insert');
+        const btnCancel = document.getElementById('link-modal-cancel');
+
+        inputText.value = defaultText;
+        inputUrl.value = '';
+        modal.style.display = 'flex';
+
+        const cleanup = () => {
+            modal.style.display = 'none';
+            btnInsert.removeEventListener('click', handleInsert);
+            btnCancel.removeEventListener('click', handleCancel);
+        };
+
+        const handleInsert = () => {
+            cleanup();
+            resolve(inputUrl.value.trim() ? { url: inputUrl.value.trim(), text: inputText.value.trim() } : null);
+        };
+        const handleCancel = () => { cleanup(); resolve(null); };
+
+        btnInsert.addEventListener('click', handleInsert);
+        btnCancel.addEventListener('click', handleCancel);
+
+        setTimeout(() => {
+            if (defaultText) inputUrl.focus();
+            else inputText.focus();
+        }, 10);
     });
 }
 

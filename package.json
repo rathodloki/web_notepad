@@ -30,6 +30,8 @@
     "@codemirror/view": "^6.39.15",
     "@lezer/highlight": "^1.2.3",
     "codemirror": "^6.0.2",
-    "quill": "^2.0.3"
+    "quill": "^2.0.3",
+    "quill-blot-formatter": "^1.0.5",
+    "quill-image-drop-and-paste": "^2.0.1"
   }
 }
