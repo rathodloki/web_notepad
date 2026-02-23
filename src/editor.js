@@ -251,6 +251,18 @@ export async function getLanguageExtension(filename) {
             const { keymap } = await import("@codemirror/view");
             const { Prec } = await import("@codemirror/state");
             return [...activateTodoMode(), Prec.highest(keymap.of(todoKeymap))];
+        case 'doc': {
+            const docModule = await import("./doc.js");
+            const docKeymapImport = await import("@codemirror/view");
+            const docPrecImport = await import("@codemirror/state");
+            const { markdown, markdownLanguage } = await import("@codemirror/lang-markdown");
+            const { languages } = await import("@codemirror/language-data");
+            return [
+                markdown({ base: markdownLanguage, codeLanguages: languages }),
+                ...docModule.activateDocMode(),
+                docPrecImport.Prec.highest(docKeymapImport.keymap.of(docModule.docKeymap))
+            ];
+        }
         default: return [];
     }
 }

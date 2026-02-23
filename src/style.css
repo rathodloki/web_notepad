@@ -119,6 +119,20 @@ body {
   box-shadow: 0 0 5px #bd93f9;
 }
 
+.tab.is-doc.active {
+  border-top: 2px solid #8be9fd;
+  /* Dracula cyan for documents */
+}
+
+.tab.is-doc .tab-title {
+  color: #f8f8f2;
+}
+
+.tab.is-doc .tab-dot.unsaved {
+  background-color: #8be9fd;
+  box-shadow: 0 0 5px #8be9fd;
+}
+
 .tab-title {
   white-space: nowrap;
   overflow: hidden;
@@ -138,6 +152,200 @@ body {
 .tab-dot.unsaved {
   background-color: var(--accent);
   box-shadow: 0 0 5px var(--accent);
+}
+
+/* -------------------------------------
+   CodeMirror Doc Engine Styling
+   Activating Notion-style headings
+-------------------------------------- */
+.cm-editor.is-doc-mode {
+  padding: 20px 40px;
+}
+
+.cm-editor.is-doc-mode .cm-header-1 {
+  font-size: 2.2em;
+  font-weight: 700;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.cm-editor.is-doc-mode .cm-header-2 {
+  font-size: 1.8em;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+}
+
+.cm-editor.is-doc-mode .cm-header-3 {
+  font-size: 1.4em;
+  font-weight: 600;
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
+}
+
+/* Faint hashes so they don't visually clutter the beautiful headers */
+.cm-editor.is-doc-mode .cm-formatting-header {
+  opacity: 0.15;
+  transition: opacity 0.2s ease;
+}
+
+.cm-editor.is-doc-mode .cm-formatting-header:hover {
+  opacity: 0.8;
+}
+
+/* -------------------------------------
+   Doc Floating Toolbar
+-------------------------------------- */
+.doc-toolbar {
+  background-color: var(--sidebar-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  transform: translateY(-100%);
+  margin-top: -10px;
+}
+
+.doc-toolbar-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.doc-toolbar-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.doc-toolbar-btn.italic {
+  font-style: italic;
+}
+
+.doc-toolbar-btn.strike {
+  text-decoration: line-through;
+}
+
+.doc-toolbar .toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background-color: rgba(255, 255, 255, 0.15);
+  margin: 0 4px;
+}
+
+/* -------------------------------------
+   Doc Media Images
+-------------------------------------- */
+.cm-doc-image-wrap {
+  display: block;
+  margin: 1em 0;
+  text-align: center;
+}
+
+.cm-doc-image {
+  max-width: 100%;
+  max-height: 50vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  object-fit: contain;
+}
+
+/* -------------------------------------
+   Smart Link Bookmarks
+-------------------------------------- */
+.cm-doc-bookmark-wrap {
+  margin: 1.5em 0;
+  user-select: none;
+}
+
+.bookmark-card {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text-main);
+  background-color: rgba(255, 255, 255, 0.02);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  height: 120px;
+}
+
+.bookmark-card:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.bookmark-info {
+  padding: 14px 14px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.bookmark-title {
+  font-size: 0.95em;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.bookmark-desc {
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.6);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.bookmark-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75em;
+  color: var(--text-main);
+}
+
+.bookmark-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+}
+
+.bookmark-url-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.8;
+}
+
+.bookmark-image {
+  width: 30%;
+  min-width: 150px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.bookmark-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .tab-close {

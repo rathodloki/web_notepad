@@ -74,6 +74,7 @@ function saveSession() {
             title: tab.title,
             isUnsaved: tab.isUnsaved,
             isTodo: tab.isTodo,
+            isDoc: tab.isDoc,
             content: tab.isUnsaved || !tab.path ? content : null
         };
     });
@@ -142,7 +143,13 @@ async function loadSession() {
 
             // Enforce Todo type rendering if inherently flagged or via extension
             const isTodo = t.isTodo || (t.path && t.path.endsWith('.todo'));
-            const langPath = isTodo ? "tasks.todo" : t.path;
+            // Enforce Doc type rendering
+            const isDoc = t.isDoc || (t.path && t.path.endsWith('.doc'));
+
+            let langPath = t.path;
+            if (isTodo) langPath = "tasks.todo";
+            if (isDoc) langPath = "document.doc";
+
             const extensions = await getLanguageExtension(langPath);
 
             const newTab = {
@@ -151,6 +158,7 @@ async function loadSession() {
                 title: t.title,
                 isUnsaved: t.isUnsaved,
                 isTodo: isTodo,
+                isDoc: isDoc,
                 savedContent: savedContent,
                 state: createEditorState(content || '', [...extensions, createUpdateListener(t.id)])
             };
@@ -208,6 +216,7 @@ function renderTabs() {
         let classes = ['tab'];
         if (tab.id === activeTabId) classes.push('active');
         if (tab.isTodo) classes.push('is-todo');
+        if (tab.isDoc) classes.push('is-doc');
 
         const tabEl = document.createElement('div');
         tabEl.className = classes.join(' ');
@@ -257,6 +266,7 @@ async function createNewTab(path = null, content = '') {
     const id = `tab-${tabCounter}`;
 
     const isTodo = path ? path.endsWith('.todo') : false;
+    const isDoc = path ? path.endsWith('.doc') : false;
     const extensions = await getLanguageExtension(path);
     const state = createEditorState(content, [...extensions, createUpdateListener(id)]);
 
@@ -266,6 +276,7 @@ async function createNewTab(path = null, content = '') {
         title: 'Untitled',
         isUnsaved: false,
         isTodo,
+        isDoc,
         savedContent: content,
         state
     };
@@ -304,6 +315,12 @@ function switchTab(id) {
         editorView.setState(tab.state);
     } else {
         editorView = createEditorView(tab.state, editorContainer);
+    }
+
+    if (tab.isDoc) {
+        editorContainer.classList.add('is-doc-mode');
+    } else {
+        editorContainer.classList.remove('is-doc-mode');
     }
 
     renderTabs();
@@ -449,9 +466,12 @@ async function saveFile() {
     try {
         let pathToSave = tab.path;
         if (!pathToSave) {
-            const filters = tab.isTodo
-                ? [{ name: 'Todo Checklist', extensions: ['todo'] }]
-                : [{ name: 'All Files', extensions: ['*'] }];
+            let filters = [{ name: 'All Files', extensions: ['*'] }];
+            if (tab.isTodo) {
+                filters = [{ name: 'Todo Checklist', extensions: ['todo'] }];
+            } else if (tab.isDoc) {
+                filters = [{ name: 'Notion Document', extensions: ['doc'] }];
+            }
 
             pathToSave = await saveDialog({
                 filters: filters
@@ -607,6 +627,42 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const docToolbar = document.getElementById('doc-toolbar');
+    if (docToolbar) {
+        docToolbar.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // Prevent editor from losing focus selection
+        });
+
+        docToolbar.addEventListener('click', (e) => {
+            const btn = e.target.closest('.doc-toolbar-btn');
+            if (!btn || !editorView) return;
+
+            const action = btn.dataset.action;
+            const { state, dispatch } = editorView;
+            const { main } = state.selection;
+            if (main.empty) return;
+
+            const selectedText = state.doc.sliceString(main.from, main.to);
+            let insertText = '';
+
+            switch (action) {
+                case 'bold': insertText = `**${selectedText}**`; break;
+                case 'italic': insertText = `*${selectedText}*`; break;
+                case 'strike': insertText = `~~${selectedText}~~`; break;
+                case 'h1': insertText = `# ${selectedText.replace(/^#+\s*/, '')}`; break;
+                case 'h2': insertText = `## ${selectedText.replace(/^#+\s*/, '')}`; break;
+                case 'h3': insertText = `### ${selectedText.replace(/^#+\s*/, '')}`; break;
+            }
+
+            if (insertText) {
+                dispatch({
+                    changes: { from: main.from, to: main.to, insert: insertText },
+                    selection: { anchor: main.from, head: main.from + insertText.length }
+                });
+            }
+        });
+    }
+
     const deleteBtn = document.getElementById('btn-delete');
     if (deleteBtn) {
         deleteBtn.addEventListener('click', deleteActiveFile);
@@ -705,6 +761,11 @@ window.addEventListener('keydown', async (e) => {
         e.preventDefault();
         spawnTodoList();
     }
+    // Ctrl+2 / Cmd+2 (Quick Notion Doc)
+    if ((e.ctrlKey || e.metaKey) && e.key === '2') {
+        e.preventDefault();
+        spawnDocProcess();
+    }
 });
 
 async function spawnTodoList() {
@@ -734,6 +795,39 @@ async function spawnTodoList() {
     // Auto focus the end of the checkbox
     if (editorView) {
         editorView.dispatch({ selection: { anchor: 6, head: 6 } });
+        editorView.focus();
+    }
+    saveSessionDebounced();
+}
+
+async function spawnDocProcess() {
+    const defaultName = "document.doc";
+    const initialContent = "# New Document\n\n";
+
+    // Create a new doc tab
+    tabCounter++;
+    const id = `tab-${tabCounter}`;
+
+    const extensions = await getLanguageExtension("document.doc");
+    const state = await import("./editor.js").then(m => m.createEditorState(initialContent, [...extensions, createUpdateListener(id)]));
+
+    const newTab = {
+        id,
+        path: null,
+        title: defaultName,
+        isUnsaved: true,
+        isTodo: false,
+        isDoc: true, // Explicitly tag this tab type
+        savedContent: null,
+        state
+    };
+
+    tabs.push(newTab);
+    switchTab(id);
+
+    // Auto focus at the end of the document
+    if (editorView) {
+        editorView.dispatch({ selection: { anchor: initialContent.length, head: initialContent.length } });
         editorView.focus();
     }
     saveSessionDebounced();
