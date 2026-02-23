@@ -16,6 +16,9 @@ let tabCounter = 0;
 let sessionTimeout = null;
 let contextMenuTargetId = null;
 
+// File History tracking
+let fileHistory = [];
+
 function getFilename(path) {
     if (!path) return 'Untitled';
     return path.split('\\').pop().split('/').pop();
@@ -126,6 +129,11 @@ async function loadSession() {
                 } catch (e) { }
             } else if (!t.path && !t.isUnsaved) {
                 savedContent = content || '';
+            }
+
+            // Clean up history immediately if file was deleted
+            if (t.path && savedContent === null && t.isUnsaved) {
+                removeFromFileHistory(t.path);
             }
 
             const num = parseInt(t.id.split('-')[1]);
@@ -409,6 +417,7 @@ async function openFile() {
 
             const contents = await readTextFile(selected);
             await createNewTab(selected, contents);
+            addToFileHistory(selected);
             showStatus('File loaded');
         }
     } catch (e) {
@@ -439,6 +448,7 @@ async function saveFile() {
             tab.isUnsaved = false;
             tab.savedContent = content;
 
+            addToFileHistory(pathToSave);
             renderTabs();
             updateTitle();
             showStatus('Saved successfully');
@@ -548,6 +558,8 @@ window.addEventListener('DOMContentLoaded', () => {
         loadSession();
     }
 
+    loadFileHistory();
+
     document.getElementById('btn-open').addEventListener('click', openFile);
     document.getElementById('btn-save').addEventListener('click', saveFile);
     document.getElementById('btn-find').addEventListener('click', () => {
@@ -557,6 +569,11 @@ window.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    const quickOpenBtn = document.getElementById('btn-quick-open');
+    if (quickOpenBtn) {
+        quickOpenBtn.addEventListener('click', toggleQuickOpen);
+    }
 
     const newTabBtn = document.getElementById('btn-new-tab');
     if (newTabBtn) {
@@ -604,21 +621,265 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Keyboard shortcuts
-window.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+window.addEventListener('keydown', async (e) => {
+    // Ctrl+S / Cmd+S
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        saveFile();
+        await saveFile();
     }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+    // Ctrl+O / Cmd+O
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'o') {
         e.preventDefault();
-        openFile();
+        await openFile();
     }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'w') {
+    // Ctrl+W / Cmd+W (Close Current)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
-        if (activeTabId) closeTab(activeTabId);
+        if (activeTabId) await closeTab(activeTabId);
     }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+    // Ctrl+Shift+W / Cmd+Shift+W (Close All)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
-        createNewTab();
+        const tabsToClose = [...tabs];
+        await closeMultipleTabs(tabsToClose);
+    }
+    // Ctrl+N / Cmd+N (New File)
+    // Ctrl+T / Cmd+T (Open File History Search)
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'n' || e.key.toLowerCase() === 't')) {
+        e.preventDefault();
+        if (e.key.toLowerCase() === 't') {
+            toggleQuickOpen();
+        } else {
+            await createNewTab();
+        }
     }
 });
+
+/* -------------------------------------------------------------------------- */
+/* Quick Open Palette Logic                                                   */
+/* -------------------------------------------------------------------------- */
+
+let quickOpenSelectedIndex = -1;
+let currentQuickOpenMatches = [];
+
+function toggleQuickOpen() {
+    const modal = document.getElementById('quick-open-modal');
+    const input = document.getElementById('quick-open-input');
+    if (!modal || !input) return;
+
+    if (modal.style.display === 'flex') {
+        closeQuickOpen();
+    } else {
+        modal.style.display = 'flex';
+        input.value = '';
+        renderQuickOpenResults();
+
+        // Ensure input gets focused after modal is displayed
+        setTimeout(() => {
+            input.focus();
+        }, 10);
+    }
+}
+
+function closeQuickOpen() {
+    const modal = document.getElementById('quick-open-modal');
+    if (modal) modal.style.display = 'none';
+    if (editorView) editorView.focus();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('quick-open-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeQuickOpen();
+        });
+    }
+
+    const input = document.getElementById('quick-open-input');
+    if (input) {
+        input.addEventListener('keydown', async (e) => {
+            if (e.key === 'Escape') {
+                closeQuickOpen();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (quickOpenSelectedIndex < currentQuickOpenMatches.length - 1) {
+                    quickOpenSelectedIndex++;
+                    updateQuickOpenSelection();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (quickOpenSelectedIndex > 0) {
+                    quickOpenSelectedIndex--;
+                    updateQuickOpenSelection();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (quickOpenSelectedIndex >= 0 && currentQuickOpenMatches[quickOpenSelectedIndex]) {
+                    await openFileFromHistory(currentQuickOpenMatches[quickOpenSelectedIndex].path);
+                }
+            }
+        });
+
+        input.addEventListener('input', () => {
+            renderQuickOpenResults();
+        });
+    }
+});
+
+function updateQuickOpenSelection() {
+    const results = document.getElementById('quick-open-results');
+    if (!results) return;
+
+    const items = results.querySelectorAll('.quick-open-item');
+    items.forEach((item, index) => {
+        if (index === quickOpenSelectedIndex) {
+            item.classList.add('selected');
+            item.scrollIntoView({ block: 'nearest' });
+        } else {
+            item.classList.remove('selected');
+        }
+    });
+}
+
+function renderQuickOpenResults() {
+    const input = document.getElementById('quick-open-input');
+    const results = document.getElementById('quick-open-results');
+    if (!input || !results) return;
+
+    const query = input.value.toLowerCase();
+
+    // Fuzzy search: filter history based on substrings
+    if (!query) {
+        currentQuickOpenMatches = fileHistory.map(path => ({ path, score: 0 }));
+    } else {
+        currentQuickOpenMatches = fileHistory
+            .map(path => {
+                const filename = getFilename(path).toLowerCase();
+                const lowerPath = path.toLowerCase();
+
+                // Score based on exact filename match > exact path match
+                let score = -1;
+                if (filename.includes(query)) score = 10;
+                else if (lowerPath.includes(query)) score = 5;
+
+                return { path, score, originalName: getFilename(path) };
+            })
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score);
+    }
+
+    results.innerHTML = '';
+    quickOpenSelectedIndex = currentQuickOpenMatches.length > 0 ? 0 : -1;
+
+    if (currentQuickOpenMatches.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'quick-open-empty';
+        emptyState.textContent = 'No matching files found.';
+        results.appendChild(emptyState);
+        return;
+    }
+
+    currentQuickOpenMatches.forEach((match, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = `quick-open-item ${index === 0 ? 'selected' : ''}`;
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'quick-open-filename';
+
+        // Very basic highlighting of the matched substring in filename
+        if (query && match.originalName.toLowerCase().includes(query)) {
+            const startIdx = match.originalName.toLowerCase().indexOf(query);
+            const before = match.originalName.substring(0, startIdx);
+            const hl = match.originalName.substring(startIdx, startIdx + query.length);
+            const after = match.originalName.substring(startIdx + query.length);
+            nameEl.innerHTML = `${before}<span class="q-match">${hl}</span>${after}`;
+        } else {
+            nameEl.textContent = match.originalName || getFilename(match.path);
+        }
+
+        const pathEl = document.createElement('div');
+        pathEl.className = 'quick-open-path';
+        pathEl.textContent = match.path;
+
+        itemEl.appendChild(nameEl);
+        itemEl.appendChild(pathEl);
+
+        itemEl.addEventListener('click', async () => {
+            await openFileFromHistory(match.path);
+        });
+
+        itemEl.addEventListener('mouseenter', () => {
+            quickOpenSelectedIndex = index;
+            updateQuickOpenSelection();
+        });
+
+        results.appendChild(itemEl);
+    });
+}
+
+/* -------------------------------------------------------------------------- */
+/* File History Data Management                                               */
+/* -------------------------------------------------------------------------- */
+
+function loadFileHistory() {
+    const historyJson = localStorage.getItem('lightpad-history');
+    if (historyJson) {
+        try {
+            fileHistory = JSON.parse(historyJson);
+        } catch (e) {
+            fileHistory = [];
+        }
+    }
+}
+
+function saveFileHistory() {
+    localStorage.setItem('lightpad-history', JSON.stringify(fileHistory));
+}
+
+function addToFileHistory(path) {
+    if (!path) return;
+    // Remove if exists to push to front
+    fileHistory = fileHistory.filter(p => p !== path);
+    fileHistory.unshift(path);
+    // Keep max 50 items
+    if (fileHistory.length > 50) {
+        fileHistory = fileHistory.slice(0, 50);
+    }
+    saveFileHistory();
+}
+
+function removeFromFileHistory(path) {
+    fileHistory = fileHistory.filter(p => p !== path);
+    saveFileHistory();
+}
+
+async function openFileFromHistory(path) {
+    closeQuickOpen();
+
+    // Check if already open open in a tab
+    const existingTab = tabs.find(t => t.path === path);
+    if (existingTab) {
+        switchTab(existingTab.id);
+        return;
+    }
+
+    if (!window.__TAURI__) return;
+    try {
+        const exists = await window.__TAURI__.fs.exists(path);
+        if (!exists) {
+            showStatus(`File no longer exists: ${getFilename(path)}`, 5000);
+            removeFromFileHistory(path); // Auto-prune dead link
+            return;
+        }
+
+        const contents = await readTextFile(path);
+        await createNewTab(path, contents);
+        showStatus('File loaded');
+        // Push back to front
+        addToFileHistory(path);
+    } catch (e) {
+        console.error(e);
+        showStatus('Error opening file from history');
+        removeFromFileHistory(path);
+    }
+}
