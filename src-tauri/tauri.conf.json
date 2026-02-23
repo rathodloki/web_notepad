@@ -24,6 +24,15 @@
             },
             "window": {
                 "all": true
+            },
+            "path": {
+                "all": true
+            },
+            "protocol": {
+                "asset": true,
+                "assetScope": [
+                    "**"
+                ]
             }
         },
         "bundle": {

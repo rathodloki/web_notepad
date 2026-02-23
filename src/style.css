@@ -611,6 +611,48 @@ body {
   color: var(--text-main) !important;
 }
 
+/* -------------------------------------
+   Notifications / Toast Styling
+-------------------------------------- */
+.cdx-notify,
+.cdx-notifies {
+  background: var(--toolbar-bg) !important;
+  border: 1px solid var(--toolbar-border) !important;
+  color: var(--text-main) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.cdx-notify__message,
+.cdx-notifies__message {
+  color: var(--text-main) !important;
+}
+
+.cdx-notify__cross,
+.cdx-notifies__cross {
+  color: var(--text-muted) !important;
+}
+
+.cdx-notify__cross::before,
+.cdx-notify__cross::after,
+.cdx-notifies__cross::before,
+.cdx-notifies__cross::after {
+  background: var(--text-muted) !important;
+}
+
+.cdx-notify__cross:hover,
+.cdx-notifies__cross:hover {
+  background: transparent !important;
+  color: var(--text-main) !important;
+}
+
+.cdx-notify__cross:hover::before,
+.cdx-notify__cross:hover::after,
+.cdx-notifies__cross:hover::before,
+.cdx-notifies__cross:hover::after {
+  background: var(--text-main) !important;
+}
+
 .ce-block__content,
 .ce-toolbar__content {
   max-width: 800px;

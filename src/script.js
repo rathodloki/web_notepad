@@ -389,31 +389,45 @@ function switchTab(id) {
                     config: {
                         uploader: {
                             async uploadByFile(file) {
-                                if (!window.__TAURI__) return { success: 0 };
-                                const ext = file.name.split('.').pop() || 'png';
-                                const filename = `media_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+                                try {
+                                    if (!window.__TAURI__) return { success: 0 };
+                                    const ext = file.name.split('.').pop() || 'png';
+                                    const filename = `media_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
 
-                                const buffer = await file.arrayBuffer();
-                                const uint8Array = new Uint8Array(buffer);
+                                    const buffer = await file.arrayBuffer();
+                                    const uint8Array = new Uint8Array(buffer);
 
-                                const { appDataDir, join } = window.__TAURI__.path;
-                                const { writeBinaryFile, createDir, exists } = window.__TAURI__.fs;
+                                    const { appDataDir, join } = window.__TAURI__.path;
+                                    const { writeBinaryFile, createDir, exists } = window.__TAURI__.fs;
 
-                                const appDataPath = await appDataDir();
-                                const mediaDir = await join(appDataPath, 'LightPadMedia');
-                                if (!(await exists(mediaDir))) await createDir(mediaDir, { recursive: true });
+                                    const appDataPath = await appDataDir();
+                                    const mediaDir = await join(appDataPath, 'LightPadMedia');
 
-                                const filePath = await join(mediaDir, filename);
-                                await writeBinaryFile(filePath, uint8Array);
-
-                                const url = window.__TAURI__.tauri.convertFileSrc(filePath);
-                                return {
-                                    success: 1,
-                                    file: {
-                                        url: url,
-                                        path: filePath
+                                    try {
+                                        const dirExists = await exists(mediaDir);
+                                        if (!dirExists) await createDir(mediaDir, { recursive: true });
+                                    } catch (err) {
+                                        console.warn("Checking/creating media dir failed (might exist):", err);
                                     }
-                                };
+
+                                    const filePath = await join(mediaDir, filename);
+                                    await writeBinaryFile(filePath, uint8Array);
+
+                                    const url = window.__TAURI__.tauri.convertFileSrc(filePath);
+                                    return {
+                                        success: 1,
+                                        file: {
+                                            url: url,
+                                            path: filePath
+                                        }
+                                    };
+                                } catch (e) {
+                                    console.error('Image upload failed natively:', e);
+                                    return {
+                                        success: 0,
+                                        message: e.message || "Could not save image to disk."
+                                    };
+                                }
                             },
                             async uploadByUrl(url) {
                                 return {
