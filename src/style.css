@@ -590,21 +590,7 @@ body {
 }
 
 .ql-tooltip {
-  background-color: var(--toolbar-bg) !important;
-  border: 1px solid var(--toolbar-border) !important;
-  color: var(--text-main) !important;
-  border-radius: 4px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
-}
-
-.ql-tooltip input[type=text] {
-  background-color: var(--bg-color) !important;
-  color: var(--text-main) !important;
-  border: 1px solid var(--toolbar-border) !important;
-}
-
-.ql-tooltip a.ql-action::before {
-  color: var(--accent) !important;
+  display: none !important;
 }
 
 /* Custom Scrollbars for CodeMirror are handled by CM theme, but we can style webkit scrollbars globally */

@@ -428,7 +428,12 @@ function switchTab(id) {
                                     selectedText = this.quill.getText(selection.index, selection.length);
                                 }
 
-                                const result = await askLinkUI(selectedText, existingHref);
+                                let defaultUrl = existingHref;
+                                if (!defaultUrl && /^(https?:\/\/|www\.|[/])/i.test(selectedText.trim())) {
+                                    defaultUrl = selectedText.trim();
+                                }
+
+                                const result = await askLinkUI(selectedText, defaultUrl);
 
                                 if (result !== null) {
                                     if (result.url) {
@@ -493,6 +498,16 @@ function switchTab(id) {
                 currentTab.needsRender = true;
                 renderTabs();
                 saveSessionDebounced();
+            });
+
+            quillView.root.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A') {
+                    // Pre-select the link range manually because native Quill tooltip is bypassed
+                    const blIndex = quillView.getIndex(Quill.find(e.target));
+                    quillView.setSelection(blIndex, e.target.innerText.length);
+                    const toolbar = quillView.getModule('toolbar');
+                    toolbar.handlers.link.call(toolbar, true);
+                }
             });
         }
 
