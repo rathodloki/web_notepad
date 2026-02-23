@@ -1,4 +1,5 @@
 import { ViewPlugin, Decoration, WidgetType, EditorView } from "@codemirror/view";
+import { EditorState } from "@codemirror/state";
 
 // Regular expressions to detect markdown checkboxes
 const UNCHECKED_REGEX = /^(\s*)-\s*\[\s*\](?:\s|$)/;
@@ -216,8 +217,20 @@ export const todoKeymap = [
     }
 ];
 
+export const todoEnsureCheckbox = EditorState.transactionFilter.of(tr => {
+    // If the transaction results in a completely empty document, auto-inject the starting checkbox
+    if (tr.docChanged && tr.newDoc.length === 0) {
+        return [tr, {
+            changes: { from: 0, insert: "- [ ] " },
+            selection: { anchor: 6 }
+        }];
+    }
+    return tr;
+});
+
 export function activateTodoMode() {
     return [
-        todoHighlighter
+        todoHighlighter,
+        todoEnsureCheckbox
     ];
 }
