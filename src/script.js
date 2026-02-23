@@ -669,21 +669,7 @@ async function spawnTodoList() {
     const defaultName = "tasks.todo";
     const initialContent = "- [ ] ";
 
-    // Check if tasks.todo is already open and just switch to it
-    const existingIndex = tabs.findIndex(t => t.title === defaultName && t.path === null);
-    if (existingIndex !== -1) {
-        switchTab(tabs[existingIndex].id);
-
-        // Move cursor to bottom
-        if (editorView) {
-            const length = editorView.state.doc.length;
-            editorView.dispatch({ selection: { anchor: length, head: length } });
-            editorView.focus();
-        }
-        return;
-    }
-
-    // Otherwise create a new one
+    // Create a new todo tab
     tabCounter++;
     const id = `tab-${tabCounter}`;
 
