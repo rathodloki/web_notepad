@@ -162,13 +162,37 @@ export const todoKeymap = [
             if (match) {
                 const prefixLength = match[0].length;
 
-                // If cursor is immediately after the checkbox
+                // Check if cursor is immediately after the checkbox
                 if (selection.head === line.from + prefixLength) {
-                    // Delete the entire hidden prefix at once
-                    view.dispatch({
-                        changes: { from: line.from, to: line.from + prefixLength, insert: "" }
-                    });
-                    return true;
+                    // Check if the rest of the line is empty
+                    const restOfLine = line.text.substring(prefixLength);
+
+                    if (restOfLine.trim().length === 0) {
+                        // The entire line is just an empty checkbox. Delete the whole line.
+                        view.dispatch({
+                            changes: { from: line.from === 0 ? 0 : line.from - 1, to: line.to, insert: "" },
+                        });
+                        return true;
+                    } else {
+                        // There is text. Just delete the prefix so it becomes a normal line.
+                        view.dispatch({
+                            changes: { from: line.from, to: line.from + prefixLength, insert: "" }
+                        });
+                        return true;
+                    }
+                }
+            } else {
+                // Not a checked match. But maybe it's a corrupted/empty checkbox piece like `- [] `
+                const corruptedMatch = line.text.match(/^(\s*)-\s*\[\s*\]\s*/);
+                if (corruptedMatch && selection.head === line.from + corruptedMatch[0].length) {
+                    const restOfLine = line.text.substring(corruptedMatch[0].length);
+                    if (restOfLine.trim().length === 0) {
+                        // The entire line is a corrupted checkbox. Delete the whole line.
+                        view.dispatch({
+                            changes: { from: line.from === 0 ? 0 : line.from - 1, to: line.to, insert: "" },
+                        });
+                        return true;
+                    }
                 }
             }
             return false;
@@ -189,16 +213,19 @@ export const todoKeymap = [
             const match = uncheckedMatch || checkedMatch;
 
             if (match) {
-                // If they pressed enter on a completely EMPTY checkbox, delete it to escape the list pattern
-                if (line.text.trim() === '- [ ]' || line.text.trim() === '- [x]' || line.text.trim() === '- [X]') {
+                // If they pressed enter on a completely EMPTY checkbox, convert it back into a normal line!
+                const restOfLine = line.text.substring(match[0].length);
+                if (restOfLine.trim().length === 0) {
+                    // It's empty. Delete the checkbox part entirely so it just becomes a plain line
+                    // and insert a newline as expected for "escaping" a list.
                     view.dispatch({
-                        changes: { from: line.from, to: line.to, insert: "" },
-                        selection: { anchor: line.from }
+                        changes: { from: line.from, to: line.to, insert: "\n" },
+                        selection: { anchor: line.from + 1 }
                     });
                     return true;
                 }
 
-                // always convert to unchecked on new line
+                // If it has text, duplicate a new unchecked box below it
                 const prefix = match[1] + "- [ ] ";
                 view.dispatch({
                     changes: {
