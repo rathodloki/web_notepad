@@ -4,8 +4,10 @@ import { EditorView } from "@codemirror/view";
 // Quill.js
 import Quill from 'quill';
 import BlotFormatter from 'quill-blot-formatter';
+import QuillImageDropAndPaste from 'quill-image-drop-and-paste';
 
 Quill.register('modules/blotFormatter', BlotFormatter);
+Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);
 
 let invoke, appWindow, readTextFile, writeTextFile, openDialog, saveDialog;
 
@@ -353,6 +355,40 @@ function switchTab(id) {
                 theme: 'snow',
                 modules: {
                     blotFormatter: {}, // Enable image resizing and moving
+                    imageDropAndPaste: {
+                        handler: async function (imageDataUrl, type, imageData) {
+                            if (!window.__TAURI__) return;
+
+                            const filename = `media_${Date.now()}_${Math.floor(Math.random() * 1000)}.png`;
+
+                            const { appDataDir, join } = window.__TAURI__.path;
+                            const { writeBinaryFile, createDir, exists } = window.__TAURI__.fs;
+
+                            const appDataPath = await appDataDir();
+                            const mediaDir = await join(appDataPath, 'LightPadMedia');
+
+                            try {
+                                const dirExists = await exists(mediaDir);
+                                if (!dirExists) await createDir(mediaDir, { recursive: true });
+                            } catch (err) { }
+
+                            // Convert base64 to Uint8Array
+                            const base64Data = imageDataUrl.replace(/^data:image\/\w+;base64,/, "");
+                            const binaryString = window.atob(base64Data);
+                            const len = binaryString.length;
+                            const bytes = new Uint8Array(len);
+                            for (let i = 0; i < len; i++) {
+                                bytes[i] = binaryString.charCodeAt(i);
+                            }
+
+                            const filePath = await join(mediaDir, filename);
+                            await writeBinaryFile(filePath, bytes);
+
+                            const url = window.__TAURI__.tauri.convertFileSrc(filePath);
+                            const range = quillView.getSelection() || { index: quillView.getLength() };
+                            quillView.insertEmbed(range.index, 'image', url);
+                        }
+                    },
                     history: { delay: 500, maxStack: 100 },
                     toolbar: {
                         container: [
@@ -365,24 +401,51 @@ function switchTab(id) {
                         ],
                         handlers: {
                             link: async function (value) {
-                                if (value) {
-                                    const range = this.quill.getSelection(true) || { index: this.quill.getLength(), length: 0 };
-                                    const selectedText = range.length > 0 ? this.quill.getText(range.index, range.length) : '';
+                                let selection = this.quill.getSelection();
+                                let selectedText = '';
+                                let existingHref = '';
+                                let isExistingLink = false;
+                                let format = this.quill.getFormat(selection);
 
-                                    const result = await askLinkUI(selectedText);
-                                    if (result) {
-                                        if (range.length > 0) {
-                                            // Provide only the URL if text is already selected
-                                            this.quill.format('link', result.url);
-                                        } else {
-                                            // Insert text and append link if no selection exists
-                                            const insertText = result.text || result.url;
-                                            this.quill.insertText(range.index, insertText, 'link', result.url);
-                                            this.quill.setSelection(range.index + insertText.length);
-                                        }
+                                if (format.link) {
+                                    existingHref = format.link;
+                                    isExistingLink = true;
+                                    // Expand selection to the entire link
+                                    let [leaf, offset] = this.quill.getLeaf(selection.index);
+                                    if (leaf !== null && leaf.parent && leaf.parent.domNode.tagName === 'A') {
+                                        let linkNode = leaf.parent;
+                                        let blIndex = this.quill.getIndex(linkNode);
+                                        let blLength = linkNode.length();
+                                        this.quill.setSelection(blIndex, blLength);
+                                        selection = this.quill.getSelection();
                                     }
-                                } else {
-                                    this.quill.format('link', false); // removes link
+                                }
+
+                                if (selection && selection.length > 0) {
+                                    selectedText = this.quill.getText(selection.index, selection.length);
+                                }
+
+                                const result = await askLinkUI(selectedText, existingHref);
+
+                                if (result !== null) {
+                                    if (result.url) {
+                                        if (selection && selection.length > 0) {
+                                            if (result.text !== selectedText) {
+                                                this.quill.deleteText(selection.index, selection.length);
+                                                this.quill.insertText(selection.index, result.text, 'link', result.url);
+                                                this.quill.setSelection(selection.index, result.text.length);
+                                            } else {
+                                                this.quill.format('link', result.url);
+                                            }
+                                        } else {
+                                            const insertIndex = selection ? selection.index : this.quill.getLength();
+                                            const insertText = result.text || result.url;
+                                            this.quill.insertText(insertIndex, insertText, 'link', result.url);
+                                            this.quill.setSelection(insertIndex + insertText.length);
+                                        }
+                                    } else if (isExistingLink) {
+                                        this.quill.format('link', false); // Cancel / remove link case if url is empty
+                                    }
                                 }
                             },
                             image: async function () {
@@ -483,7 +546,7 @@ function askConfirmUI(message, multiple = false) {
     });
 }
 
-function askLinkUI(defaultText = '') {
+function askLinkUI(defaultText = '', defaultUrl = '') {
     return new Promise((resolve) => {
         const modal = document.getElementById('link-modal');
         const inputUrl = document.getElementById('link-modal-url');
@@ -492,26 +555,41 @@ function askLinkUI(defaultText = '') {
         const btnCancel = document.getElementById('link-modal-cancel');
 
         inputText.value = defaultText;
-        inputUrl.value = '';
+        inputUrl.value = defaultUrl;
         modal.style.display = 'flex';
 
         const cleanup = () => {
             modal.style.display = 'none';
             btnInsert.removeEventListener('click', handleInsert);
             btnCancel.removeEventListener('click', handleCancel);
+            inputUrl.removeEventListener('keydown', handleKey);
+            inputText.removeEventListener('keydown', handleKey);
         };
 
         const handleInsert = () => {
             cleanup();
-            resolve(inputUrl.value.trim() ? { url: inputUrl.value.trim(), text: inputText.value.trim() } : null);
+            if (!inputUrl.value.trim() && !defaultUrl) { resolve(null); return; }
+            resolve({ url: inputUrl.value.trim(), text: inputText.value.trim() });
         };
         const handleCancel = () => { cleanup(); resolve(null); };
 
+        const handleKey = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleInsert();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                handleCancel();
+            }
+        };
+
         btnInsert.addEventListener('click', handleInsert);
         btnCancel.addEventListener('click', handleCancel);
+        inputUrl.addEventListener('keydown', handleKey);
+        inputText.addEventListener('keydown', handleKey);
 
         setTimeout(() => {
-            if (defaultText) inputUrl.focus();
+            if (defaultText && !defaultUrl) inputUrl.focus();
             else inputText.focus();
         }, 10);
     });
