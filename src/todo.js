@@ -9,15 +9,16 @@ const CHECKED_REGEX = /^(\s*)-\s\[x\]\s/i;
 // -------------------------------------------------------------
 
 class CheckboxWidget extends WidgetType {
-    constructor(isChecked, from, to) {
+    constructor(isChecked, from, to, isMissingPrefix = false) {
         super();
         this.isChecked = isChecked;
         this.from = from;
         this.to = to;
+        this.isMissingPrefix = isMissingPrefix;
     }
 
     eq(other) {
-        return other.isChecked === this.isChecked && other.from === this.from && other.to === this.to;
+        return other.isChecked === this.isChecked && other.from === this.from && other.to === this.to && other.isMissingPrefix === this.isMissingPrefix;
     }
 
     toDOM(view) {
@@ -26,19 +27,29 @@ class CheckboxWidget extends WidgetType {
         wrap.style.cursor = "pointer";
         wrap.style.display = "inline-flex";
         wrap.style.alignItems = "center";
-        wrap.style.justifyContent = "center";
+        wrap.style.justifyContent = "flex-start"; // Align SVG to left of fixed width block
         wrap.style.transform = "translateY(2px)";
-        wrap.style.marginRight = "6px";
+
+        // Exact fixed width so text always aligns perfectly vertically on all lines
+        wrap.style.width = "28px";
+        // No marginRight needed since width acts as the spacer
 
         // Add mousedown listener directly to the widget DOM to flip state
         wrap.addEventListener("mousedown", (e) => {
             e.preventDefault();
             e.stopPropagation();
 
-            const newText = this.isChecked ? "- [ ] " : "- [x] ";
-            view.dispatch({
-                changes: { from: this.from, to: this.to, insert: newText }
-            });
+            if (this.isMissingPrefix) {
+                // It was plain text, so clicking unchecked should make it checked by prepending "- [x] "
+                view.dispatch({
+                    changes: { from: this.from, insert: "- [x] " }
+                });
+            } else {
+                const newText = this.isChecked ? "- [ ] " : "- [x] ";
+                view.dispatch({
+                    changes: { from: this.from, to: this.to, insert: newText }
+                });
+            }
         });
 
         if (this.isChecked) {
@@ -108,6 +119,18 @@ export const todoHighlighter = ViewPlugin.fromClass(class {
                         widget: new CheckboxWidget(true, startRawIdx, endRawIdx),
                         inclusive: false
                     }).range(startRawIdx, endRawIdx));
+                } else {
+                    // Line does NOT have a valid checkbox prefix
+                    // Visually make it a checklist item!
+                    builder.push(rowBackgroundDecoration.range(line.from, line.from));
+                    // Inject a widget at the very start of the line, taking up 0 width in the document
+                    const whitespaceMatch = line.text.match(/^(\s*)/);
+                    const injectPos = line.from + (whitespaceMatch ? whitespaceMatch[1].length : 0);
+
+                    builder.push(Decoration.widget({
+                        widget: new CheckboxWidget(false, injectPos, injectPos, true),
+                        side: 1
+                    }).range(injectPos, injectPos));
                 }
 
                 pos = line.to + 1;
@@ -158,8 +181,20 @@ export const todoKeymap = [
                     selection: { anchor: selection.head + 1 + prefix.length }
                 });
                 return true;
+            } else {
+                // It's a non-checkbox line (e.g., an empty line or normal text)
+                // Insert a newline with a checkbox!
+                const whitespaceMatch = line.text.match(/^(\s*)/);
+                const prefix = (whitespaceMatch ? whitespaceMatch[1] : "") + "- [ ] ";
+                view.dispatch({
+                    changes: {
+                        from: selection.head,
+                        insert: "\n" + prefix
+                    },
+                    selection: { anchor: selection.head + 1 + prefix.length }
+                });
+                return true;
             }
-            return false;
         }
     }
 ];
