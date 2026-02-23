@@ -916,6 +916,11 @@ window.addEventListener('DOMContentLoaded', () => {
         todoBtn.addEventListener('click', spawnTodoList);
     }
 
+    const docBtn = document.getElementById('btn-doc');
+    if (docBtn) {
+        docBtn.addEventListener('click', spawnDocProcess);
+    }
+
     const tabBarContainer = document.querySelector('.tab-bar-container');
     if (tabBarContainer) {
         tabBarContainer.addEventListener('dblclick', (e) => {
