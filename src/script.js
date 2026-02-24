@@ -398,6 +398,7 @@ function switchTab(id) {
                             [{ 'header': [1, 2, 3, false] }],
                             ['bold', 'italic', 'underline', 'strike'],
                             ['blockquote', 'code-block'],
+                            [{ 'align': [] }],
                             [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'list': 'check' }],
                             ['link', 'image'],
                             ['clean']
