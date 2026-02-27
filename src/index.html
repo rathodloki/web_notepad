@@ -95,6 +95,15 @@
                 <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
         </button>
+        <button id="btn-wordwrap" class="icon-btn" title="Toggle Word Wrap (Alt+Z)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M3 12h14a3 3 0 0 1 0 6h-4"></path>
+                <polyline points="16 16 13 18 16 20"></polyline>
+                <line x1="3" y1="18" x2="10" y2="18"></line>
+            </svg>
+        </button>
         <div class="status-container">
             <span class="status-item" id="status-cursor">Ln 1, Col 1</span>
             <span class="status-item divider">|</span>
@@ -137,13 +146,14 @@
                 <div class="modal-title">LightPad</div>
             </div>
             <div class="modal-body" id="discard-modal-message">
-                Discard unsaved changes?
+                Do you want to save changes?
             </div>
             <div class="modal-footer">
                 <button id="modal-btn-yestoall" class="modal-btn" style="display: none; margin-right: auto;">Yes to
                     All</button>
                 <button id="modal-btn-yes" class="modal-btn primary">Yes</button>
                 <button id="modal-btn-no" class="modal-btn">No</button>
+                <button id="modal-btn-cancel" class="modal-btn" style="display: none;">Cancel</button>
             </div>
         </div>
     </div>

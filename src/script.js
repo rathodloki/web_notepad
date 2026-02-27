@@ -1,4 +1,4 @@
-import { createEditorState, createEditorView, getLanguageExtension } from './editor.js';
+import { createEditorState, createEditorView, getLanguageExtension, toggleLineWrapping, applyLineWrappingToState } from './editor.js';
 import { EditorView } from "@codemirror/view";
 
 // Quill.js
@@ -32,6 +32,29 @@ let draggedTabEl = null;
 
 // File History tracking
 let fileHistory = [];
+
+let isWordWrapEnabled = localStorage.getItem('lightpad-wordwrap') === 'true';
+
+function toggleWordWrap() {
+    isWordWrapEnabled = !isWordWrapEnabled;
+    localStorage.setItem('lightpad-wordwrap', isWordWrapEnabled.toString());
+
+    const btn = document.getElementById('btn-wordwrap');
+    if (btn) {
+        if (isWordWrapEnabled) btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
+
+    tabs.forEach(tab => {
+        if (!tab.isDoc && tab.state) {
+            tab.state = applyLineWrappingToState(tab.state, isWordWrapEnabled);
+        }
+    });
+
+    if (editorView) {
+        toggleLineWrapping(editorView, isWordWrapEnabled);
+    }
+}
 
 function getFilename(path) {
     if (!path) return 'Untitled';
@@ -193,7 +216,7 @@ async function loadSession() {
                 isTodo: isTodo,
                 isDoc: isDoc,
                 savedContent: savedContent,
-                state: createEditorState(content || '', [...extensions, createUpdateListener(t.id)])
+                state: createEditorState(content || '', [...extensions, createUpdateListener(t.id)], isWordWrapEnabled)
             };
             tabs.push(newTab);
         }
@@ -467,7 +490,7 @@ async function createNewTab(path = null, content = '') {
     let state = null;
     if (!isDoc) {
         const extensions = await getLanguageExtension(path);
-        state = createEditorState(content, [...extensions, createUpdateListener(id)]);
+        state = createEditorState(content, [...extensions, createUpdateListener(id)], isWordWrapEnabled);
     }
 
     const newTab = {
@@ -701,32 +724,37 @@ function switchTab(id) {
     saveSessionDebounced();
 }
 
-function askConfirmUI(message, multiple = false) {
+function askConfirmUI(message, multiple = false, showCancel = false) {
     return new Promise((resolve) => {
         const modal = document.getElementById('discard-modal');
         const msg = document.getElementById('discard-modal-message');
         const btnYes = document.getElementById('modal-btn-yes');
         const btnNo = document.getElementById('modal-btn-no');
         const btnYTA = document.getElementById('modal-btn-yestoall');
+        const btnCancel = document.getElementById('modal-btn-cancel');
 
         msg.textContent = message;
         btnYTA.style.display = multiple ? 'inline-block' : 'none';
+        if (btnCancel) btnCancel.style.display = showCancel ? 'inline-block' : 'none';
         modal.style.display = 'flex';
 
         const handleYes = () => { cleanup(); resolve('yes'); };
         const handleNo = () => { cleanup(); resolve('no'); };
         const handleYTA = () => { cleanup(); resolve('all'); };
+        const handleCancel = () => { cleanup(); resolve('cancel'); };
 
         const cleanup = () => {
             modal.style.display = 'none';
             btnYes.removeEventListener('click', handleYes);
             btnNo.removeEventListener('click', handleNo);
             btnYTA.removeEventListener('click', handleYTA);
+            if (btnCancel) btnCancel.removeEventListener('click', handleCancel);
         };
 
         btnYes.addEventListener('click', handleYes);
         btnNo.addEventListener('click', handleNo);
         btnYTA.addEventListener('click', handleYTA);
+        if (btnCancel) btnCancel.addEventListener('click', handleCancel);
 
         // Auto-focus the Yes button for fluid keyboard usage
         setTimeout(() => btnYes.focus(), 10);
@@ -820,9 +848,26 @@ async function closeTab(id, forceClose = false, multipleFiles = false) {
         }
 
         if (askPrompt && !forceClose) {
-            let answer = await askConfirmUI(`Discard unsaved changes to "${getFilename(tab.path)}"?`, multipleFiles);
-            if (answer === 'no') return false;
-            if (answer === 'all') result = 'force_all';
+            let answer = await askConfirmUI(`Do you want to save changes to "${getFilename(tab.path)}"?`, multipleFiles, true);
+            if (answer === 'cancel') return false;
+
+            if (answer === 'all') {
+                result = 'save_all';
+                // Switch focus to tab so save logic knows what to save
+                if (activeTabId !== tab.id) switchTab(tab.id);
+                try {
+                    const saveResult = await saveFile(true); // Call saveFile, knowing it will prompt OS
+                    if (!saveResult) return false; // OS Save dialog cancelled
+                } catch (e) { return false; }
+            } else if (answer === 'yes') {
+                if (activeTabId !== tab.id) switchTab(tab.id);
+                try {
+                    const saveResult = await saveFile(true);
+                    if (!saveResult) return false;
+                } catch (e) { return false; }
+            } else if (answer === 'no') {
+                // Do nothing, just proceed to close
+            }
         }
     }
 
@@ -846,13 +891,30 @@ async function closeTab(id, forceClose = false, multipleFiles = false) {
 async function closeMultipleTabs(tabsToClose) {
     const unsavedTabs = tabsToClose.filter(t => t.isUnsaved);
     let forceClose = false;
+    let saveAll = false;
     let multipleFiles = unsavedTabs.length > 1;
 
     const toClose = [...tabsToClose];
     for (const t of toClose) {
-        const res = await closeTab(t.id, forceClose, multipleFiles);
-        if (res === 'force_all') {
-            forceClose = true;
+        if (saveAll && t.isUnsaved) {
+            // Re-use logic to explicitly save without re-prompting
+            if (activeTabId !== t.id) switchTab(t.id);
+            const saveResult = await saveFile(true);
+            if (!saveResult) {
+                // If they cancel an OS save prompt for one file during "Save All", abort remaining tab closes
+                break;
+            }
+            await closeTab(t.id, true); // Safe to force close now
+        } else {
+            const res = await closeTab(t.id, forceClose, multipleFiles);
+            if (res === false) break; // User hit cancel on this tab, abort the multi-close operation
+            if (res === 'save_all') {
+                saveAll = true;
+                // The first tab handles its own save during closeTab internally returning 'save_all' if 'all' was picked
+            }
+            if (res === 'force_all') {
+                forceClose = true;
+            }
         }
     }
 }
@@ -882,11 +944,14 @@ async function openFile() {
     }
 }
 
-async function saveFile() {
-    if (!window.__TAURI__) return alert('Saving files is only supported in the app.');
+async function saveFile(returnResult = false) {
+    if (!window.__TAURI__) {
+        alert('Saving files is only supported in the app.');
+        return returnResult ? false : undefined;
+    }
 
     const tab = tabs.find(t => t.id === activeTabId);
-    if (!tab) return;
+    if (!tab) return returnResult ? false : undefined;
 
     try {
         let pathToSave = tab.path;
@@ -926,10 +991,14 @@ async function saveFile() {
             updateTitle();
             showStatus('Saved successfully');
             saveSessionDebounced();
+            return returnResult ? true : undefined;
+        } else {
+            return returnResult ? false : undefined; // User cancelled OS save dialog
         }
     } catch (e) {
         console.error(e);
         showStatus('Error saving file');
+        return returnResult ? false : undefined;
     }
 }
 
@@ -1097,6 +1166,12 @@ window.addEventListener('DOMContentLoaded', () => {
         docBtn.addEventListener('click', spawnDocProcess);
     }
 
+    const wordWrapBtn = document.getElementById('btn-wordwrap');
+    if (wordWrapBtn) {
+        if (isWordWrapEnabled) wordWrapBtn.classList.add('active');
+        wordWrapBtn.addEventListener('click', toggleWordWrap);
+    }
+
     const tabBarContainer = document.querySelector('.tab-bar-container');
     if (tabBarContainer) {
         tabBarContainer.addEventListener('dblclick', (e) => {
@@ -1180,6 +1255,11 @@ window.addEventListener('keydown', async (e) => {
         e.preventDefault();
         spawnDocProcess();
     }
+    // Alt+Z (Word Wrap)
+    if (e.altKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        toggleWordWrap();
+    }
 });
 
 async function spawnTodoList() {
@@ -1191,7 +1271,7 @@ async function spawnTodoList() {
     const id = `tab-${tabCounter}`;
 
     const extensions = await getLanguageExtension("tasks.todo");
-    const state = await import("./editor.js").then(m => m.createEditorState(initialContent, [...extensions, createUpdateListener(id)]));
+    const state = await import("./editor.js").then(m => m.createEditorState(initialContent, [...extensions, createUpdateListener(id)], isWordWrapEnabled));
 
     const newTab = {
         id,

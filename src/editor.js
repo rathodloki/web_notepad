@@ -1,4 +1,4 @@
-import { EditorState } from "@codemirror/state";
+import { EditorState, Compartment, StateEffect } from "@codemirror/state";
 import { EditorView, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
@@ -8,6 +8,8 @@ import { tags as t } from "@lezer/highlight";
 import { rainbowCsvExtension } from "./csv.js";
 
 // Languages unloaded by default to reduce boot time
+
+export const wordWrapCompartment = new Compartment();
 
 const cyberpunkHighlightStyle = HighlightStyle.define([
     { tag: [t.keyword, t.controlKeyword, t.moduleKeyword], color: "#FF79C6", fontWeight: "bold" },
@@ -139,7 +141,7 @@ const customTheme = EditorView.theme({
     }
 }, { dark: true });
 
-export function createEditorState(initialDoc, extensionList = []) {
+export function createEditorState(initialDoc, extensionList = [], isWordWrapEnabled = false) {
     return EditorState.create({
         doc: initialDoc,
         extensions: [
@@ -169,6 +171,7 @@ export function createEditorState(initialDoc, extensionList = []) {
             ]),
             syntaxHighlighting(cyberpunkHighlightStyle, { fallback: true }),
             customTheme,
+            wordWrapCompartment.of(isWordWrapEnabled ? EditorView.lineWrapping : []),
             ...rainbowCsvExtension(),
             ...extensionList
         ]
@@ -269,4 +272,16 @@ export async function getLanguageExtension(filename) {
         }
         default: return [];
     }
+}
+
+export function toggleLineWrapping(view, isEnabled) {
+    view.dispatch({
+        effects: wordWrapCompartment.reconfigure(isEnabled ? EditorView.lineWrapping : [])
+    });
+}
+
+export function applyLineWrappingToState(state, isEnabled) {
+    return state.update({
+        effects: wordWrapCompartment.reconfigure(isEnabled ? EditorView.lineWrapping : [])
+    }).state;
 }
