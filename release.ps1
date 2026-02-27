@@ -54,16 +54,7 @@ Write-Host "`n[2/5] Building Optimized Tauri Executable v$newVersion..." -Foregr
 # Run the build BEFORE committing, in case the build generates any auto-files or modifies lockfiles.
 npm run tauri build
 
-# 4. Git Pipeline
-Write-Host "`n[3/5] Committing and Pushing to Git..." -ForegroundColor Cyan
-git add .
-git commit -m $commitMessage
-git tag "v$newVersion"
-git push origin HEAD
-git push origin "v$newVersion"
-Write-Host "Git Push Successful." -ForegroundColor Green
-
-# 5. Local Release Backup
+# 4. Local Release Backup
 Write-Host "`n[4/5] Copying to Local Releases Folder..." -ForegroundColor Cyan
 $releaseDir = ".\releases\v$newVersion"
 if (!(Test-Path -Path $releaseDir)) {
@@ -81,6 +72,14 @@ else {
     exit 1
 }
 
+# 5. Git Pipeline
+Write-Host "`n[3/5] Committing and Pushing to Git..." -ForegroundColor Cyan
+git add .
+git commit -m $commitMessage
+git tag "v$newVersion"
+git push origin HEAD
+git push origin "v$newVersion"
+Write-Host "Git Push Successful." -ForegroundColor Green
 
 # 6. GitHub Release via GitHub CLI
 Write-Host "`n[5/5] Publishing GitHub Release..." -ForegroundColor Cyan
