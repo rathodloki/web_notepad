@@ -5,6 +5,7 @@ import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { syntaxHighlighting, HighlightStyle, bracketMatching, foldGutter, foldKeymap, indentOnInput, StreamLanguage } from "@codemirror/language";
 import { closeBrackets, autocompletion, closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
 import { tags as t } from "@lezer/highlight";
+import { rainbowCsvExtension } from "./csv.js";
 
 // Languages unloaded by default to reduce boot time
 
@@ -168,6 +169,7 @@ export function createEditorState(initialDoc, extensionList = []) {
             ]),
             syntaxHighlighting(cyberpunkHighlightStyle, { fallback: true }),
             customTheme,
+            ...rainbowCsvExtension(),
             ...extensionList
         ]
     });
@@ -186,71 +188,85 @@ export async function getLanguageExtension(filename) {
     switch (ext) {
         case 'js':
         case 'mjs':
-        case 'cjs':
+        case 'cjs': {
             const { javascript } = await import("@codemirror/lang-javascript");
             return [javascript()];
+        }
         case 'jsx':
         case 'ts':
-        case 'tsx':
+        case 'tsx': {
             const { javascript: jsTs } = await import("@codemirror/lang-javascript");
             return [jsTs({ typescript: true })];
-        case 'py':
+        }
+        case 'py': {
             const { python } = await import("@codemirror/lang-python");
             return [python()];
-        case 'html':
+        }
+        case 'html': {
             const { html } = await import("@codemirror/lang-html");
             return [html()];
-        case 'css':
+        }
+        case 'css': {
             const { css } = await import("@codemirror/lang-css");
             return [css()];
+        }
         case 'cpp':
         case 'cc':
         case 'h':
         case 'hpp':
-        case 'c':
+        case 'c': {
             const { cpp } = await import("@codemirror/lang-cpp");
             return [cpp()];
-        case 'java':
+        }
+        case 'java': {
             const { java } = await import("@codemirror/lang-java");
             return [java()];
-        case 'json':
+        }
+        case 'json': {
             const { json } = await import("@codemirror/lang-json");
             return [json()];
+        }
         case 'md':
-        case 'markdown':
+        case 'markdown': {
             const { markdown } = await import("@codemirror/lang-markdown");
             return [markdown()];
+        }
         case 'yaml':
-        case 'yml':
+        case 'yml': {
             const { yaml } = await import("@codemirror/legacy-modes/mode/yaml");
             return [StreamLanguage.define(yaml)];
+        }
         case 'ini':
         case 'conf':
         case 'cfg':
         case 'properties':
-        case 'log':
+        case 'log': {
             const { properties } = await import("@codemirror/legacy-modes/mode/properties");
             return [StreamLanguage.define(properties)];
+        }
         case 'sh':
         case 'bash':
-        case 'zsh':
+        case 'zsh': {
             const { shell } = await import("@codemirror/legacy-modes/mode/shell");
             return [StreamLanguage.define(shell)];
-        case 'rb':
+        }
+        case 'rb': {
             const { ruby } = await import("@codemirror/legacy-modes/mode/ruby");
             return [StreamLanguage.define(ruby)];
-        case 'go':
+        }
+        case 'go': {
             const { go } = await import("@codemirror/legacy-modes/mode/go");
             return [StreamLanguage.define(go)];
-        case 'rs':
+        }
+        case 'rs': {
             const { rust } = await import("@codemirror/legacy-modes/mode/rust");
             return [StreamLanguage.define(rust)];
-        case 'todo':
+        }
+        case 'todo': {
             const { activateTodoMode, todoKeymap } = await import("./todo.js");
-            // Import keymap array separately so it properly registers as a functional hotkey override
-            const { keymap } = await import("@codemirror/view");
             const { Prec } = await import("@codemirror/state");
             return [...activateTodoMode(), Prec.highest(keymap.of(todoKeymap))];
+        }
         default: return [];
     }
 }

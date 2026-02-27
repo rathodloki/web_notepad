@@ -64,6 +64,38 @@ body {
   overflow: hidden;
   position: relative;
   -webkit-app-region: drag;
+  min-width: 0;
+  /* Critical: allows children to shrink below their innate width */
+}
+
+/* --- Scroll Shadows --- */
+.tab-scroll-shadow-left,
+.tab-scroll-shadow-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.25s ease-in-out;
+}
+
+.tab-scroll-shadow-left {
+  left: 0;
+  /* Strong dark gradient starting from absolute black at the very edge */
+  background: linear-gradient(to right, rgba(10, 10, 15, 0.95) 0%, rgba(10, 10, 15, 0.5) 40%, transparent 100%);
+}
+
+.tab-scroll-shadow-right {
+  right: 32px;
+  /* Needs to sit just to the left of the New Tab button */
+  background: linear-gradient(to left, rgba(10, 10, 15, 0.95) 0%, rgba(10, 10, 15, 0.5) 40%, transparent 100%);
+}
+
+.tab-scroll-shadow-right.show,
+.tab-scroll-shadow-left.show {
+  opacity: 1;
 }
 
 .tab-bar {
@@ -73,6 +105,12 @@ body {
   scrollbar-width: none;
   /* Firefox */
   -webkit-app-region: no-drag;
+  flex: 1 1 auto;
+  min-width: 0;
+  /* CRITICAL: allows flex children (tabs) to shrink */
+  height: 40px;
+  /* Force explicit container height */
+  align-items: center;
 }
 
 .tab-bar::-webkit-scrollbar {
@@ -81,18 +119,26 @@ body {
 }
 
 .tab {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 0 12px 0 16px;
+  border-top: 2px solid transparent;
+  /* Prevent vertical text jumping when active */
   border-right: 1px solid var(--toolbar-border);
   background: transparent;
   color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
-  min-width: 120px;
+  /* perfectly equal sharing of all horizontal space, safely shrinking down to 140px */
+  flex: 1 1 200px;
+  min-width: 140px;
+  /* CRITICAL: Absolute physical limit */
   max-width: 250px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  height: 40px;
+  /* CRITICAL: Force explicit height identical to parent */
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, border-top-color 0.15s ease;
 }
 
 .tab:hover {
@@ -107,7 +153,6 @@ body {
 
 .tab.is-todo.active {
   border-top: 2px solid #bd93f9;
-  /* Dracula purple for checklists */
 }
 
 .tab.is-todo .tab-title {
@@ -137,7 +182,10 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex-grow: 1;
+  flex: 1 1 0;
+  /* Consume remaining space, strictly allowed to shrink to 0 width */
+  min-width: 0;
+  /* Prevent text from breaking out of flex container */
 }
 
 .tab-dot {
@@ -458,21 +506,73 @@ body {
   font-size: 10px;
 }
 
-.editor-container {
+/* ── Editor shell (the main content area) ─────────────────────────────────── */
+.editor-shell {
   flex-grow: 1;
   display: flex;
+  flex-direction: row;
+  /* default: no split */
   position: relative;
   overflow: hidden;
-  background-color: var(--bg-color);
+  background: var(--bg-color);
   border-top: 1px solid var(--toolbar-border);
 }
 
-.editor-container {
-  flex-grow: 1;
+/* ── Editor pane ─────────────────────────────────────────────────────────── */
+.editor-pane {
+  flex: 1;
   display: flex;
-  position: relative;
+  flex-direction: column;
   overflow: hidden;
-  background-color: var(--bg-color);
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+
+/* Active pane border (only shown during split) */
+.editor-pane.pane-focused {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* Pane 2 & resize handle: hidden by default */
+#pane-2,
+#pane-resize-handle {
+  display: none;
+}
+
+/* No split drop zones */
+
+/* Pane-2 header (tab bar + close button) */
+.pane2-header {
+  display: flex;
+  align-items: stretch;
+  background: var(--titlebar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
+  flex-shrink: 0;
+  min-height: 36px;
+}
+
+.pane2-header .tab-bar {
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pane2-close-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  padding: 0;
+  border-left: 1px solid var(--toolbar-border);
+  border-radius: 0;
+}
+
+#pane-2-editor {
+  flex-grow: 1;
+  overflow: hidden;
 }
 
 #editor-container {
@@ -904,4 +1004,144 @@ body {
 .q-match {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* -------------------------------------
+   Rainbow CSV – Column Colouring
+   Each class colours one CSV/TSV column.
+   Palette: neon cyberpunk, 10 colours.
+   ------------------------------------- */
+.csv-col-0 {
+  color: #ff79c6;
+}
+
+/* pink      */
+.csv-col-1 {
+  color: #8be9fd;
+}
+
+/* cyan      */
+.csv-col-2 {
+  color: #50fa7b;
+}
+
+/* green     */
+.csv-col-3 {
+  color: #ffb86c;
+}
+
+/* orange    */
+.csv-col-4 {
+  color: #bd93f9;
+}
+
+/* purple    */
+.csv-col-5 {
+  color: #f1fa8c;
+}
+
+/* yellow    */
+.csv-col-6 {
+  color: #ff5555;
+}
+
+/* red       */
+.csv-col-7 {
+  color: #6be5fd;
+}
+
+/* sky       */
+.csv-col-8 {
+  color: #a4e87c;
+}
+
+/* lime      */
+.csv-col-9 {
+  color: #ffcb6b;
+}
+
+/* amber     */
+
+/* -------------------------------------
+   Tab Drag-and-Drop
+   ------------------------------------- */
+
+/* The tab being dragged — dim it so the user sees the ghost */
+.tab.tab-dragging {
+  opacity: 0.7;
+  cursor: grabbing;
+  background: var(--titlebar-hover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Drop indicator: a 3px accent line on the left edge of the target */
+.tab.tab-drag-over-left {
+  box-shadow: inset 3px 0 0 var(--accent) !important;
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Drop indicator: right edge */
+.tab.tab-drag-over-right {
+  box-shadow: inset -3px 0 0 var(--accent) !important;
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* -------------------------------------
+   File Drag-and-Drop Overlay
+   ------------------------------------- */
+.file-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  animation: fdoFadeIn 0.12s ease;
+}
+
+@keyframes fdoFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.file-drop-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 48px 64px;
+  border: 2px dashed var(--accent);
+  border-radius: 16px;
+  color: var(--accent);
+  background: rgba(59, 130, 246, 0.06);
+  box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
+  animation: fdoPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes fdoPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.12);
+  }
+
+  50% {
+    box-shadow: 0 0 55px rgba(59, 130, 246, 0.30);
+  }
+}
+
+.file-drop-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--accent);
 }

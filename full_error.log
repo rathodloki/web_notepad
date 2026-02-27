@@ -1,0 +1,11 @@
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+[32mΓ£ô[39m 0 modules transformed.
+Γ£ù Build failed in 93ms
+error during build:
+[vite:build-html] [plugin vite:build-import-analysis] src/script.js: Failed to parse source for import analysis because the content contains invalid JS syntax. If you are using JSX, make sure to name the file with the .jsx or .tsx extension.
+file: C:/Users/ratho/Desktop/code/web_notepad/src/index.html
+    at getRollupError (file:///C:/Users/ratho/Desktop/code/web_notepad/node_modules/rollup/dist/es/shared/parseAst.js:402:41)
+    at error (file:///C:/Users/ratho/Desktop/code/web_notepad/node_modules/rollup/dist/es/shared/parseAst.js:398:42)
+    at Object.error (file:///C:/Users/ratho/Desktop/code/web_notepad/node_modules/rollup/dist/es/shared/node-entry.js:22226:20)
+    at Object.error (file:///C:/Users/ratho/Desktop/code/web_notepad/node_modules/rollup/dist/es/shared/node-entry.js:21275:42)
+    at Object.handler (file:///C:/Users/ratho/Desktop/code/web_notepad/node_modules/vite/dist/node/chunks/config.js:23397:11)

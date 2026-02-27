@@ -26,6 +26,10 @@ let tabCounter = 0;
 let sessionTimeout = null;
 let contextMenuTargetId = null;
 
+// Drag state
+let draggedTabId = null;
+let draggedTabEl = null;
+
 // File History tracking
 let fileHistory = [];
 
@@ -239,8 +243,33 @@ function createUpdateListener(id) {
     });
 }
 
+/* --- Scroll Shadows --- */
+function updateScrollShadows() {
+    const leftShadow = document.querySelector('.tab-scroll-shadow-left');
+    const rightShadow = document.querySelector('.tab-scroll-shadow-right');
+    if (!leftShadow || !rightShadow || !tabBar) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = tabBar;
+
+    if (scrollLeft > 0) {
+        leftShadow.classList.add('show');
+    } else {
+        leftShadow.classList.remove('show');
+    }
+
+    if (Math.ceil(scrollLeft + clientWidth) < scrollWidth) {
+        rightShadow.classList.add('show');
+    } else {
+        rightShadow.classList.remove('show');
+    }
+}
+
+// Ensure shadows update on window resize
+window.addEventListener('resize', updateScrollShadows);
+
 function renderTabs() {
     tabBar.innerHTML = '';
+
     tabs.forEach(tab => {
         let classes = ['tab'];
         if (tab.id === activeTabId) classes.push('active');
@@ -266,7 +295,7 @@ function renderTabs() {
         tabEl.appendChild(closeBtn);
 
         tabEl.addEventListener('click', (e) => {
-            if (e.target.closest('.tab-close')) return;
+            if (e.target.closest('.tab-close') || isDraggingTab) return;
             switchTab(tab.id);
         });
 
@@ -286,8 +315,146 @@ function renderTabs() {
             }
         });
 
+        let startX = 0;
+        let isDraggingTab = false;
+
+        tabEl.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.tab-close') || e.button !== 0) return;
+            e.currentTarget.setPointerCapture(e.pointerId);
+            draggedTabId = tab.id;
+            draggedTabEl = e.currentTarget;
+            startX = e.clientX;
+            isDraggingTab = false;
+        });
+
+        tabEl.addEventListener('pointermove', (e) => {
+            if (!draggedTabId || draggedTabId !== tab.id || !draggedTabEl) return;
+
+            const dragOffsetX = e.clientX - startX;
+            if (Math.abs(dragOffsetX) > 5) {
+                isDraggingTab = true;
+                draggedTabEl.classList.add('tab-dragging');
+            }
+
+            if (!isDraggingTab) return;
+
+            draggedTabEl.style.transform = `translateX(${dragOffsetX}px)`;
+            draggedTabEl.style.zIndex = '1000';
+            draggedTabEl.style.position = 'relative';
+
+            const elements = document.elementsFromPoint(e.clientX, e.clientY);
+            const dropTarget = elements.find(el => el.classList.contains('tab') && el !== draggedTabEl);
+
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('tab-drag-over-left', 'tab-drag-over-right');
+            });
+
+            if (dropTarget) {
+                const targetRect = dropTarget.getBoundingClientRect();
+                const isRightHalf = e.clientX > targetRect.left + (targetRect.width / 2);
+                if (isRightHalf) {
+                    dropTarget.classList.add('tab-drag-over-right');
+                } else {
+                    dropTarget.classList.add('tab-drag-over-left');
+                }
+            }
+        });
+
+        tabEl.addEventListener('pointerup', (e) => {
+            if (!draggedTabEl) return;
+
+            draggedTabEl.classList.remove('tab-dragging');
+            draggedTabEl.style.transform = '';
+            draggedTabEl.style.zIndex = '';
+            draggedTabEl.style.position = '';
+            draggedTabEl.releasePointerCapture(e.pointerId);
+
+            const leftTarget = document.querySelector('.tab.tab-drag-over-left');
+            const rightTarget = document.querySelector('.tab.tab-drag-over-right');
+            const dropTarget = leftTarget || rightTarget;
+
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('tab-drag-over-left', 'tab-drag-over-right');
+            });
+
+            if (isDraggingTab && dropTarget) {
+                const dropIdx = Array.from(tabBar.children).indexOf(dropTarget);
+                if (dropIdx !== -1) {
+                    const targetId = tabs[dropIdx].id;
+                    const fromIdx = tabs.findIndex(t => t.id === draggedTabId);
+                    const toIdx = tabs.findIndex(t => t.id === targetId);
+
+                    if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+                        const isRightHalf = !!rightTarget;
+                        let insertBefore = isRightHalf ? toIdx + 1 : toIdx;
+
+                        const [movedTab] = tabs.splice(fromIdx, 1);
+                        const adjustedIndex = insertBefore > fromIdx ? insertBefore - 1 : insertBefore;
+                        tabs.splice(adjustedIndex, 0, movedTab);
+                        renderTabs();
+                    }
+                }
+            }
+
+            draggedTabId = null;
+            draggedTabEl = null;
+
+            // Give a tiny delay before resetting isDraggingTab so click event has time to see it was true
+            setTimeout(() => {
+                isDraggingTab = false;
+            }, 50);
+
+            saveSessionDebounced();
+        });
+
+        tabEl.addEventListener('pointercancel', (e) => {
+            if (draggedTabEl) {
+                draggedTabEl.classList.remove('tab-dragging');
+                draggedTabEl.style.transform = '';
+                draggedTabEl.style.zIndex = '';
+                draggedTabEl.style.position = '';
+                draggedTabEl.releasePointerCapture(e.pointerId);
+            }
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('tab-drag-over-left', 'tab-drag-over-right');
+            });
+            draggedTabId = null;
+            draggedTabEl = null;
+        });
+
         tabBar.appendChild(tabEl);
     });
+
+    if (draggedTabId) {
+        draggedTabEl = document.querySelector(`[data-id="${draggedTabId}"]`);
+    }
+
+    // Add scroll listener if it hasn't been added yet
+    if (!tabBar.dataset.scrollListenerAdded) {
+        tabBar.addEventListener('scroll', updateScrollShadows);
+        tabBar.dataset.scrollListenerAdded = 'true';
+    }
+
+    // Auto-scroll to active tab if it's out of view
+    const activeTabEl = tabBar.querySelector('.tab.active');
+    if (activeTabEl) {
+        // Use a slight delay to allow CSS widths to calculate after DOM insertion
+        setTimeout(() => {
+            const barRect = tabBar.getBoundingClientRect();
+            const tabRect = activeTabEl.getBoundingClientRect();
+
+            if (tabRect.left < barRect.left) {
+                // Tab is hidden to the left
+                tabBar.scrollBy({ left: tabRect.left - barRect.left - 20, behavior: 'smooth' });
+            } else if (tabRect.right > barRect.right) {
+                // Tab is hidden to the right
+                tabBar.scrollBy({ left: tabRect.right - barRect.right + 20, behavior: 'smooth' });
+            }
+        }, 10);
+    }
+
+    // Update shadows immediately after rendering tabs
+    requestAnimationFrame(updateScrollShadows);
 }
 
 async function createNewTab(path = null, content = '') {
@@ -863,6 +1030,14 @@ window.addEventListener('DOMContentLoaded', () => {
             }, 50);
         });
 
+        const themeBlueBtn = document.getElementById('theme-blue');
+        if (themeBlueBtn) themeBlueBtn.addEventListener('click', () => setTheme('blue-theme'));
+        const themeHackerBtn = document.getElementById('theme-hacker');
+        if (themeHackerBtn) themeHackerBtn.addEventListener('click', () => setTheme('hacker-theme'));
+
+        // Init dropping
+        setupFileDrop();
+
         document.getElementById('titlebar-minimize').addEventListener('click', () => appWindow.minimize());
 
         document.getElementById('titlebar-maximize').addEventListener('click', () => appWindow.toggleMaximize());
@@ -1289,5 +1464,99 @@ async function openFileFromHistory(path) {
         console.error(e);
         showStatus('Error opening file from history');
         removeFromFileHistory(path);
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* File Drag-and-Drop to Open                                                 */
+/* -------------------------------------------------------------------------- */
+
+async function openDroppedPaths(paths) {
+    for (const filePath of paths) {
+        try {
+            const existing = tabs.find(t => t.path === filePath);
+            if (existing) { switchTab(existing.id); continue; }
+
+            const content = await readTextFile(filePath);
+            const name = getFilename(filePath);
+
+            await createNewTab(filePath, content);
+            addToFileHistory(filePath);
+            showStatus(`Opened: ${name}`);
+        } catch (err) {
+            console.error('Error opening dropped file:', err);
+            showStatus(`Error opening: ${getFilename(filePath)}`);
+        }
+    }
+}
+
+async function setupFileDrop() {
+    const overlay = document.getElementById('file-drop-overlay');
+    if (!overlay) return;
+
+    if (window.__TAURI__) {
+        const { listen } = window.__TAURI__.event;
+
+        await listen('tauri://file-drop-hover', () => {
+            overlay.style.display = 'flex';
+            document.body.classList.add('is-dragging-file');
+        });
+
+        await listen('tauri://file-drop-cancelled', () => {
+            overlay.style.display = 'none';
+            document.body.classList.remove('is-dragging-file');
+        });
+
+        await listen('tauri://file-drop', async (event) => {
+            overlay.style.display = 'none';
+            document.body.classList.remove('is-dragging-file');
+            const paths = event.payload;
+            if (paths && paths.length > 0) {
+                await openDroppedPaths(paths);
+            }
+        });
+    } else {
+        // Browser fallback
+        let dragDepth = 0;
+        function isFileDrag(e) {
+            return e.dataTransfer && e.dataTransfer.types &&
+                Array.from(e.dataTransfer.types).includes('Files');
+        }
+        document.addEventListener('dragenter', (e) => {
+            if (!isFileDrag(e)) return;
+            e.preventDefault();
+            dragDepth++;
+            overlay.style.display = 'flex';
+            document.body.classList.add('is-dragging-file');
+        });
+        document.addEventListener('dragleave', () => {
+            dragDepth = Math.max(0, dragDepth - 1);
+            if (dragDepth === 0) {
+                overlay.style.display = 'none';
+                document.body.classList.remove('is-dragging-file');
+            }
+        });
+        document.addEventListener('dragover', (e) => {
+            if (!isFileDrag(e)) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        });
+        document.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            dragDepth = 0;
+            overlay.style.display = 'none';
+            document.body.classList.remove('is-dragging-file');
+
+            const files = Array.from(e.dataTransfer.files || []);
+            for (const file of files) {
+                try {
+                    const content = await file.text();
+                    await createNewTab(null, content);
+                    showStatus(`Opened: ${file.name}`);
+                } catch (err) {
+                    showStatus(`Error opening: ${file.name}`);
+                }
+            }
+        });
     }
 }
