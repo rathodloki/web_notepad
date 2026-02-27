@@ -1,4 +1,4 @@
-import { createEditorState, createEditorView, getLanguageExtension, toggleLineWrapping, applyLineWrappingToState } from './editor.js';
+import { createEditorState, createEditorView, getLanguageExtension, toggleLineWrapping, applyLineWrappingToState, detectLanguageFromContent } from './editor.js';
 import { EditorView } from "@codemirror/view";
 
 // Quill.js
@@ -90,6 +90,37 @@ function updateCursorStatus() {
     const pos = editorView.state.selection.main.head;
     const line = editorView.state.doc.lineAt(pos);
     statusCursor.textContent = `Ln ${line.number}, Col ${pos - line.from + 1}`;
+
+    // Update language status
+    const tab = tabs.find(t => t.id === activeTabId);
+    const statusLang = document.getElementById('status-language');
+    if (tab && statusLang) {
+        if (tab.isDoc) {
+            statusLang.textContent = "Document";
+        } else if (tab.isTodo) {
+            statusLang.textContent = "Todo List";
+        } else {
+            let extToMatch = tab.manualLanguage;
+            if (extToMatch === undefined || extToMatch === null) {
+                if (tab.path) extToMatch = tab.path.split('.').pop().toLowerCase();
+            }
+
+            if (extToMatch === undefined || extToMatch === null) {
+                // TRY auto detect if still null
+                let content = editorView.state.doc.toString();
+                extToMatch = detectLanguageFromContent(content);
+            }
+
+            const langObj = supportedLanguages.find(l => l.ext === extToMatch);
+            if (langObj) {
+                statusLang.textContent = langObj.name;
+            } else if (extToMatch) {
+                statusLang.textContent = extToMatch.toUpperCase();
+            } else {
+                statusLang.textContent = "Plain Text";
+            }
+        }
+    }
 }
 
 function saveSessionDebounced() {
@@ -128,6 +159,7 @@ async function saveSession() {
             isUnsaved: tab.isUnsaved,
             isTodo: tab.isTodo,
             isDoc: tab.isDoc,
+            manualLanguage: tab.manualLanguage,
             content: tab.isUnsaved || !tab.path ? content : null
         };
     });
@@ -206,7 +238,7 @@ async function loadSession() {
             if (isTodo) langPath = "tasks.todo";
             if (isDoc) langPath = "document.doc";
 
-            const extensions = await getLanguageExtension(langPath);
+            const extensions = await getLanguageExtension(langPath, content || '', t.manualLanguage);
 
             const newTab = {
                 id: t.id,
@@ -216,6 +248,7 @@ async function loadSession() {
                 isTodo: isTodo,
                 isDoc: isDoc,
                 savedContent: savedContent,
+                manualLanguage: t.manualLanguage || null,
                 state: createEditorState(content || '', [...extensions, createUpdateListener(t.id)], isWordWrapEnabled)
             };
             tabs.push(newTab);
@@ -489,7 +522,7 @@ async function createNewTab(path = null, content = '') {
 
     let state = null;
     if (!isDoc) {
-        const extensions = await getLanguageExtension(path);
+        const extensions = await getLanguageExtension(path, content);
         state = createEditorState(content, [...extensions, createUpdateListener(id)], isWordWrapEnabled);
     }
 
@@ -501,6 +534,7 @@ async function createNewTab(path = null, content = '') {
         isTodo,
         isDoc,
         savedContent: content,
+        manualLanguage: null,
         state
     };
 
@@ -1277,9 +1311,10 @@ async function spawnTodoList() {
         id,
         path: null,
         title: defaultName,
-        isUnsaved: true,
+        isUnsaved: false,
         isTodo: true, // Explicitly tag this tab type regardless of path/extension
-        savedContent: null,
+        savedContent: initialContent,
+        manualLanguage: null,
         state
     };
 
@@ -1306,10 +1341,11 @@ async function spawnDocProcess() {
         id,
         path: null,
         title: defaultName,
-        isUnsaved: true,
+        isUnsaved: false,
         isTodo: false,
         isDoc: true, // Explicitly tag this tab type
         savedContent: initialContent,
+        manualLanguage: null,
         state: null
     };
 
@@ -1478,6 +1514,209 @@ function renderQuickOpenResults() {
 
         results.appendChild(itemEl);
     });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Language Selection Palette Logic                                           */
+/* -------------------------------------------------------------------------- */
+
+let languageSelectedIndex = -1;
+let currentLanguageMatches = [];
+const supportedLanguages = [
+    { name: 'Plain Text', ext: '' },
+    { name: 'JavaScript', ext: 'js' },
+    { name: 'TypeScript', ext: 'ts' },
+    { name: 'Python', ext: 'py' },
+    { name: 'HTML', ext: 'html' },
+    { name: 'CSS', ext: 'css' },
+    { name: 'C / C++', ext: 'cpp' },
+    { name: 'Java', ext: 'java' },
+    { name: 'JSON', ext: 'json' },
+    { name: 'Markdown', ext: 'md' },
+    { name: 'YAML', ext: 'yaml' },
+    { name: 'Properties/INI', ext: 'ini' },
+    { name: 'Shell/Bash', ext: 'sh' },
+    { name: 'Ruby', ext: 'rb' },
+    { name: 'Go', ext: 'go' },
+    { name: 'Rust', ext: 'rs' },
+    { name: 'Todo List', ext: 'todo' }
+];
+
+function toggleLanguageOpen() {
+    const modal = document.getElementById('language-modal');
+    const input = document.getElementById('language-input');
+    if (!modal || !input) return;
+
+    if (modal.style.display === 'flex') {
+        closeLanguageOpen();
+    } else {
+        modal.style.display = 'flex';
+        input.value = '';
+        renderLanguageResults();
+
+        // Ensure input gets focused after modal is displayed
+        setTimeout(() => {
+            input.focus();
+        }, 10);
+    }
+}
+
+function closeLanguageOpen() {
+    const modal = document.getElementById('language-modal');
+    if (modal) modal.style.display = 'none';
+    if (editorView) editorView.focus();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const langModal = document.getElementById('language-modal');
+    if (langModal) {
+        langModal.addEventListener('click', (e) => {
+            if (e.target === langModal) closeLanguageOpen();
+        });
+    }
+
+    const langInput = document.getElementById('language-input');
+    if (langInput) {
+        langInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Escape') {
+                closeLanguageOpen();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (languageSelectedIndex < currentLanguageMatches.length - 1) {
+                    languageSelectedIndex++;
+                    updateLanguageSelection();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (languageSelectedIndex > 0) {
+                    languageSelectedIndex--;
+                    updateLanguageSelection();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (languageSelectedIndex >= 0 && currentLanguageMatches[languageSelectedIndex]) {
+                    await setManualLanguage(currentLanguageMatches[languageSelectedIndex].ext);
+                }
+            }
+        });
+
+        langInput.addEventListener('input', () => {
+            renderLanguageResults();
+        });
+    }
+
+    const statusLang = document.getElementById('status-language');
+    if (statusLang) {
+        statusLang.addEventListener('click', toggleLanguageOpen);
+    }
+});
+
+function updateLanguageSelection() {
+    const results = document.getElementById('language-results');
+    if (!results) return;
+
+    const items = results.querySelectorAll('.quick-open-item');
+    items.forEach((item, index) => {
+        if (index === languageSelectedIndex) {
+            item.classList.add('selected');
+            item.scrollIntoView({ block: 'nearest' });
+        } else {
+            item.classList.remove('selected');
+        }
+    });
+}
+
+function renderLanguageResults() {
+    const input = document.getElementById('language-input');
+    const results = document.getElementById('language-results');
+    if (!input || !results) return;
+
+    const query = input.value.toLowerCase();
+
+    if (!query) {
+        currentLanguageMatches = supportedLanguages.map(l => ({ ...l, score: 0 }));
+    } else {
+        currentLanguageMatches = supportedLanguages
+            .map(lang => {
+                const name = lang.name.toLowerCase();
+                let score = -1;
+                if (name.includes(query)) score = 10;
+                else if (lang.ext.includes(query)) score = 5;
+                return { ...lang, score };
+            })
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score);
+    }
+
+    results.innerHTML = '';
+    languageSelectedIndex = currentLanguageMatches.length > 0 ? 0 : -1;
+
+    if (currentLanguageMatches.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'quick-open-empty';
+        emptyState.textContent = 'No matching languages found.';
+        results.appendChild(emptyState);
+        return;
+    }
+
+    currentLanguageMatches.forEach((match, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = `quick-open-item ${index === 0 ? 'selected' : ''}`;
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'quick-open-filename';
+
+        if (query && match.name.toLowerCase().includes(query)) {
+            const startIdx = match.name.toLowerCase().indexOf(query);
+            const before = match.name.substring(0, startIdx);
+            const hl = match.name.substring(startIdx, startIdx + query.length);
+            const after = match.name.substring(startIdx + query.length);
+            nameEl.innerHTML = `${before}<span class="q-match">${hl}</span>${after}`;
+        } else {
+            nameEl.textContent = match.name;
+        }
+
+        itemEl.appendChild(nameEl);
+
+        itemEl.addEventListener('click', async () => {
+            await setManualLanguage(match.ext);
+        });
+
+        itemEl.addEventListener('mouseenter', () => {
+            languageSelectedIndex = index;
+            updateLanguageSelection();
+        });
+
+        results.appendChild(itemEl);
+    });
+}
+
+async function setManualLanguage(ext) {
+    closeLanguageOpen();
+    if (!activeTabId) return;
+    const tab = tabs.find(t => t.id === activeTabId);
+    if (!tab || tab.isDoc) return;
+
+    tab.manualLanguage = ext;
+
+    // determine content to re-init state
+    let content = '';
+    if (editorView) {
+        content = editorView.state.doc.toString();
+    } else {
+        content = tab.state.doc.toString();
+    }
+
+    const extensions = await getLanguageExtension(tab.path, content, ext);
+    const newState = createEditorState(content, [...extensions, createUpdateListener(tab.id)], isWordWrapEnabled);
+    tab.state = newState;
+
+    if (editorView) {
+        editorView.setState(newState);
+    }
+
+    saveSessionDebounced();
+    updateCursorStatus(); // also updates language label
 }
 
 /* -------------------------------------------------------------------------- */

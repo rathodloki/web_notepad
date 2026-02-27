@@ -954,7 +954,8 @@ body {
   margin-right: 12px;
 }
 
-#quick-open-input {
+#quick-open-input,
+#language-input {
   flex-grow: 1;
   background: transparent;
   border: none;
@@ -964,7 +965,8 @@ body {
   font-size: 14px;
 }
 
-#quick-open-input::placeholder {
+#quick-open-input::placeholder,
+#language-input::placeholder {
   color: #5a5f6e;
 }
 

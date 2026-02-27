@@ -10,7 +10,7 @@ Quill.register('modules/blotFormatter', BlotFormatter);
 Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);
 
 // import
-    tabs, activeTabId, registerTab, setActiveTab, unregisterTab,
+tabs, activeTabId, registerTab, setActiveTab, unregisterTab,
     getAllTabs, findTab, serializeTabs, moveTabToIndex
 } from './panes.js';
 
@@ -1147,9 +1147,9 @@ function switchPane2Tab(tabId) {
             id,
             path: null,
             title: defaultName,
-            isUnsaved: true,
+            isUnsaved: false,
             isTodo: true, // Explicitly tag this tab type regardless of path/extension
-            savedContent: null,
+            savedContent: initialContent,
             state
         };
 
@@ -1176,7 +1176,7 @@ function switchPane2Tab(tabId) {
             id,
             path: null,
             title: defaultName,
-            isUnsaved: true,
+            isUnsaved: false,
             isTodo: false,
             isDoc: true, // Explicitly tag this tab type
             savedContent: initialContent,

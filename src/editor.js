@@ -185,9 +185,41 @@ export function createEditorView(state, parent) {
     });
 }
 
-export async function getLanguageExtension(filename) {
-    if (!filename) return [];
-    const ext = filename.split('.').pop().toLowerCase();
+export function detectLanguageFromContent(content) {
+    if (!content) return null;
+    const firstLine = content.split('\n')[0].trim();
+    if (firstLine.startsWith('#!')) {
+        if (firstLine.includes('python')) return 'py';
+        if (firstLine.includes('node')) return 'js';
+        if (firstLine.match(/\b(bash|sh|zsh)\b/)) return 'sh';
+        if (firstLine.includes('ruby')) return 'rb';
+    }
+
+    // basic content heuristics if shebang is missing
+    if (content.includes('<!DOCTYPE html>') || content.includes('<html')) return 'html';
+    if (content.startsWith('{') || content.startsWith('[')) {
+        try {
+            JSON.parse(content);
+            return 'json';
+        } catch (e) { }
+    }
+
+    return null;
+}
+
+export async function getLanguageExtension(filename, content = '', manualExt = null) {
+    let ext = manualExt;
+
+    if (!ext && filename) {
+        ext = filename.split('.').pop().toLowerCase();
+    }
+
+    if (!ext && content) {
+        ext = detectLanguageFromContent(content);
+    }
+
+    if (!ext) return [];
+
     switch (ext) {
         case 'js':
         case 'mjs':
