@@ -8,7 +8,7 @@
     },
     "package": {
         "productName": "LightPad",
-        "version": "1.0.4"
+        "version": "1.0.5"
     },
     "tauri": {
         "allowlist": {
@@ -27,6 +27,33 @@
             },
             "path": {
                 "all": true
+            },
+            "shell": {
+                "all": true,
+                "execute": true,
+                "open": true,
+                "scope": [
+                    {
+                        "name": "cmd",
+                        "cmd": "cmd.exe",
+                        "args": true
+                    },
+                    {
+                        "name": "powershell",
+                        "cmd": "powershell.exe",
+                        "args": true
+                    },
+                    {
+                        "name": "gitbash",
+                        "cmd": "C:\\Program Files\\Git\\bin\\bash.exe",
+                        "args": true
+                    },
+                    {
+                        "name": "wsl",
+                        "cmd": "wsl.exe",
+                        "args": true
+                    }
+                ]
             },
             "protocol": {
                 "asset": true,
@@ -75,5 +102,3 @@
         ]
     }
 }
-
-

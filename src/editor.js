@@ -10,6 +10,7 @@ import { rainbowCsvExtension } from "./csv.js";
 // Languages unloaded by default to reduce boot time
 
 export const wordWrapCompartment = new Compartment();
+export const languageCompartment = new Compartment();
 
 const cyberpunkHighlightStyle = HighlightStyle.define([
     { tag: [t.keyword, t.controlKeyword, t.moduleKeyword], color: "#FF79C6", fontWeight: "bold" },
@@ -39,7 +40,7 @@ const customTheme = EditorView.theme({
         borderLeftColor: "#528BFF"
     },
     "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
-        backgroundColor: "#3E4451"
+        backgroundColor: "rgba(59, 130, 246, 0.4)"
     },
     ".cm-panels": {
         backgroundColor: "#14171c",
@@ -122,10 +123,10 @@ const customTheme = EditorView.theme({
         outlineOffset: "-1px"
     },
     ".cm-activeLine": {
-        backgroundColor: "#2c313a"
+        backgroundColor: "rgba(255, 255, 255, 0.08)"
     },
     ".cm-activeLineGutter": {
-        backgroundColor: "#2c313a",
+        backgroundColor: "rgba(255, 255, 255, 0.08)",
         color: "#C678DD"
     },
     ".cm-gutters": {
@@ -141,7 +142,7 @@ const customTheme = EditorView.theme({
     }
 }, { dark: true });
 
-export function createEditorState(initialDoc, extensionList = [], isWordWrapEnabled = false) {
+export function createEditorState(initialDoc, langExtensions = [], otherExtensions = [], isWordWrapEnabled = false) {
     return EditorState.create({
         doc: initialDoc,
         extensions: [
@@ -172,8 +173,9 @@ export function createEditorState(initialDoc, extensionList = [], isWordWrapEnab
             syntaxHighlighting(cyberpunkHighlightStyle, { fallback: true }),
             customTheme,
             wordWrapCompartment.of(isWordWrapEnabled ? EditorView.lineWrapping : []),
-            ...rainbowCsvExtension(),
-            ...extensionList
+            languageCompartment.of(langExtensions),
+            ...otherExtensions,
+            ...rainbowCsvExtension()
         ]
     });
 }
@@ -193,10 +195,27 @@ export function detectLanguageFromContent(content) {
         if (firstLine.includes('node')) return 'js';
         if (firstLine.match(/\b(bash|sh|zsh)\b/)) return 'sh';
         if (firstLine.includes('ruby')) return 'rb';
+        if (firstLine.match(/\b(pwsh|powershell)\b/i)) return 'ps1';
     }
 
     // basic content heuristics if shebang is missing
+    if (content.startsWith('<#')) return 'ps1';
+
+    // PowerShell heuristics
+    if (content.match(/\b(Write-|Get-|Set-|Invoke-|Out-|Start-|Stop-|New-|Remove-|Format-|ForEach-Object|Where-Object)\b/i) ||
+        content.match(/^\$[a-zA-Z_]\w*\s*=/m) ||
+        content.match(/\[CmdletBinding\(\)\]/i) ||
+        content.match(/\bparam\s*\(/i)) {
+        return 'ps1';
+    }
+
     if (content.includes('<!DOCTYPE html>') || content.includes('<html')) return 'html';
+
+    // Python heuristics
+    if (content.match(/^(import|from\s+[\w.]+\s+import|def|class)\s+[a-zA-Z_]/m) ||
+        content.match(/^print\(|^\s*try:|^\s*except.*:|^\s*elif.*:|^\s*def\s+\w+\s*\(/m)) {
+        return 'py';
+    }
     if (content.startsWith('{') || content.startsWith('[')) {
         try {
             JSON.parse(content);
@@ -285,6 +304,14 @@ export async function getLanguageExtension(filename, content = '', manualExt = n
             const { shell } = await import("@codemirror/legacy-modes/mode/shell");
             return [StreamLanguage.define(shell)];
         }
+        case 'ps1':
+        case 'psm1':
+        case 'psd1':
+        case 'pwsh':
+        case 'powershell': {
+            const { powerShell } = await import("@codemirror/legacy-modes/mode/powershell");
+            return [StreamLanguage.define(powerShell)];
+        }
         case 'rb': {
             const { ruby } = await import("@codemirror/legacy-modes/mode/ruby");
             return [StreamLanguage.define(ruby)];
@@ -315,5 +342,17 @@ export function toggleLineWrapping(view, isEnabled) {
 export function applyLineWrappingToState(state, isEnabled) {
     return state.update({
         effects: wordWrapCompartment.reconfigure(isEnabled ? EditorView.lineWrapping : [])
+    }).state;
+}
+
+export function setLanguageExtension(view, extensions) {
+    view.dispatch({
+        effects: languageCompartment.reconfigure(extensions)
+    });
+}
+
+export function applyLanguageExtensionToState(state, extensions) {
+    return state.update({
+        effects: languageCompartment.reconfigure(extensions)
     }).state;
 }

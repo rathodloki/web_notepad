@@ -11,6 +11,8 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
 </head>
 
 <body>
@@ -65,6 +67,33 @@
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
         </button>
+        <button id="btn-global-search" class="icon-btn" title="Global Search across Tabs (Ctrl+Shift+F)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 12h4l2-2h4l2 2h8"></path>
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <path d="M4 18v-2a4 4 0 011-2.9"></path>
+            </svg>
+        </button>
+        <div style="position: relative;">
+            <button id="btn-text-format" class="icon-btn" title="Text Formatting Options">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20v-8m0 0V4m0 8h8m-8 0H4"></path>
+                    <path d="M4 4l6 6m10-6l-6 6M4 20l6-6m10 6l-6-6"></path>
+                </svg>
+            </button>
+            <div id="text-format-menu" class="context-menu"
+                style="display: none; position: absolute; top: 100%; left: 0; z-index: 2000; min-width: 150px;">
+                <div class="menu-item" id="menu-format-upper">UPPERCASE</div>
+                <div class="menu-item" id="menu-format-lower">lowercase</div>
+                <div class="menu-item" id="menu-format-title">Title Case</div>
+                <div class="menu-item divider"></div>
+                <div class="menu-item" id="menu-format-sort">Sort Lines</div>
+                <div class="menu-item" id="menu-format-reverse">Reverse String</div>
+                <div class="menu-item divider"></div>
+                <div class="menu-item" id="menu-format-remove-empty">Remove Empty Lines</div>
+            </div>
+        </div>
         <button id="btn-delete" class="icon-btn" title="Delete File">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -104,6 +133,22 @@
                 <line x1="3" y1="18" x2="10" y2="18"></line>
             </svg>
         </button>
+        <button id="btn-auto-save" class="icon-btn" title="Toggle Auto-Save to Disk">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+                <circle cx="12" cy="17" r="1.5"></circle>
+            </svg>
+        </button>
+        <button id="btn-markdown" class="icon-btn" title="Toggle Markdown Preview" style="display: none;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
+                <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path>
+                <path d="M18 12a2 2 0 0 0-2 2v4-2 2"></path>
+            </svg>
+        </button>
         <div class="status-container">
             <span class="status-item" id="status-cursor">Ln 1, Col 1</span>
             <span class="status-item divider">|</span>
@@ -119,16 +164,24 @@
     </div>
     <!-- editor-shell: the main content area. -->
     <div class="editor-shell" id="editor-shell">
-        <!-- Main Pane (always visible) -->
-        <div class="editor-pane" id="pane-1">
-            <div id="editor-container"></div>
-            <div id="quill-wrapper" style="display: none;">
-                <div id="quill-editor"></div>
+        <!-- Main Pane -->
+        <div class="editor-pane" id="pane-1" style="display: flex; flex-direction: row; height: 100%;">
+            <div id="editor-wrapper"
+                style="flex: 1; height: 100%; position: relative; display: flex; flex-direction: column;">
+                <div id="editor-container" style="flex: 1; height: 100%;"></div>
+                <div id="quill-wrapper" style="display: none; flex: 1; height: 100%;">
+                    <div id="quill-editor"></div>
+                </div>
+            </div>
+            <!-- Markdown Preview Pane -->
+            <div id="markdown-preview"
+                style="display: none; flex: 1; height: 100%; border-left: 1px solid var(--border); padding: 20px; overflow-y: auto; background-color: var(--bg); color: var(--fg); font-family: sans-serif;">
             </div>
         </div>
     </div>
 
     <div id="tab-context-menu" class="context-menu" style="display: none;">
+        <div class="menu-item" id="menu-undo-close">Undo Closed Tabs</div>
         <div class="menu-item" id="menu-close-all">Close All</div>
         <div class="menu-item" id="menu-close-others">Close Others</div>
         <div class="menu-item" id="menu-close-right">Close to the Right</div>
@@ -152,7 +205,9 @@
                 Do you want to save changes?
             </div>
             <div class="modal-footer">
-                <button id="modal-btn-yestoall" class="modal-btn" style="display: none; margin-right: auto;">Yes to
+                <button id="modal-btn-yestoall" class="modal-btn" style="display: none; margin-right: 5px;">Yes to
+                    All</button>
+                <button id="modal-btn-notoall" class="modal-btn" style="display: none; margin-right: auto;">No to
                     All</button>
                 <button id="modal-btn-yes" class="modal-btn primary">Yes</button>
                 <button id="modal-btn-no" class="modal-btn">No</button>
@@ -194,7 +249,46 @@
                 <input type="text" id="quick-open-input" placeholder="Search recent files..." autocomplete="off"
                     spellcheck="false">
             </div>
-            <div id="quick-open-results" class="quick-open-results">
+            <!-- Results populated by JS -->
+        </div>
+    </div>
+    </div>
+
+    <!-- Global Search Modal -->
+    <div id="global-search-modal" class="modal-overlay quick-open-overlay" style="display: none;">
+        <div class="quick-open-palette" style="width: 500px; max-width: 90vw;">
+            <div
+                style="padding: 16px; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--toolbar-border);">
+                <div class="quick-open-input-wrapper"
+                    style="border: 1px solid var(--toolbar-border); border-radius: 6px; padding: 10px 14px; background: #0f1115;">
+                    <svg class="quick-open-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="global-search-input" placeholder="Search across open tabs..."
+                        autocomplete="off" spellcheck="false">
+                </div>
+                <div class="quick-open-input-wrapper"
+                    style="border: 1px solid var(--toolbar-border); border-radius: 6px; padding: 10px 14px; background: #0f1115;">
+                    <svg class="quick-open-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <input type="text" id="global-replace-input" placeholder="Replace with..." autocomplete="off"
+                        spellcheck="false">
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+                    <label
+                        style="color: var(--text-main); font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" id="global-search-case" style="accent-color: var(--accent); margin: 0;">
+                        Match Case
+                    </label>
+                    <button class="modal-btn primary" id="btn-global-replace-all" style="margin-left: auto;">Replace
+                        All</button>
+                </div>
+            </div>
+            <div id="global-search-results" class="quick-open-results" style="max-height: 400px; padding-bottom: 8px;">
                 <!-- Results populated by JS -->
             </div>
         </div>

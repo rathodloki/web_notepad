@@ -1,4 +1,4 @@
-import { createEditorState, createEditorView, getLanguageExtension, toggleLineWrapping, applyLineWrappingToState, detectLanguageFromContent } from './editor.js';
+import { createEditorState, createEditorView, getLanguageExtension, toggleLineWrapping, applyLineWrappingToState, detectLanguageFromContent, setLanguageExtension, applyLanguageExtensionToState } from './editor.js';
 import { EditorView } from "@codemirror/view";
 
 // Quill.js
@@ -32,8 +32,31 @@ let draggedTabEl = null;
 
 // File History tracking
 let fileHistory = [];
+let closedTabsHistory = [];
+let isRestoringTab = false;
+let currentCloseBatch = null;
 
 let isWordWrapEnabled = localStorage.getItem('lightpad-wordwrap') === 'true';
+let isAutoSaveEnabled = localStorage.getItem('lightpad-autosave') === 'true';
+let isMarkdownPreviewEnabled = false;
+
+function toggleAutoSave() {
+    isAutoSaveEnabled = !isAutoSaveEnabled;
+    localStorage.setItem('lightpad-autosave', isAutoSaveEnabled.toString());
+
+    updateAutoSaveUI();
+
+    showStatus(isAutoSaveEnabled ? 'Auto-Save Enabled' : 'Auto-Save Disabled');
+
+    // Auto-save any currently unsaved tabs immediately
+    if (isAutoSaveEnabled) {
+        tabs.forEach(tab => {
+            if (tab.isUnsaved && tab.path) {
+                autoSaveDiskDebounced(tab, 0);
+            }
+        });
+    }
+}
 
 function toggleWordWrap() {
     isWordWrapEnabled = !isWordWrapEnabled;
@@ -102,13 +125,8 @@ function updateCursorStatus() {
         } else {
             let extToMatch = tab.manualLanguage;
             if (extToMatch === undefined || extToMatch === null) {
-                if (tab.path) extToMatch = tab.path.split('.').pop().toLowerCase();
-            }
-
-            if (extToMatch === undefined || extToMatch === null) {
-                // TRY auto detect if still null
-                let content = editorView.state.doc.toString();
-                extToMatch = detectLanguageFromContent(content);
+                if (tab.autoLanguage) extToMatch = tab.autoLanguage;
+                else if (tab.path) extToMatch = tab.path.split('.').pop().toLowerCase();
             }
 
             const langObj = supportedLanguages.find(l => l.ext === extToMatch);
@@ -119,6 +137,21 @@ function updateCursorStatus() {
             } else {
                 statusLang.textContent = "Plain Text";
             }
+
+            // Show/Hide Markdown Preview button based on language
+            const btnMarkdown = document.getElementById('btn-markdown');
+            if (btnMarkdown) {
+                if (extToMatch === 'md' || extToMatch === 'markdown' || statusLang.textContent === 'Markdown') {
+                    btnMarkdown.style.display = 'inline-flex';
+                    if (isMarkdownPreviewEnabled && activeTabId === tab.id) {
+                        renderMarkdownPreview();
+                    }
+                } else {
+                    btnMarkdown.style.display = 'none';
+                    document.getElementById('markdown-preview').style.display = 'none';
+                    isMarkdownPreviewEnabled = false;
+                }
+            }
         }
     }
 }
@@ -128,6 +161,38 @@ function saveSessionDebounced() {
     sessionTimeout = setTimeout(() => {
         saveSession();
     }, 1000);
+}
+
+function autoSaveDiskDebounced(tab, delay = 2000) {
+    if (!isAutoSaveEnabled) return;
+    if (!tab.path || !window.__TAURI__) return; // Only autosave files that exist on disk
+
+    if (tab.autoSaveTimeout) clearTimeout(tab.autoSaveTimeout);
+    tab.autoSaveTimeout = setTimeout(async () => {
+        try {
+            let content = '';
+            if (tab.isDoc) {
+                if (quillView && activeTabId === tab.id) {
+                    content = quillView.root.innerHTML;
+                } else {
+                    content = tab.savedContent || '';
+                }
+            } else {
+                if (editorView && activeTabId === tab.id) {
+                    content = editorView.state.doc.toString();
+                } else {
+                    content = tab.state.doc.toString();
+                }
+            }
+            await writeTextFile(tab.path, content);
+            tab.isUnsaved = false;
+            tab.savedContent = content;
+            renderTabs();
+            updateTitle();
+        } catch (e) {
+            console.error("Autosave failed", e);
+        }
+    }, delay);
 }
 
 async function saveSession() {
@@ -160,6 +225,7 @@ async function saveSession() {
             isTodo: tab.isTodo,
             isDoc: tab.isDoc,
             manualLanguage: tab.manualLanguage,
+            autoLanguage: tab.autoLanguage,
             content: tab.isUnsaved || !tab.path ? content : null
         };
     });
@@ -249,7 +315,8 @@ async function loadSession() {
                 isDoc: isDoc,
                 savedContent: savedContent,
                 manualLanguage: t.manualLanguage || null,
-                state: createEditorState(content || '', [...extensions, createUpdateListener(t.id)], isWordWrapEnabled)
+                autoLanguage: t.autoLanguage || null,
+                state: createEditorState(content || '', extensions, [createUpdateListener(t.id)], isWordWrapEnabled)
             };
             tabs.push(newTab);
         }
@@ -288,6 +355,32 @@ function createUpdateListener(id) {
                 if (tab.isUnsaved !== isNowUnsaved) {
                     tab.isUnsaved = isNowUnsaved;
                     renderTabs();
+                }
+
+                if (isNowUnsaved && isAutoSaveEnabled) {
+                    autoSaveDiskDebounced(tab);
+                }
+
+                if (isMarkdownPreviewEnabled && id === activeTabId && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+                    renderMarkdownPreview(currentContent);
+                }
+
+                if (!tab.manualLanguage && !tab.isTodo && !tab.isDoc) {
+                    let newAutoExt = detectLanguageFromContent(currentContent);
+                    if (!newAutoExt && tab.path) newAutoExt = tab.path.split('.').pop().toLowerCase();
+
+                    if (newAutoExt !== tab.autoLanguage) {
+                        tab.autoLanguage = newAutoExt;
+                        getLanguageExtension(tab.path, currentContent).then(extensions => {
+                            if (tab.autoLanguage === newAutoExt) {
+                                tab.state = applyLanguageExtensionToState(tab.state, extensions);
+                                if (activeTabId === tab.id && editorView) {
+                                    setLanguageExtension(editorView, extensions);
+                                    updateCursorStatus();
+                                }
+                            }
+                        });
+                    }
                 }
             }
             saveSessionDebounced();
@@ -521,9 +614,13 @@ async function createNewTab(path = null, content = '') {
     const isDoc = path ? path.endsWith('.doc') : false;
 
     let state = null;
+    let autoLanguage = null;
     if (!isDoc) {
         const extensions = await getLanguageExtension(path, content);
-        state = createEditorState(content, [...extensions, createUpdateListener(id)], isWordWrapEnabled);
+        state = createEditorState(content, extensions, [createUpdateListener(id)], isWordWrapEnabled);
+
+        autoLanguage = detectLanguageFromContent(content);
+        if (!autoLanguage && path) autoLanguage = path.split('.').pop().toLowerCase();
     }
 
     const newTab = {
@@ -535,6 +632,7 @@ async function createNewTab(path = null, content = '') {
         isDoc,
         savedContent: content,
         manualLanguage: null,
+        autoLanguage,
         state
     };
 
@@ -561,6 +659,8 @@ function switchTab(id) {
             quillWrapper.style.display = 'none';
         }
         editorContainer.style.display = 'block';
+        document.getElementById('markdown-preview').style.display = 'none';
+        isMarkdownPreviewEnabled = false;
 
         renderTabs();
         updateTitle();
@@ -723,6 +823,10 @@ function switchTab(id) {
                 currentTab.needsRender = true;
                 renderTabs();
                 saveSessionDebounced();
+
+                if (isAutoSaveEnabled) {
+                    autoSaveDiskDebounced(currentTab);
+                }
             });
 
             quillView.root.addEventListener('click', (e) => {
@@ -765,16 +869,19 @@ function askConfirmUI(message, multiple = false, showCancel = false) {
         const btnYes = document.getElementById('modal-btn-yes');
         const btnNo = document.getElementById('modal-btn-no');
         const btnYTA = document.getElementById('modal-btn-yestoall');
+        const btnNTA = document.getElementById('modal-btn-notoall');
         const btnCancel = document.getElementById('modal-btn-cancel');
 
         msg.textContent = message;
         btnYTA.style.display = multiple ? 'inline-block' : 'none';
+        if (btnNTA) btnNTA.style.display = multiple ? 'inline-block' : 'none';
         if (btnCancel) btnCancel.style.display = showCancel ? 'inline-block' : 'none';
         modal.style.display = 'flex';
 
         const handleYes = () => { cleanup(); resolve('yes'); };
         const handleNo = () => { cleanup(); resolve('no'); };
         const handleYTA = () => { cleanup(); resolve('all'); };
+        const handleNTA = () => { cleanup(); resolve('no_all'); };
         const handleCancel = () => { cleanup(); resolve('cancel'); };
 
         const cleanup = () => {
@@ -782,12 +889,14 @@ function askConfirmUI(message, multiple = false, showCancel = false) {
             btnYes.removeEventListener('click', handleYes);
             btnNo.removeEventListener('click', handleNo);
             btnYTA.removeEventListener('click', handleYTA);
+            if (btnNTA) btnNTA.removeEventListener('click', handleNTA);
             if (btnCancel) btnCancel.removeEventListener('click', handleCancel);
         };
 
         btnYes.addEventListener('click', handleYes);
         btnNo.addEventListener('click', handleNo);
         btnYTA.addEventListener('click', handleYTA);
+        if (btnNTA) btnNTA.addEventListener('click', handleNTA);
         if (btnCancel) btnCancel.addEventListener('click', handleCancel);
 
         // Auto-focus the Yes button for fluid keyboard usage
@@ -893,6 +1002,8 @@ async function closeTab(id, forceClose = false, multipleFiles = false) {
                     const saveResult = await saveFile(true); // Call saveFile, knowing it will prompt OS
                     if (!saveResult) return false; // OS Save dialog cancelled
                 } catch (e) { return false; }
+            } else if (answer === 'no_all') {
+                result = 'force_all';
             } else if (answer === 'yes') {
                 if (activeTabId !== tab.id) switchTab(tab.id);
                 try {
@@ -908,6 +1019,28 @@ async function closeTab(id, forceClose = false, multipleFiles = false) {
     // Since we awaited, the array might have shifted index. Find again to safely splice.
     const newTabIndex = tabs.findIndex(t => t.id === id);
     if (newTabIndex === -1) return false;
+
+    if (!isRestoringTab) {
+        const closedTabInfo = {
+            path: tab.path,
+            title: tab.title,
+            isTodo: tab.isTodo,
+            isDoc: tab.isDoc,
+            manualLanguage: tab.manualLanguage,
+        };
+        if (tab.isDoc) {
+            closedTabInfo.content = (tab.id === activeTabId && quillView) ? quillView.root.innerHTML : (tab.savedContent || '');
+        } else {
+            closedTabInfo.content = (tab.id === activeTabId && editorView) ? editorView.state.doc.toString() : tab.state.doc.toString();
+        }
+
+        if (currentCloseBatch !== null) {
+            currentCloseBatch.push(closedTabInfo);
+        } else {
+            closedTabsHistory.push([closedTabInfo]);
+            if (closedTabsHistory.length > 50) closedTabsHistory.shift();
+        }
+    }
 
     tabs.splice(newTabIndex, 1);
     if (tabs.length === 0) {
@@ -927,6 +1060,8 @@ async function closeMultipleTabs(tabsToClose) {
     let forceClose = false;
     let saveAll = false;
     let multipleFiles = unsavedTabs.length > 1;
+
+    currentCloseBatch = [];
 
     const toClose = [...tabsToClose];
     for (const t of toClose) {
@@ -951,6 +1086,12 @@ async function closeMultipleTabs(tabsToClose) {
             }
         }
     }
+
+    if (currentCloseBatch.length > 0) {
+        closedTabsHistory.push(currentCloseBatch);
+        if (closedTabsHistory.length > 50) closedTabsHistory.shift();
+    }
+    currentCloseBatch = null;
 }
 
 async function openFile() {
@@ -1185,9 +1326,133 @@ window.addEventListener('DOMContentLoaded', () => {
         quickOpenBtn.addEventListener('click', toggleQuickOpen);
     }
 
+    // --- Text Formatting Menu Logic ---
+    const textFormatBtn = document.getElementById('btn-text-format');
+    const textFormatMenu = document.getElementById('text-format-menu');
+
+    if (textFormatBtn && textFormatMenu) {
+        textFormatBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = textFormatMenu.style.display === 'block';
+            textFormatMenu.style.display = isVisible ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!textFormatBtn.contains(e.target) && !textFormatMenu.contains(e.target)) {
+                textFormatMenu.style.display = 'none';
+            }
+        });
+
+        function modifyEditorSelection(transformFn) {
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (!tab) return;
+
+            if (tab.isDoc && quillView) {
+                let range = quillView.getSelection();
+                if (!range || range.length === 0) {
+                    range = { index: 0, length: quillView.getLength() - 1 }; // whole doc minus trailing newline
+                }
+                if (range.length > 0) {
+                    const text = quillView.getText(range.index, range.length);
+                    const newText = transformFn(text);
+                    quillView.deleteText(range.index, range.length);
+                    quillView.insertText(range.index, newText);
+                    quillView.setSelection(range.index, newText.length);
+                }
+            } else if (editorView) {
+                const selection = editorView.state.selection.main;
+                let from = selection.from;
+                let to = selection.to;
+                let targetText = editorView.state.doc.sliceString(from, to);
+
+                if (from === to) { // No selection, apply to whole document
+                    from = 0;
+                    to = editorView.state.doc.length;
+                    targetText = editorView.state.doc.toString();
+                }
+
+                if (targetText.length > 0) {
+                    const newText = transformFn(targetText);
+                    editorView.dispatch({
+                        changes: { from, to, insert: newText },
+                        selection: { anchor: from, head: from + newText.length }
+                    });
+                }
+            }
+            textFormatMenu.style.display = 'none';
+        }
+
+        document.getElementById('menu-format-upper').addEventListener('click', () => {
+            modifyEditorSelection(text => text.toUpperCase());
+        });
+
+        document.getElementById('menu-format-lower').addEventListener('click', () => {
+            modifyEditorSelection(text => text.toLowerCase());
+        });
+
+        document.getElementById('menu-format-title').addEventListener('click', () => {
+            modifyEditorSelection(text => {
+                return text.split(/(?<=\s|-|_)/).map(word => {
+                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                }).join('');
+            });
+        });
+
+        document.getElementById('menu-format-sort').addEventListener('click', () => {
+            modifyEditorSelection(text => {
+                return text.split('\n').sort().join('\n');
+            });
+        });
+
+        document.getElementById('menu-format-reverse').addEventListener('click', () => {
+            modifyEditorSelection(text => text.split('').reverse().join(''));
+        });
+
+        document.getElementById('menu-format-remove-empty').addEventListener('click', () => {
+            modifyEditorSelection(text => {
+                return text.split('\n').filter(line => line.trim().length > 0).join('\n');
+            });
+        });
+    }
+
     const newTabBtn = document.getElementById('btn-new-tab');
     if (newTabBtn) {
         newTabBtn.addEventListener('click', async () => await createNewTab());
+    }
+
+    // --- Markdown Preview Logic ---
+    function renderMarkdownPreview(content = null) {
+        if (!isMarkdownPreviewEnabled) return;
+        const preview = document.getElementById('markdown-preview');
+        if (!preview) return;
+
+        let textToRender = content;
+        if (textToRender === null) {
+            if (editorView) textToRender = editorView.state.doc.toString();
+            else textToRender = '';
+        }
+
+        try {
+            preview.innerHTML = DOMPurify.sanitize(marked.parse(textToRender));
+        } catch (e) {
+            console.error("Markdown parsing failed", e);
+        }
+    }
+
+    const markdownBtn = document.getElementById('btn-markdown');
+    if (markdownBtn) {
+        markdownBtn.addEventListener('click', () => {
+            isMarkdownPreviewEnabled = !isMarkdownPreviewEnabled;
+            const preview = document.getElementById('markdown-preview');
+            if (isMarkdownPreviewEnabled) {
+                preview.style.display = 'block';
+                markdownBtn.classList.add('active');
+                renderMarkdownPreview();
+            } else {
+                preview.style.display = 'none';
+                markdownBtn.classList.remove('active');
+            }
+        });
     }
 
     const todoBtn = document.getElementById('btn-todo');
@@ -1204,6 +1469,13 @@ window.addEventListener('DOMContentLoaded', () => {
     if (wordWrapBtn) {
         if (isWordWrapEnabled) wordWrapBtn.classList.add('active');
         wordWrapBtn.addEventListener('click', toggleWordWrap);
+    }
+
+    // --- Auto Save Logic ---
+    const autoSaveBtn = document.getElementById('btn-auto-save');
+    if (autoSaveBtn) {
+        autoSaveBtn.addEventListener('click', toggleAutoSave);
+        updateAutoSaveUI(); // Initialize UI based on default state
     }
 
     const tabBarContainer = document.querySelector('.tab-bar-container');
@@ -1244,10 +1516,72 @@ window.addEventListener('DOMContentLoaded', () => {
         const tabsToClose = tabs.filter(t => !t.isUnsaved);
         await closeMultipleTabs(tabsToClose);
     });
+
+    document.getElementById('menu-undo-close')?.addEventListener('click', async () => {
+        if (closedTabsHistory.length > 0) {
+            isRestoringTab = true;
+            const batch = closedTabsHistory.pop();
+
+            // Restore in reverse order to approximate original tab sequence structure
+            for (let i = batch.length - 1; i >= 0; i--) {
+                const restoredTabInfo = batch[i];
+                tabCounter++;
+                const id = `tab-${tabCounter}`;
+
+                let state = null;
+                if (!restoredTabInfo.isDoc) {
+                    let langPath = restoredTabInfo.path;
+                    if (restoredTabInfo.isTodo) langPath = "tasks.todo";
+
+                    const extensions = await getLanguageExtension(langPath, restoredTabInfo.content || '', restoredTabInfo.manualLanguage);
+                    state = createEditorState(restoredTabInfo.content || '', extensions, [createUpdateListener(id)], isWordWrapEnabled);
+                }
+
+                const newTab = {
+                    id,
+                    path: restoredTabInfo.path,
+                    title: restoredTabInfo.title,
+                    isUnsaved: false,
+                    isTodo: restoredTabInfo.isTodo,
+                    isDoc: restoredTabInfo.isDoc,
+                    savedContent: restoredTabInfo.content,
+                    manualLanguage: restoredTabInfo.manualLanguage,
+                    autoLanguage: detectLanguageFromContent(restoredTabInfo.content) || (restoredTabInfo.path ? restoredTabInfo.path.split('.').pop().toLowerCase() : null),
+                    state
+                };
+                tabs.push(newTab);
+                switchTab(id);
+            }
+
+            showStatus(batch.length > 1 ? `Restored ${batch.length} tabs` : 'Tab restored');
+            isRestoringTab = false;
+        } else {
+            showStatus('No recently closed tabs');
+        }
+    });
 });
 
 // Keyboard shortcuts
 window.addEventListener('keydown', async (e) => {
+    // Ctrl+ArrowRight (Next Tab)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (tabs.length > 1) {
+            const currentIndex = tabs.findIndex(t => t.id === activeTabId);
+            const nextIndex = (Math.max(0, currentIndex) + 1) % tabs.length;
+            switchTab(tabs[nextIndex].id);
+        }
+    }
+    // Ctrl+ArrowLeft (Prev Tab)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (tabs.length > 1) {
+            const currentIndex = tabs.findIndex(t => t.id === activeTabId);
+            const prevIndex = (Math.max(0, currentIndex) - 1 + tabs.length) % tabs.length;
+            switchTab(tabs[prevIndex].id);
+        }
+    }
+
     // Ctrl+S / Cmd+S
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
@@ -1279,6 +1613,11 @@ window.addEventListener('keydown', async (e) => {
             await createNewTab();
         }
     }
+    // Ctrl+Shift+F / Cmd+Shift+F (Global Search)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        toggleGlobalSearch();
+    }
     // Ctrl+1 / Cmd+1 (Quick Todo List)
     if ((e.ctrlKey || e.metaKey) && e.key === '1') {
         e.preventDefault();
@@ -1294,6 +1633,77 @@ window.addEventListener('keydown', async (e) => {
         e.preventDefault();
         toggleWordWrap();
     }
+
+    // Modal Generic Keyboard Navigation
+    const activeModal = document.querySelector('.modal-overlay[style*="display: flex"], .modal-overlay[style*="display: block"]');
+    if (activeModal) {
+        if (e.key === 'Escape') {
+            // Check specifically which modal to close based on ID or a generic close mechanism
+            if (activeModal.id === 'discard-modal') cancelClose();
+            if (activeModal.id === 'link-modal') {
+                activeModal.style.display = 'none';
+                if (quillView) quillView.focus();
+            }
+            if (activeModal.id === 'quick-open-modal') closeQuickOpen();
+            if (activeModal.id === 'global-search-modal') closeGlobalSearch();
+            if (activeModal.id === 'language-modal') closeLanguageModal();
+            return;
+        }
+
+        // Handle ArrowKeys / Tab for focusable elements inside the modal
+        const focusableElements = Array.from(activeModal.querySelectorAll('button:not([style*="display: none"]), input:not([style*="display: none"]), a:not([style*="display: none"]), .quick-open-item, .quick-open-result'))
+            .filter(el => {
+                // Ignore elements hidden by parent
+                let parent = el;
+                while (parent && parent !== activeModal) {
+                    if (window.getComputedStyle(parent).display === 'none') return false;
+                    parent = parent.parentElement;
+                }
+                return true;
+            });
+
+        if (focusableElements.length > 0) {
+            let currentIndex = focusableElements.findIndex(el =>
+                document.activeElement === el ||
+                (el.classList.contains('selected') && !['INPUT', 'BUTTON', 'A'].includes(el.tagName))
+            );
+
+            if (e.key === 'Tab' || e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                let nextIndex = currentIndex + 1;
+                if (nextIndex >= focusableElements.length) nextIndex = 0;
+
+                // For Quick Search / Language list items specifically
+                if (focusableElements[nextIndex].classList.contains('quick-open-item') || focusableElements[nextIndex].classList.contains('quick-open-result')) {
+                    focusableElements.forEach(el => el.classList.remove('selected'));
+                    focusableElements[nextIndex].classList.add('selected');
+                    focusableElements[nextIndex].scrollIntoView({ block: 'nearest' });
+                } else {
+                    focusableElements[nextIndex].focus();
+                }
+
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                let prevIndex = currentIndex - 1;
+                if (prevIndex < 0) prevIndex = focusableElements.length - 1;
+
+                if (focusableElements[prevIndex].classList.contains('quick-open-item') || focusableElements[prevIndex].classList.contains('quick-open-result')) {
+                    focusableElements.forEach(el => el.classList.remove('selected'));
+                    focusableElements[prevIndex].classList.add('selected');
+                    focusableElements[prevIndex].scrollIntoView({ block: 'nearest' });
+                } else {
+                    focusableElements[prevIndex].focus();
+                }
+            } else if (e.key === 'Enter') {
+                // If it's a div list item (quick open, language, global results) simulate click
+                if (currentIndex !== -1 && (focusableElements[currentIndex].classList.contains('quick-open-item') || focusableElements[currentIndex].classList.contains('quick-open-result'))) {
+                    e.preventDefault();
+                    focusableElements[currentIndex].click();
+                }
+                // Buttons and Inputs will naturally handle Enter via their own native focus or specific event listeners
+            }
+        }
+    }
 });
 
 async function spawnTodoList() {
@@ -1305,7 +1715,7 @@ async function spawnTodoList() {
     const id = `tab-${tabCounter}`;
 
     const extensions = await getLanguageExtension("tasks.todo");
-    const state = await import("./editor.js").then(m => m.createEditorState(initialContent, [...extensions, createUpdateListener(id)], isWordWrapEnabled));
+    const state = await import("./editor.js").then(m => m.createEditorState(initialContent, extensions, [createUpdateListener(id)], isWordWrapEnabled));
 
     const newTab = {
         id,
@@ -1315,6 +1725,7 @@ async function spawnTodoList() {
         isTodo: true, // Explicitly tag this tab type regardless of path/extension
         savedContent: initialContent,
         manualLanguage: null,
+        autoLanguage: "todo",
         state
     };
 
@@ -1346,6 +1757,7 @@ async function spawnDocProcess() {
         isDoc: true, // Explicitly tag this tab type
         savedContent: initialContent,
         manualLanguage: null,
+        autoLanguage: null,
         state: null
     };
 
@@ -1536,11 +1948,27 @@ const supportedLanguages = [
     { name: 'YAML', ext: 'yaml' },
     { name: 'Properties/INI', ext: 'ini' },
     { name: 'Shell/Bash', ext: 'sh' },
+    { name: 'PowerShell', ext: 'ps1' },
     { name: 'Ruby', ext: 'rb' },
     { name: 'Go', ext: 'go' },
     { name: 'Rust', ext: 'rs' },
     { name: 'Todo List', ext: 'todo' }
 ];
+
+function updateAutoSaveUI() {
+    const btn = document.getElementById('btn-auto-save');
+    const statusEl = document.getElementById('status-autosave');
+    if (btn) {
+        if (isAutoSaveEnabled) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    }
+    if (statusEl) {
+        statusEl.textContent = isAutoSaveEnabled ? 'Auto-Save: ON' : 'Auto-Save: OFF';
+    }
+}
 
 function toggleLanguageOpen() {
     const modal = document.getElementById('language-modal');
@@ -1565,6 +1993,34 @@ function closeLanguageOpen() {
     const modal = document.getElementById('language-modal');
     if (modal) modal.style.display = 'none';
     if (editorView) editorView.focus();
+}
+
+// Ensure the listener removes the state replace
+async function setManualLanguage(ext) {
+    closeLanguageOpen();
+    if (!activeTabId) return;
+    const tab = tabs.find(t => t.id === activeTabId);
+    if (!tab || tab.isDoc) return;
+
+    tab.manualLanguage = ext;
+
+    // determine content to re-init state
+    let content = '';
+    if (editorView) {
+        content = editorView.state.doc.toString();
+    } else {
+        content = tab.state.doc.toString();
+    }
+
+    const extensions = await getLanguageExtension(tab.path, content, ext);
+    tab.state = applyLanguageExtensionToState(tab.state, extensions);
+
+    if (editorView) {
+        setLanguageExtension(editorView, extensions);
+    }
+
+    saveSessionDebounced();
+    updateCursorStatus(); // also updates language label
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -1691,34 +2147,6 @@ function renderLanguageResults() {
     });
 }
 
-async function setManualLanguage(ext) {
-    closeLanguageOpen();
-    if (!activeTabId) return;
-    const tab = tabs.find(t => t.id === activeTabId);
-    if (!tab || tab.isDoc) return;
-
-    tab.manualLanguage = ext;
-
-    // determine content to re-init state
-    let content = '';
-    if (editorView) {
-        content = editorView.state.doc.toString();
-    } else {
-        content = tab.state.doc.toString();
-    }
-
-    const extensions = await getLanguageExtension(tab.path, content, ext);
-    const newState = createEditorState(content, [...extensions, createUpdateListener(tab.id)], isWordWrapEnabled);
-    tab.state = newState;
-
-    if (editorView) {
-        editorView.setState(newState);
-    }
-
-    saveSessionDebounced();
-    updateCursorStatus(); // also updates language label
-}
-
 /* -------------------------------------------------------------------------- */
 /* File History Data Management                                               */
 /* -------------------------------------------------------------------------- */
@@ -1785,6 +2213,237 @@ async function openFileFromHistory(path) {
         removeFromFileHistory(path);
     }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Global Search & Replace                                                    */
+/* -------------------------------------------------------------------------- */
+
+let globalSearchMatches = [];
+
+function toggleGlobalSearch() {
+    const modal = document.getElementById('global-search-modal');
+    const input = document.getElementById('global-search-input');
+    if (!modal || !input) return;
+
+    if (modal.style.display === 'flex') {
+        closeGlobalSearch();
+    } else {
+        modal.style.display = 'flex';
+        input.value = '';
+        document.getElementById('global-replace-input').value = '';
+        document.getElementById('global-search-results').innerHTML = '';
+        globalSearchMatches = [];
+        setTimeout(() => input.focus(), 10);
+    }
+}
+
+function closeGlobalSearch() {
+    const modal = document.getElementById('global-search-modal');
+    if (modal) modal.style.display = 'none';
+    if (editorView) editorView.focus();
+}
+
+function performGlobalSearch() {
+    const query = document.getElementById('global-search-input').value;
+    const matchCase = document.getElementById('global-search-case').checked;
+    const resultsContainer = document.getElementById('global-search-results');
+
+    globalSearchMatches = [];
+    resultsContainer.innerHTML = '';
+
+    if (!query) return;
+
+    tabs.forEach(tab => {
+        let content = '';
+        if (tab.id === activeTabId && editorView && !tab.isDoc) {
+            content = editorView.state.doc.toString();
+        } else if (tab.id === activeTabId && quillView && tab.isDoc) {
+            content = quillView.getText();
+        } else if (tab.state) {
+            content = tab.state.doc.toString();
+        } else {
+            content = tab.savedContent || '';
+        }
+
+        const lines = content.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const searchLine = matchCase ? line : line.toLowerCase();
+            const searchQuery = matchCase ? query : query.toLowerCase();
+
+            const col = searchLine.indexOf(searchQuery);
+            if (col !== -1) {
+                globalSearchMatches.push({
+                    tabId: tab.id,
+                    filename: getFilename(tab.path) || tab.title,
+                    line: i + 1,
+                    col: col + 1,
+                    text: line.trim() || '...',
+                    fullLineText: line
+                });
+            }
+        }
+    });
+
+    renderGlobalSearchResults();
+}
+
+function renderGlobalSearchResults() {
+    const resultsContainer = document.getElementById('global-search-results');
+    resultsContainer.innerHTML = '';
+
+    if (globalSearchMatches.length === 0) {
+        const noRes = document.createElement('div');
+        noRes.className = 'quick-open-result';
+        noRes.style.pointerEvents = 'none';
+        noRes.textContent = 'No matches found in open tabs.';
+        resultsContainer.appendChild(noRes);
+        return;
+    }
+
+    globalSearchMatches.forEach((match, index) => {
+        const item = document.createElement('div');
+        item.className = 'quick-open-result';
+
+        const info = document.createElement('div');
+        info.innerHTML = `<strong>${match.filename}</strong><span style="opacity:0.6;font-size:11px;margin-left:8px;">Ln ${match.line}</span>`;
+
+        const snippet = document.createElement('div');
+        snippet.style.fontSize = '12px';
+        snippet.style.opacity = '0.8';
+        snippet.style.marginTop = '4px';
+        snippet.style.textOverflow = 'ellipsis';
+        snippet.style.overflow = 'hidden';
+        snippet.style.whiteSpace = 'nowrap';
+        snippet.textContent = match.text;
+
+        item.appendChild(info);
+        item.appendChild(snippet);
+
+        item.addEventListener('click', () => {
+            switchTab(match.tabId);
+            closeGlobalSearch();
+            // Try to jump to line if CodeMirror
+            if (editorView && tabs.find(t => t.id === match.tabId) && !tabs.find(t => t.id === match.tabId).isDoc) {
+                try {
+                    const lineInfo = editorView.state.doc.line(match.line);
+                    editorView.dispatch({
+                        selection: { anchor: lineInfo.from + match.col - 1, head: lineInfo.from + match.col - 1 + document.getElementById('global-search-input').value.length },
+                        effects: import('@codemirror/view').then(view => view.EditorView.scrollIntoView(lineInfo.from, { y: "center" }))
+                    });
+                } catch (e) { }
+            }
+        });
+
+        resultsContainer.appendChild(item);
+    });
+}
+
+function performGlobalReplaceAll() {
+    const query = document.getElementById('global-search-input').value;
+    const replaceWith = document.getElementById('global-replace-input').value;
+    const matchCase = document.getElementById('global-search-case').checked;
+
+    if (!query) return;
+
+    let totalReplaced = 0;
+
+    tabs.forEach(tab => {
+        let content = '';
+        if (tab.id === activeTabId && editorView && !tab.isDoc) {
+            content = editorView.state.doc.toString();
+        } else if (tab.id === activeTabId && quillView && tab.isDoc) {
+            content = quillView.getText();
+        } else if (tab.state) {
+            content = tab.state.doc.toString();
+        } else {
+            content = tab.savedContent || '';
+        }
+
+        if (!content) return;
+
+        let regexFlags = 'g';
+        if (!matchCase) regexFlags += 'i';
+
+        // Escape regex special chars for literal string replacement
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escapedQuery, regexFlags);
+
+        if (regex.test(content)) {
+            const matchesCount = (content.match(regex) || []).length;
+            totalReplaced += matchesCount;
+            const newContent = content.replace(regex, replaceWith);
+
+            if (tab.id === activeTabId && editorView && !tab.isDoc) {
+                editorView.dispatch({
+                    changes: { from: 0, to: editorView.state.doc.length, insert: newContent }
+                });
+            } else if (tab.id === activeTabId && quillView && tab.isDoc) {
+                quillView.setText(newContent);
+            } else if (tab.state) {
+                tab.state = tab.state.update({
+                    changes: { from: 0, to: tab.state.doc.length, insert: newContent }
+                }).state;
+            } else {
+                tab.savedContent = newContent;
+            }
+            tab.isUnsaved = true;
+            tab.needsRender = true;
+        }
+    });
+
+    if (totalReplaced > 0) {
+        showStatus(`Replaced ${totalReplaced} occurrence(s) left in open tabs.`);
+        renderTabs();
+        saveSessionDebounced();
+        performGlobalSearch(); // refresh results
+    } else {
+        showStatus(`No occurrences found to replace.`);
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    // ... existing quick-open setups
+
+    // Global search setups
+    const searchModal = document.getElementById('global-search-modal');
+    if (searchModal) {
+        searchModal.addEventListener('click', (e) => {
+            if (e.target === searchModal) closeGlobalSearch();
+        });
+    }
+
+    const searchInput = document.getElementById('global-search-input');
+    if (searchInput) {
+        let debounceTimer;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(performGlobalSearch, 300);
+        });
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeGlobalSearch();
+        });
+    }
+
+    const replaceInput = document.getElementById('global-replace-input');
+    if (replaceInput) {
+        replaceInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeGlobalSearch();
+            if (e.key === 'Enter') performGlobalReplaceAll();
+        });
+    }
+
+    const replaceBtn = document.getElementById('btn-global-replace-all');
+    if (replaceBtn) replaceBtn.addEventListener('click', performGlobalReplaceAll);
+
+    const matchCaseCB = document.getElementById('global-search-case');
+    if (matchCaseCB) matchCaseCB.addEventListener('change', performGlobalSearch);
+
+    const btnGlobalSearchIcon = document.getElementById('btn-global-search');
+    if (btnGlobalSearchIcon) {
+        btnGlobalSearchIcon.addEventListener('click', toggleGlobalSearch);
+    }
+});
 
 /* -------------------------------------------------------------------------- */
 /* File Drag-and-Drop to Open                                                 */
