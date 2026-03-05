@@ -321,6 +321,8 @@ async function loadSession() {
             tabs.push(newTab);
         }
 
+        renderTabs();
+
         if (session.activeTabId && tabs.find(t => t.id === session.activeTabId)) {
             switchTab(session.activeTabId);
         } else {
@@ -354,7 +356,11 @@ function createUpdateListener(id) {
 
                 if (tab.isUnsaved !== isNowUnsaved) {
                     tab.isUnsaved = isNowUnsaved;
-                    renderTabs();
+                    const tabEl = document.querySelector(`.tab[data-id="${tab.id}"] .tab-dot`);
+                    if (tabEl) {
+                        if (isNowUnsaved) tabEl.classList.add('unsaved');
+                        else tabEl.classList.remove('unsaved');
+                    }
                 }
 
                 if (isNowUnsaved && isAutoSaveEnabled) {
@@ -427,6 +433,7 @@ function renderTabs() {
 
         const tabEl = document.createElement('div');
         tabEl.className = classes.join(' ');
+        tabEl.dataset.id = tab.id;
 
         const dot = document.createElement('div');
         dot.className = `tab-dot ${tab.isUnsaved ? 'unsaved' : ''}`;
@@ -606,6 +613,30 @@ function renderTabs() {
     requestAnimationFrame(updateScrollShadows);
 }
 
+function updateActiveTabUI() {
+    const tabEls = tabBar.querySelectorAll('.tab');
+    tabEls.forEach(el => {
+        if (el.dataset.id === activeTabId) {
+            el.classList.add('active');
+
+            // Auto-scroll to active tab if it's out of view
+            const barRect = tabBar.getBoundingClientRect();
+            const tabRect = el.getBoundingClientRect();
+
+            if (tabRect.left < barRect.left) {
+                tabBar.scrollBy({ left: tabRect.left - barRect.left - 20, behavior: 'instant' });
+            } else if (tabRect.right > barRect.right) {
+                tabBar.scrollBy({ left: tabRect.right - barRect.right + 20, behavior: 'instant' });
+            }
+        } else {
+            el.classList.remove('active');
+        }
+    });
+
+    // Update scroll shadows
+    requestAnimationFrame(updateScrollShadows);
+}
+
 async function createNewTab(path = null, content = '') {
     tabCounter++;
     const id = `tab-${tabCounter}`;
@@ -637,6 +668,7 @@ async function createNewTab(path = null, content = '') {
     };
 
     tabs.push(newTab);
+    renderTabs();
     switchTab(id);
     saveSessionDebounced();
 }
@@ -662,7 +694,7 @@ function switchTab(id) {
         document.getElementById('markdown-preview').style.display = 'none';
         isMarkdownPreviewEnabled = false;
 
-        renderTabs();
+        updateActiveTabUI();
         updateTitle();
         statusCursor.textContent = '';
         saveSessionDebounced();
@@ -821,7 +853,8 @@ function switchTab(id) {
                 if (!currentTab || !currentTab.isDoc) return;
                 currentTab.isUnsaved = true;
                 currentTab.needsRender = true;
-                renderTabs();
+                const tabEl = document.querySelector(`.tab[data-id="${currentTab.id}"] .tab-dot`);
+                if (tabEl) tabEl.classList.add('unsaved');
                 saveSessionDebounced();
 
                 if (isAutoSaveEnabled) {
@@ -856,7 +889,7 @@ function switchTab(id) {
         editorView.focus();
     }
 
-    renderTabs();
+    updateActiveTabUI();
     updateTitle();
     updateCursorStatus();
     saveSessionDebounced();
@@ -1046,6 +1079,7 @@ async function closeTab(id, forceClose = false, multipleFiles = false) {
     if (tabs.length === 0) {
         switchTab(null);
     } else if (activeTabId === id) {
+        renderTabs();
         const nextTab = tabs[Math.max(0, newTabIndex - 1)];
         switchTab(nextTab.id);
     } else {
