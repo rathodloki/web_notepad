@@ -11,8 +11,8 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js" defer></script>
 </head>
 
 <body>
@@ -160,6 +160,8 @@
                 Text</span>
             <span class="status-item divider">|</span>
             <span class="status-item" id="status-text">Ready</span>
+            <span class="status-item divider">|</span>
+            <span class="status-item" id="status-version">v1.0.5</span>
         </div>
     </div>
     <!-- editor-shell: the main content area. -->

@@ -1205,6 +1205,13 @@ window.addEventListener('DOMContentLoaded', () => {
         openDialog = window.__TAURI__.dialog.open;
         saveDialog = window.__TAURI__.dialog.save;
 
+        if (window.__TAURI__.app) {
+            window.__TAURI__.app.getVersion().then(v => {
+                const el = document.getElementById('status-version');
+                if (el) el.textContent = 'v' + v;
+            }).catch(e => console.error("Failed fetching version", e));
+        }
+
         requestAnimationFrame(() => {
             setTimeout(async () => {
                 const { LogicalSize, PhysicalSize, PhysicalPosition } = window.__TAURI__.window;
