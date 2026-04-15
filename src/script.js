@@ -25,6 +25,7 @@ let quillView = null;
 let tabCounter = 0;
 let sessionTimeout = null;
 let contextMenuTargetId = null;
+let activeSessionPath = null;
 
 // Multi-instance Sync
 const syncChannel = new BroadcastChannel('lightpad_sync');
@@ -126,13 +127,23 @@ function getFilename(path) {
 
 function updateTitle() {
     const activeTab = tabs.find(t => t.id === activeTabId);
+    let workspaceStr = activeSessionPath ? getFilename(activeSessionPath).replace('.lpsession', '') : 'Default';
+    
+    // Update status bar
+    const statusWorkspace = document.getElementById('status-workspace');
+    if (statusWorkspace) {
+        statusWorkspace.textContent = `Workspace: ${workspaceStr}`;
+        statusWorkspace.style.color = activeSessionPath ? 'var(--accent)' : '';
+    }
+
     if (!activeTab) {
-        if (appWindow) appWindow.setTitle('LightPad');
-        document.title = 'LightPad';
+        let text = `LightPad - [${workspaceStr}]`;
+        if (appWindow) appWindow.setTitle(text);
+        document.title = text;
         return;
     }
     const filename = getFilename(activeTab.path);
-    const text = `${filename} - LightPad`;
+    const text = `${filename} - LightPad - [${workspaceStr}]`;
     if (appWindow) appWindow.setTitle(text);
     document.title = text;
 }
@@ -280,11 +291,21 @@ async function saveSession() {
         cursorPos = editorView.state.selection.main.head;
     }
 
-    localStorage.setItem('lightpad-session', JSON.stringify({
+    let sessionStateStr = JSON.stringify({
         tabs: sessionTabs,
         activeTabId,
         cursorPos
-    }));
+    });
+
+    localStorage.setItem('lightpad-session', sessionStateStr);
+
+    // If we are explicitly in a custom Workspace, silently update it on disk too
+    if (activeSessionPath && window.__TAURI__) {
+        try {
+            const sessionData = JSON.stringify({ tabs: sessionTabs, version: 1 }, null, 2);
+            window.__TAURI__.fs.writeTextFile(activeSessionPath, sessionData).catch(()=>{});
+        } catch(e) {}
+    }
 }
 
 async function loadSession() {
@@ -1545,6 +1566,167 @@ window.addEventListener('DOMContentLoaded', () => {
                 return text.split('\n').filter(line => line.trim().length > 0).join('\n');
             });
         });
+    }
+
+    // --- Session Manager Logic ---
+    const sessionManagerBtn = document.getElementById('btn-session-manager');
+    const sessionMenu = document.getElementById('session-menu');
+
+    if (sessionManagerBtn && sessionMenu) {
+        sessionManagerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = sessionMenu.style.display === 'block';
+            sessionMenu.style.display = isVisible ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!sessionManagerBtn.contains(e.target) && !sessionMenu.contains(e.target)) {
+                sessionMenu.style.display = 'none';
+            }
+        });
+
+        document.getElementById('menu-session-save').addEventListener('click', async () => {
+            sessionMenu.style.display = 'none';
+            await saveExplicitSession();
+        });
+
+        document.getElementById('menu-session-load').addEventListener('click', async () => {
+            sessionMenu.style.display = 'none';
+            await loadExplicitSession();
+        });
+        document.getElementById('menu-session-set-default').addEventListener('click', async () => {
+            sessionMenu.style.display = 'none';
+            if (!activeSessionPath) return showStatus('Already using Default Session');
+            activeSessionPath = null;
+            saveSession();
+            updateTitle();
+            showStatus('Current tabs set to Default Session');
+        });
+
+        document.getElementById('menu-session-load-default').addEventListener('click', async () => {
+            sessionMenu.style.display = 'none';
+            if (tabs.length > 0) {
+                let answer = await askConfirmUI(`Close current tabs before reverting to Default Session?`, true);
+                if (answer === 'yes') {
+                    await closeMultipleTabs(tabs);
+                } else if (answer === 'cancel') {
+                    return; // user aborted
+                }
+            }
+            activeSessionPath = null;
+            loadSession();
+            updateTitle();
+            showStatus('Loaded Default Session');
+        });
+    }
+
+    async function saveExplicitSession() {
+        if (!window.__TAURI__) return alert('Saving explicit sessions is only supported in the app.');
+        try {
+            // Guarantee latest memory commits
+            let activeDocContent = null;
+            const activeTab = tabs.find(t => t.id === activeTabId);
+            if (activeTab && activeTab.isDoc && quillView) activeDocContent = quillView.root.innerHTML;
+
+            const sessionTabs = tabs.map(tab => {
+                let content = null;
+                if (tab.isDoc) {
+                    content = (tab.id === activeTabId && activeDocContent !== null) ? activeDocContent : tab.savedContent;
+                } else {
+                    content = (tab.id === activeTabId && editorView) ? editorView.state.doc.toString() : tab.state.doc.toString();
+                }
+
+                return {
+                    path: tab.path,
+                    title: tab.title,
+                    isTodo: tab.isTodo,
+                    isDoc: tab.isDoc,
+                    manualLanguage: tab.manualLanguage,
+                    // Just like notepad++, if it's untitled or an embedded specific type, we save contents in the workspace.
+                    content: tab.isUnsaved || !tab.path || tab.isTodo || tab.isDoc ? content : null 
+                };
+            });
+
+            const sessionData = JSON.stringify({ tabs: sessionTabs, version: 1 }, null, 2);
+
+            const selected = await saveDialog({
+                filters: [{ name: 'LightPad Session', extensions: ['lpsession'] }]
+            });
+
+            if (selected) {
+                await writeTextFile(selected, sessionData);
+                activeSessionPath = selected;
+                updateTitle();
+                showStatus('Workspace Session saved natively');
+            }
+        } catch (e) {
+            console.error(e);
+            showStatus('Error saving Workspace');
+        }
+    }
+
+    async function loadExplicitSession() {
+        if (!window.__TAURI__) return alert('Loading sessions is only supported in the app.');
+        try {
+            const selected = await openDialog({
+                filters: [{ name: 'LightPad Session', extensions: ['lpsession'] }]
+            });
+
+            if (selected) {
+                const rawData = await readTextFile(selected);
+                let sessionParams;
+                try {
+                    sessionParams = JSON.parse(rawData);
+                } catch(e) {
+                    return showStatus('Invalid or corrupted Session format');
+                }
+
+                if (!sessionParams.tabs || !Array.isArray(sessionParams.tabs)) {
+                     return showStatus('No valid tabs found in session file');
+                }
+
+                if (tabs.length > 0) {
+                    let answer = await askConfirmUI(`Close current tabs before loading the Workspace?`, true);
+                    if (answer === 'yes') {
+                        await closeMultipleTabs(tabs);
+                    } else if (answer === 'cancel') {
+                        return; // user aborted
+                    }
+                }
+                
+                activeSessionPath = selected;
+
+                for (const t of sessionParams.tabs) {
+                    let content = t.content;
+                    if (content === null && t.path) {
+                        try {
+                            content = await readTextFile(t.path);
+                        } catch (e) {
+                            console.warn(`File previously opened is missing or inaccessible: ${t.path}`, e);
+                            content = ''; 
+                        }
+                    } else if (content === undefined || content === null) {
+                        content = '';
+                    }
+
+                    await createNewTab(t.path || null, content);
+                    const newT = tabs[tabs.length - 1];
+                    if (t.isTodo) newT.isTodo = true;
+                    if (t.isDoc) newT.isDoc = true;
+                    if (t.title) newT.title = t.title;
+                    if (t.manualLanguage) newT.manualLanguage = t.manualLanguage;
+                    if (t.path) {
+                         try { newT.lastModified = await invoke('get_file_modified', { path: t.path }); } catch(err){}
+                         addToFileHistory(t.path);
+                    }
+                }
+                updateTitle();
+                showStatus('Workspace loaded successfully');
+            }
+        } catch(e) {
+            console.error(e);
+            showStatus('Error loading session');
+        }
     }
 
     const newTabBtn = document.getElementById('btn-new-tab');

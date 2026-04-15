@@ -94,6 +94,24 @@
                 <div class="menu-item" id="menu-format-remove-empty">Remove Empty Lines</div>
             </div>
         </div>
+        <div style="position: relative;">
+            <button id="btn-session-manager" class="icon-btn" title="Sessions (Save/Load Workspace)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    <path d="M12 11v6"></path>
+                    <path d="M9 14l3 3 3-3"></path>
+                </svg>
+            </button>
+            <div id="session-menu" class="context-menu"
+                style="display: none; position: absolute; top: 100%; left: 0; z-index: 2000; min-width: 170px;">
+                <div class="menu-item" id="menu-session-save">Save Workspace As...</div>
+                <div class="menu-item" id="menu-session-load">Load Workspace...</div>
+                <div class="menu-item divider"></div>
+                <div class="menu-item" id="menu-session-set-default">Set as Default Session</div>
+                <div class="menu-item" id="menu-session-load-default">Load Default Session</div>
+            </div>
+        </div>
+
         <button id="btn-delete" class="icon-btn" title="Delete File">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -158,6 +176,7 @@
             <span class="status-item divider">|</span>
             <span class="status-item" id="status-language" style="cursor: pointer;" title="Select Language">Plain
                 Text</span>
+            <span class="status-item" id="status-workspace" title="Active Workspace">Workspace: Default</span>
             <span class="status-item divider">|</span>
             <span class="status-item" id="status-text">Ready</span>
             <span class="status-item divider">|</span>
