@@ -455,6 +455,15 @@ function renderTabs() {
             switchTab(tab.id);
         });
 
+        // Middle-click to close tab (standard editor behavior)
+        tabEl.addEventListener('auxclick', (e) => {
+            if (e.button === 1) { // middle click
+                e.preventDefault();
+                e.stopPropagation();
+                closeTab(tab.id);
+            }
+        });
+
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             closeTab(tab.id);
@@ -1604,23 +1613,22 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Keyboard shortcuts
 window.addEventListener('keydown', async (e) => {
-    // Ctrl+ArrowRight (Next Tab)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowRight') {
+    // Ctrl+Tab (Next Tab) / Ctrl+Shift+Tab (Prev Tab)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Tab') {
         e.preventDefault();
         if (tabs.length > 1) {
             const currentIndex = tabs.findIndex(t => t.id === activeTabId);
-            const nextIndex = (Math.max(0, currentIndex) + 1) % tabs.length;
-            switchTab(tabs[nextIndex].id);
+            if (e.shiftKey) {
+                // Ctrl+Shift+Tab: Previous tab
+                const prevIndex = (Math.max(0, currentIndex) - 1 + tabs.length) % tabs.length;
+                switchTab(tabs[prevIndex].id);
+            } else {
+                // Ctrl+Tab: Next tab
+                const nextIndex = (Math.max(0, currentIndex) + 1) % tabs.length;
+                switchTab(tabs[nextIndex].id);
+            }
         }
-    }
-    // Ctrl+ArrowLeft (Prev Tab)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowLeft') {
-        e.preventDefault();
-        if (tabs.length > 1) {
-            const currentIndex = tabs.findIndex(t => t.id === activeTabId);
-            const prevIndex = (Math.max(0, currentIndex) - 1 + tabs.length) % tabs.length;
-            switchTab(tabs[prevIndex].id);
-        }
+        return; // Don't process further
     }
 
     // Ctrl+S / Cmd+S
@@ -1633,26 +1641,40 @@ window.addEventListener('keydown', async (e) => {
         e.preventDefault();
         await openFile();
     }
-    // Ctrl+W / Cmd+W (Close Current)
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'w') {
-        e.preventDefault();
-        if (activeTabId) await closeTab(activeTabId);
-    }
-    // Ctrl+Shift+W / Cmd+Shift+W (Close All)
+    // Ctrl+Shift+W / Cmd+Shift+W (Close All) — must check before Ctrl+W
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
         const tabsToClose = [...tabs];
         await closeMultipleTabs(tabsToClose);
+        return;
+    }
+    // Ctrl+W / Cmd+W (Close Current)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'w') {
+        e.preventDefault();
+        if (activeTabId) await closeTab(activeTabId);
+        return;
+    }
+    // Ctrl+Shift+T / Cmd+Shift+T (Reopen Last Closed Tab)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        if (closedTabsHistory.length > 0) {
+            document.getElementById('menu-undo-close')?.click();
+        } else {
+            showStatus('No recently closed tabs');
+        }
+        return;
     }
     // Ctrl+N / Cmd+N (New File)
-    // Ctrl+T / Cmd+T (Open File History Search)
-    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'n' || e.key.toLowerCase() === 't')) {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        if (e.key.toLowerCase() === 't') {
-            toggleQuickOpen();
-        } else {
-            await createNewTab();
-        }
+        await createNewTab();
+        return;
+    }
+    // Ctrl+T / Cmd+T (Open File History Search)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        toggleQuickOpen();
+        return;
     }
     // Ctrl+Shift+F / Cmd+Shift+F (Global Search)
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
@@ -1691,6 +1713,10 @@ window.addEventListener('keydown', async (e) => {
             return;
         }
 
+        // Don't intercept arrow Left/Right when an input/textarea is focused (allow cursor movement in text fields)
+        const activeEl = document.activeElement;
+        const isInTextField = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+
         // Handle ArrowKeys / Tab for focusable elements inside the modal
         const focusableElements = Array.from(activeModal.querySelectorAll('button:not([style*="display: none"]), input:not([style*="display: none"]), a:not([style*="display: none"]), .quick-open-item, .quick-open-result'))
             .filter(el => {
@@ -1709,7 +1735,7 @@ window.addEventListener('keydown', async (e) => {
                 (el.classList.contains('selected') && !['INPUT', 'BUTTON', 'A'].includes(el.tagName))
             );
 
-            if (e.key === 'Tab' || e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+            if (e.key === 'Tab' || e.key === 'ArrowDown' || (e.key === 'ArrowRight' && !isInTextField)) {
                 e.preventDefault();
                 let nextIndex = currentIndex + 1;
                 if (nextIndex >= focusableElements.length) nextIndex = 0;
@@ -1723,7 +1749,7 @@ window.addEventListener('keydown', async (e) => {
                     focusableElements[nextIndex].focus();
                 }
 
-            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+            } else if (e.key === 'ArrowUp' || (e.key === 'ArrowLeft' && !isInTextField)) {
                 e.preventDefault();
                 let prevIndex = currentIndex - 1;
                 if (prevIndex < 0) prevIndex = focusableElements.length - 1;
