@@ -259,39 +259,32 @@
 
     <!-- Global Search Modal -->
     <div id="global-search-modal" class="modal-overlay quick-open-overlay" style="display: none;">
-        <div class="quick-open-palette" style="width: 500px; max-width: 90vw;">
-            <div
-                style="padding: 16px; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--toolbar-border);">
-                <div class="quick-open-input-wrapper"
-                    style="border: 1px solid var(--toolbar-border); border-radius: 6px; padding: 10px 14px; background: #0f1115;">
-                    <svg class="quick-open-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="quick-open-palette gs-palette">
+            <div class="gs-inputs-area">
+                <div class="gs-input-row">
+                    <svg class="gs-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                     <input type="text" id="global-search-input" placeholder="Search across open tabs..."
                         autocomplete="off" spellcheck="false">
                 </div>
-                <div class="quick-open-input-wrapper"
-                    style="border: 1px solid var(--toolbar-border); border-radius: 6px; padding: 10px 14px; background: #0f1115;">
-                    <svg class="quick-open-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                <div class="gs-input-row">
+                    <svg class="gs-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
                     </svg>
                     <input type="text" id="global-replace-input" placeholder="Replace with..." autocomplete="off"
                         spellcheck="false">
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
-                    <label
-                        style="color: var(--text-main); font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" id="global-search-case" style="accent-color: var(--accent); margin: 0;">
+                <div class="gs-options-row">
+                    <label class="gs-checkbox-label">
+                        <input type="checkbox" id="global-search-case">
                         Match Case
                     </label>
-                    <button class="modal-btn primary" id="btn-global-replace-all" style="margin-left: auto;">Replace
-                        All</button>
+                    <button class="modal-btn primary gs-replace-btn" id="btn-global-replace-all">Replace All</button>
                 </div>
             </div>
-            <div id="global-search-results" class="quick-open-results" style="max-height: 400px; padding-bottom: 8px;">
+            <div id="global-search-results" class="gs-results">
                 <!-- Results populated by JS -->
             </div>
         </div>

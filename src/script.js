@@ -26,6 +26,46 @@ let tabCounter = 0;
 let sessionTimeout = null;
 let contextMenuTargetId = null;
 
+// Multi-instance Sync
+const syncChannel = new BroadcastChannel('lightpad_sync');
+syncChannel.onmessage = (event) => {
+    if (event.data.type === 'file_saved') {
+        handleExternalFileChange(event.data.path, event.data.content, event.data.mtime);
+    }
+};
+
+async function handleExternalFileChange(path, content, mtime) {
+    const tab = tabs.find(t => t.path === path);
+    if (!tab) return;
+    
+    // If the tab is unsaved (has local changes), don't blindly overwrite
+    if (tab.isUnsaved) {
+        showStatus(`File ${getFilename(path)} was modified externally. Save to overwrite.`, 5000);
+        return;
+    }
+
+    tab.lastModified = mtime;
+    tab.savedContent = content;
+
+    if (tab.id === activeTabId) {
+        if (tab.isDoc && quillView) {
+            quillView.root.innerHTML = content;
+        } else if (editorView) {
+            editorView.dispatch({
+                changes: { from: 0, to: editorView.state.doc.length, insert: content }
+            });
+        }
+        showStatus(`Reloaded ${getFilename(path)} (modified externally)`);
+    } else {
+        if (!tab.isDoc && tab.state) {
+            tab.state = tab.state.update({
+                changes: { from: 0, to: tab.state.doc.length, insert: content }
+            }).state;
+        }
+        tab.needsRender = true;
+    }
+}
+
 // Drag state
 let draggedTabId = null;
 let draggedTabEl = null;
@@ -185,6 +225,11 @@ function autoSaveDiskDebounced(tab, delay = 2000) {
                 }
             }
             await writeTextFile(tab.path, content);
+            try {
+                let mtime = await invoke('get_file_modified', { path: tab.path });
+                tab.lastModified = mtime;
+                syncChannel.postMessage({ type: 'file_saved', path: tab.path, content, mtime });
+            } catch(e) {}
             tab.isUnsaved = false;
             tab.savedContent = content;
             renderTabs();
@@ -267,6 +312,7 @@ async function loadSession() {
                 try {
                     content = await readTextFile(t.path);
                     savedContent = content;
+                    try { t.lastModified = await invoke('get_file_modified', { path: t.path }); } catch(e){}
                 } catch (e) {
                     console.warn(`File previously opened is missing or inaccessible: ${t.path}`, e);
                     // Use whatever content was cached in session or empty string
@@ -279,6 +325,7 @@ async function loadSession() {
             } else if (t.path && window.__TAURI__ && t.isUnsaved) {
                 try {
                     savedContent = await readTextFile(t.path);
+                    try { t.lastModified = await invoke('get_file_modified', { path: t.path }); } catch(e){}
                 } catch (e) { }
             } else if (!t.path && t.isDoc) {
                 savedContent = (t.content !== undefined && t.content !== null) ? t.content : '';
@@ -1153,6 +1200,11 @@ async function openFile() {
 
             const contents = await readTextFile(selected);
             await createNewTab(selected, contents);
+            try {
+                const newT = tabs[tabs.length - 1];
+                if (newT) newT.lastModified = await invoke('get_file_modified', { path: selected });
+            } catch(e){}
+
             addToFileHistory(selected);
             showStatus('File loaded');
         }
@@ -1199,6 +1251,12 @@ async function saveFile(returnResult = false) {
             }
 
             await writeTextFile(pathToSave, content);
+
+            try {
+                let mtime = await invoke('get_file_modified', { path: pathToSave });
+                tab.lastModified = mtime;
+                syncChannel.postMessage({ type: 'file_saved', path: pathToSave, content, mtime });
+            } catch(e) {}
 
             tab.path = pathToSave;
             tab.isUnsaved = false;
@@ -1346,7 +1404,31 @@ window.addEventListener('DOMContentLoaded', () => {
             saveSession();
         });
 
-        loadSession();
+        // External Modification Checking on Window Focus
+        window.addEventListener('focus', async () => {
+            if (!window.__TAURI__) return;
+            for (let tab of tabs) {
+                if (tab.path && !tab.isUnsaved) {
+                    try {
+                        let mtime = await invoke('get_file_modified', { path: tab.path });
+                        if (tab.lastModified && mtime > tab.lastModified) {
+                            tab.lastModified = mtime;
+                            const newContent = await readTextFile(tab.path);
+                            handleExternalFileChange(tab.path, newContent, mtime);
+                        }
+                    } catch (e) { }
+                }
+            }
+        });
+
+        navigator.locks.request('lightpad-primary-instance', { mode: 'exclusive', ifAvailable: true }, async (lock) => {
+            if (lock) {
+                loadSession();
+                return new Promise(() => {}); // Hold lock indefinitely
+            } else {
+                console.log("Secondary instance started, opening blank slate.");
+            }
+        });
     } else {
         console.warn("Tauri API not found. Running in browser mode.");
         loadSession();
@@ -2271,6 +2353,11 @@ async function openFileFromHistory(path) {
 
         const contents = await readTextFile(path);
         await createNewTab(path, contents);
+        try {
+            const newT = tabs[tabs.length - 1];
+            if (newT) newT.lastModified = await invoke('get_file_modified', { path: path });
+        } catch(e){}
+        
         showStatus('File loaded');
         // Push back to front
         addToFileHistory(path);
@@ -2357,53 +2444,105 @@ function performGlobalSearch() {
 
 function renderGlobalSearchResults() {
     const resultsContainer = document.getElementById('global-search-results');
+    const query = document.getElementById('global-search-input').value;
     resultsContainer.innerHTML = '';
 
     if (globalSearchMatches.length === 0) {
         const noRes = document.createElement('div');
-        noRes.className = 'quick-open-result';
-        noRes.style.pointerEvents = 'none';
+        noRes.className = 'gs-empty';
         noRes.textContent = 'No matches found in open tabs.';
         resultsContainer.appendChild(noRes);
         return;
     }
 
-    globalSearchMatches.forEach((match, index) => {
-        const item = document.createElement('div');
-        item.className = 'quick-open-result';
-
-        const info = document.createElement('div');
-        info.innerHTML = `<strong>${match.filename}</strong><span style="opacity:0.6;font-size:11px;margin-left:8px;">Ln ${match.line}</span>`;
-
-        const snippet = document.createElement('div');
-        snippet.style.fontSize = '12px';
-        snippet.style.opacity = '0.8';
-        snippet.style.marginTop = '4px';
-        snippet.style.textOverflow = 'ellipsis';
-        snippet.style.overflow = 'hidden';
-        snippet.style.whiteSpace = 'nowrap';
-        snippet.textContent = match.text;
-
-        item.appendChild(info);
-        item.appendChild(snippet);
-
-        item.addEventListener('click', () => {
-            switchTab(match.tabId);
-            closeGlobalSearch();
-            // Try to jump to line if CodeMirror
-            if (editorView && tabs.find(t => t.id === match.tabId) && !tabs.find(t => t.id === match.tabId).isDoc) {
-                try {
-                    const lineInfo = editorView.state.doc.line(match.line);
-                    editorView.dispatch({
-                        selection: { anchor: lineInfo.from + match.col - 1, head: lineInfo.from + match.col - 1 + document.getElementById('global-search-input').value.length },
-                        effects: import('@codemirror/view').then(view => view.EditorView.scrollIntoView(lineInfo.from, { y: "center" }))
-                    });
-                } catch (e) { }
-            }
-        });
-
-        resultsContainer.appendChild(item);
+    // Group results by file
+    const grouped = {};
+    globalSearchMatches.forEach(match => {
+        if (!grouped[match.tabId]) {
+            grouped[match.tabId] = { filename: match.filename, matches: [] };
+        }
+        grouped[match.tabId].matches.push(match);
     });
+
+    // Count total
+    const countEl = document.createElement('div');
+    countEl.className = 'gs-count';
+    countEl.textContent = `${globalSearchMatches.length} result${globalSearchMatches.length !== 1 ? 's' : ''} in ${Object.keys(grouped).length} file${Object.keys(grouped).length !== 1 ? 's' : ''}`;
+    resultsContainer.appendChild(countEl);
+
+    Object.keys(grouped).forEach(tabId => {
+        const group = grouped[tabId];
+
+        // File header
+        const fileHeader = document.createElement('div');
+        fileHeader.className = 'gs-file-header';
+        fileHeader.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>${group.filename}</span><span class="gs-file-count">${group.matches.length}</span>`;
+        resultsContainer.appendChild(fileHeader);
+
+        group.matches.forEach(match => {
+            const item = document.createElement('div');
+            item.className = 'gs-result-item';
+
+            const lineNum = document.createElement('span');
+            lineNum.className = 'gs-line-num';
+            lineNum.textContent = match.line;
+
+            const snippet = document.createElement('span');
+            snippet.className = 'gs-snippet';
+
+            // Highlight the match within the snippet
+            const trimmedText = match.text;
+            const matchCase = document.getElementById('global-search-case')?.checked;
+            const searchText = matchCase ? trimmedText : trimmedText.toLowerCase();
+            const searchQuery = matchCase ? query : query.toLowerCase();
+            const matchIdx = searchText.indexOf(searchQuery);
+
+            if (matchIdx !== -1) {
+                const before = trimmedText.substring(0, matchIdx);
+                const hl = trimmedText.substring(matchIdx, matchIdx + query.length);
+                const after = trimmedText.substring(matchIdx + query.length);
+                snippet.innerHTML = `${escapeHtml(before)}<span class="gs-highlight">${escapeHtml(hl)}</span>${escapeHtml(after)}`;
+            } else {
+                snippet.textContent = trimmedText;
+            }
+
+            item.appendChild(lineNum);
+            item.appendChild(snippet);
+
+            item.addEventListener('click', () => {
+                const searchLen = query.length;
+                switchTab(match.tabId);
+                closeGlobalSearch();
+
+                // Use requestAnimationFrame to ensure editorView is ready after switchTab
+                requestAnimationFrame(() => {
+                    const tab = tabs.find(t => t.id === match.tabId);
+                    if (editorView && tab && !tab.isDoc) {
+                        try {
+                            const lineInfo = editorView.state.doc.line(match.line);
+                            const from = lineInfo.from + match.col - 1;
+                            const to = from + searchLen;
+                            editorView.dispatch({
+                                selection: { anchor: from, head: to },
+                                effects: EditorView.scrollIntoView(from, { y: "center" })
+                            });
+                            editorView.focus();
+                        } catch (e) {
+                            console.warn('Failed to navigate to search result', e);
+                        }
+                    }
+                });
+            });
+
+            resultsContainer.appendChild(item);
+        });
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function performGlobalReplaceAll() {
@@ -2526,6 +2665,11 @@ async function openDroppedPaths(paths) {
             const name = getFilename(filePath);
 
             await createNewTab(filePath, content);
+            try {
+                const newlyCreatedTab = tabs[tabs.length - 1]; // Assume the new tab is appended to end
+                newlyCreatedTab.lastModified = await invoke('get_file_modified', { path: filePath });
+            } catch(e) {}
+
             addToFileHistory(filePath);
             showStatus(`Opened: ${name}`);
         } catch (err) {
