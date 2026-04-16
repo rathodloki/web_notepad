@@ -61,11 +61,31 @@ if (!(Test-Path -Path $releaseDir)) {
     New-Item -ItemType Directory -Path $releaseDir | Out-Null
 }
 
-$exeSourcePath = ".\src-tauri\target\release\LightPad.exe"
+$exeSourcePath = ".\src-tauri\target\release\lightpad.exe"
+$setupSourcePath = ".\src-tauri\target\release\bundle\nsis\LightPad_$newVersion`_x64-setup.exe"
 
 if (Test-Path -Path $exeSourcePath) {
-    Copy-Item -Path $exeSourcePath -Destination "$releaseDir\LightPad.exe" -Force
-    Write-Host "Successfully packaged to: $releaseDir\LightPad.exe" -ForegroundColor Green
+    Copy-Item -Path $exeSourcePath -Destination "$releaseDir\LightPad-Portable.exe" -Force
+    if (Test-Path -Path $setupSourcePath) {
+        Copy-Item -Path $setupSourcePath -Destination "$releaseDir\LightPad-Setup.exe" -Force
+    }
+    
+    Write-Host "Applying Code Signature to bypass Defender/SmartScreen..." -ForegroundColor Yellow
+    $cert = Get-Item "Cert:\CurrentUser\My\0653CD08D62617B0CF0C48FCCB373F3498016AF2" -ErrorAction SilentlyContinue
+    if ($cert) {
+        Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Portable.exe" -Certificate $cert | Out-Null
+        if (Test-Path -Path "$releaseDir\LightPad-Setup.exe") {
+            Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Setup.exe" -Certificate $cert | Out-Null
+        }
+        Write-Host "Certificates attached!" -ForegroundColor Green
+    } else {
+        Write-Host "WARNING: 0653CD08D62617B0CF0C48FCCB373F3498016AF2 Cert not found. Binaries are UNSIGNED." -ForegroundColor Red
+    }
+
+    Write-Host "Zipping Portable executable to protect Transit Stream..." -ForegroundColor Yellow
+    Compress-Archive -Path "$releaseDir\LightPad-Portable.exe" -DestinationPath "$releaseDir\LightPad-Portable.zip" -Force
+    
+    Write-Host "Successfully packaged release files." -ForegroundColor Green
 }
 else {
     Write-Host "CRITICAL ERROR: Tauri build failed to output LightPad.exe at $exeSourcePath!" -ForegroundColor Red
@@ -92,8 +112,13 @@ if ($null -ne $ghCheck) {
     # v$newVersion is the git tag.
     # --title matches the version
     # --notes passes the commit message
-    # And finally, attach the executable.
-    gh release create "v$newVersion" "$releaseDir\LightPad.exe" --title "v$newVersion" --notes $commitMessage
+    # and .exe Setup.
+    $uploadAssets = "$releaseDir\LightPad-Portable.zip"
+    if (Test-Path -Path "$releaseDir\LightPad-Setup.exe") {
+        $uploadAssets += " $releaseDir\LightPad-Setup.exe"
+    }
+
+    Invoke-Expression "gh release create `"v$newVersion`" $uploadAssets --title `"v$newVersion`" --notes `"$commitMessage`""
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "`n>>> SUCCESS: LightPad v$newVersion successfully built and published to GitHub! <<<" -ForegroundColor Green
@@ -105,7 +130,7 @@ if ($null -ne $ghCheck) {
 else {
     Write-Host "GitHub CLI (gh) is not installed or not in PATH." -ForegroundColor Yellow
     Write-Host "Skipping automatic upload to GitHub Releases." -ForegroundColor Yellow
-    Write-Host "The build is available locally at: $releaseDir\LightPad.exe" -ForegroundColor Yellow
+    Write-Host "The build is available locally at: $releaseDir" -ForegroundColor Yellow
 }
 
 Write-Host "Process Completed." -ForegroundColor Cyan
