@@ -26,6 +26,7 @@ let tabCounter = 0;
 let sessionTimeout = null;
 let contextMenuTargetId = null;
 let activeSessionPath = null;
+let isPrimaryInstance = false;
 
 // Multi-instance Sync
 const syncChannel = new BroadcastChannel('lightpad_sync');
@@ -331,14 +332,17 @@ async function saveSession() {
         cursorPos
     });
 
-    localStorage.setItem('lightpad-session', sessionStateStr);
-
-    // If we are explicitly in a custom Workspace, silently update it on disk too
     if (activeSessionPath && window.__TAURI__) {
+        // If explicitly editing a Workspace Session, silently update it on disk ONLY
         try {
             const sessionData = JSON.stringify({ tabs: sessionTabs, version: 1 }, null, 2);
             window.__TAURI__.fs.writeTextFile(activeSessionPath, sessionData).catch(()=>{});
         } catch(e) {}
+    } else {
+        // Standard behavior: Only the leader/primary instance manages the volatile Default Session
+        if (isPrimaryInstance || !window.__TAURI__) {
+            localStorage.setItem('lightpad-session', sessionStateStr);
+        }
     }
 }
 
@@ -1497,6 +1501,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         navigator.locks.request('lightpad-primary-instance', { mode: 'exclusive', ifAvailable: true }, async (lock) => {
             if (lock) {
+                isPrimaryInstance = true;
                 loadSession();
                 return new Promise(() => {}); // Hold lock indefinitely
             } else {
@@ -1649,7 +1654,8 @@ window.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('menu-session-set-default').addEventListener('click', async () => {
             sessionMenu.style.display = 'none';
-            if (!activeSessionPath) return showStatus('Already using Default Session');
+            if (!activeSessionPath && isPrimaryInstance) return showStatus('Already using Default Session');
+            isPrimaryInstance = true; // Claim leadership over the default persistence slot
             activeSessionPath = null;
             saveSession();
             updateTitle();
@@ -1667,6 +1673,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
             }
             activeSessionPath = null;
+            isPrimaryInstance = true; // Manually triggering default invokes the master layout
             loadSession();
             updateTitle();
             showStatus('Loaded Default Session');
