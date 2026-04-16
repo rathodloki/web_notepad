@@ -1,17 +1,26 @@
 :root {
-  --bg-color: #0f1115;
-  --titlebar-bg: #14171c;
-  --titlebar-hover: #ffffff15;
+  --bg-color: #0d1017;
+  --titlebar-bg: #11141c;
+  --titlebar-hover: rgba(255, 255, 255, 0.05);
   --toolbar-bg: #14171c;
-  --toolbar-border: #ffffff10;
-  --text-main: #f0f0f0;
-  --text-muted: #8b92a5;
+  --toolbar-border: rgba(255, 255, 255, 0.06);
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
   --accent: #3b82f6;
   --accent-hover: #60a5fa;
-  --button-hover: #ffffff0a;
+  --accent-alpha: rgba(59, 130, 246, 0.15);
+  --button-hover: rgba(255, 255, 255, 0.08);
   --danger-hover: #e81123;
-  --scrollbar-bg: #0f1115;
-  --scrollbar-thumb: #2a2d36;
+  --scrollbar-bg: transparent;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-hover: rgba(255, 255, 255, 0.2);
+  /* Glassmorphism / Shadows completely stripped for flat minimal aesthetic */
+  --glass-bg: var(--titlebar-bg);
+  --glass-border: transparent;
+  --glass-blur: none;
+  
+  /* Transitions */
+  --trans-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body,
@@ -29,9 +38,38 @@ html {
   /* subtle inner border */
 }
 
-/* Background wrapping to support border radius */
-body {
+body, .theme-text {
   background-color: var(--bg-color);
+  --active-top: #1c2a47; 
+  --active-mid: #141c2e; 
+  --active-bot: #0d1017; 
+  --active-accent: #3b82f6;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --scrollbar-thumb: rgba(59, 130, 246, 0.15);
+  --scrollbar-hover: rgba(59, 130, 246, 0.3);
+}
+
+body.theme-doc {
+  --active-top: #123326;
+  --active-mid: #0f211a;
+  --active-bot: #0d1017;
+  --active-accent: #10b981; 
+  --accent: #10b981;
+  --accent-hover: #34d399;
+  --scrollbar-thumb: rgba(16, 185, 129, 0.15);
+  --scrollbar-hover: rgba(16, 185, 129, 0.3);
+}
+
+body.theme-todo {
+  --active-top: #2c1c43;
+  --active-mid: #1c152d;
+  --active-bot: #0d1017;
+  --active-accent: #bd93f9; 
+  --accent: #bd93f9;
+  --accent-hover: #d2a8ff;
+  --scrollbar-thumb: rgba(189, 147, 249, 0.15);
+  --scrollbar-hover: rgba(189, 147, 249, 0.3);
 }
 
 .window-header {
@@ -39,7 +77,7 @@ body {
   background: var(--titlebar-bg);
   display: flex;
   align-items: stretch;
-  border-bottom: 1px solid var(--toolbar-border);
+  border-bottom: none; /* Removed for seamless tab transition */
   user-select: none;
   -webkit-app-region: drag;
 }
@@ -115,7 +153,6 @@ body {
 
 .tab-bar::-webkit-scrollbar {
   display: none;
-  /* Chrome */
 }
 
 .tab {
@@ -123,59 +160,48 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px 0 16px;
-  border-top: 2px solid transparent;
-  /* Prevent vertical text jumping when active */
-  border-right: 1px solid var(--toolbar-border);
+  padding: 0 14px;
+  margin: 0;
+  border-radius: 8px 8px 0 0; /* Only round top, flat bottom */
+  border-right: 1px solid rgba(255, 255, 255, 0.04); /* subtle contrast between inactive tabs */
+  border-top: 2px solid transparent; /* reserved for active line */
   background: transparent;
   color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
-  /* perfectly equal sharing of all horizontal space, safely shrinking down to 140px */
-  flex: 1 1 200px;
+  flex: 1 1 180px;
   min-width: 140px;
-  /* CRITICAL: Absolute physical limit */
   max-width: 250px;
   height: 40px;
-  /* CRITICAL: Force explicit height identical to parent */
-  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, border-top-color 0.15s ease;
+  transition: var(--trans-smooth);
 }
 
 .tab:hover {
-  background: var(--titlebar-hover);
+  background: var(--button-hover);
 }
 
 .tab.active {
-  background: var(--bg-color);
+  /* Top half of the unified continuous gradient */
+  background: linear-gradient(180deg, var(--active-top) 0%, var(--active-mid) 100%);
   color: var(--text-main);
-  border-top: 2px solid var(--accent);
+  border-right: 1px solid transparent; 
+  border-top: 2px solid var(--active-accent); 
 }
 
-.tab.is-todo.active {
-  border-top: 2px solid #bd93f9;
-}
-
+/* Local context hints for the indicator dots only, no background overrides! */
 .tab.is-todo .tab-title {
   color: #f8f8f2;
 }
-
 .tab.is-todo .tab-dot.unsaved {
   background-color: #bd93f9;
   box-shadow: 0 0 5px #bd93f9;
 }
-
-.tab.is-doc.active {
-  border-top: 2px solid #8be9fd;
-  /* Dracula cyan for documents */
-}
-
 .tab.is-doc .tab-title {
   color: #f8f8f2;
 }
-
 .tab.is-doc .tab-dot.unsaved {
-  background-color: #8be9fd;
-  box-shadow: 0 0 5px #8be9fd;
+  background-color: #10b981;
+  box-shadow: 0 0 5px #10b981;
 }
 
 .tab-title {
@@ -439,12 +465,13 @@ body {
 }
 
 .window-btn:hover {
-  background: var(--titlebar-hover);
+  background: linear-gradient(180deg, var(--active-top) 0%, var(--active-mid) 100%);
   color: var(--text-main);
 }
 
 .window-btn.close-btn:hover {
-  background: var(--danger-hover);
+  /* Glossy candy-red gradient */
+  background: linear-gradient(180deg, #f04747 0%, var(--danger-hover) 100%);
   color: white;
 }
 
@@ -456,7 +483,8 @@ body {
 .toolbar {
   display: flex;
   padding: 6px 16px;
-  background: var(--bg-color);
+  /* Bottom half of the unified continuous gradient */
+  background: linear-gradient(180deg, var(--active-mid) 0%, var(--active-bot) 100%);
   align-items: center;
   gap: 12px;
 }
@@ -750,15 +778,22 @@ body {
 
 .context-menu {
   position: absolute;
-  background: var(--toolbar-bg);
-  border: 1px solid var(--toolbar-border);
+  /* Contextual popup inheritances */
+  background: linear-gradient(180deg, var(--active-mid) 0%, var(--active-bot) 100%);
+  border: 1px solid var(--active-accent);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   padding: 4px;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   min-width: 150px;
+  animation: flyoutMenu 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top left;
+}
+
+@keyframes flyoutMenu {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .menu-item {
@@ -783,26 +818,37 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(2px);
   -webkit-app-region: no-drag;
+  animation: fadeIn 0.1s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal {
-  background: var(--bg-color);
-  border: 1px solid var(--toolbar-border);
+  /* Inherit the glow properties from the current active file */
+  background: linear-gradient(180deg, var(--active-mid) 0%, var(--active-bot) 100%);
+  border: 1px solid var(--active-accent); /* Colored outline! */
   border-radius: 8px;
   width: 400px;
   max-width: 90%;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transform: translateY(10px) scale(0.98);
+  animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes popIn {
+  to { transform: translateY(0) scale(1); }
 }
 
 .modal-header {
@@ -810,8 +856,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--titlebar-bg);
-  border-bottom: 1px solid var(--toolbar-border);
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* very soft line */
 }
 
 .modal-title {
@@ -860,28 +906,29 @@ body {
 
 .modal-btn {
   padding: 8px 16px;
-  border-radius: 4px;
-  border: 1px solid var(--toolbar-border);
-  background: var(--bg-color);
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: var(--button-hover);
   color: var(--text-main);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s;
+  transition: var(--trans-smooth);
 }
 
 .modal-btn:hover {
-  background: var(--titlebar-hover);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .modal-btn.primary {
   background: var(--accent);
-  border-color: var(--accent);
   color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .modal-btn.primary:hover {
   background: var(--accent-hover);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
 }
 
 /* -------------------------------------

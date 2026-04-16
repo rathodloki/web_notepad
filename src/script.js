@@ -35,35 +35,69 @@ syncChannel.onmessage = (event) => {
     }
 };
 
-async function handleExternalFileChange(path, content, mtime) {
+async function handleExternalFileChange(path, mtime) {
     const tab = tabs.find(t => t.path === path);
     if (!tab) return;
     
-    // If the tab is unsaved (has local changes), don't blindly overwrite
-    if (tab.isUnsaved) {
+    // If the tab is unsaved (has explicit local changes the user typed), we don't automatically trigger external overrides
+    if (tab.isUnsaved && !tab.externalModified) {
         showStatus(`File ${getFilename(path)} was modified externally. Save to overwrite.`, 5000);
         return;
     }
 
-    tab.lastModified = mtime;
-    tab.savedContent = content;
+    if (tab.lastModified && mtime > tab.lastModified) {
+        if (!tab.externalModified) {
+            tab.externalModified = mtime;
+            tab.isUnsaved = true; // turn on the blue unsaved dot
+            tab.needsRender = true;
+            renderTabs();
+            // If the user happens to have this very tab actively focused, prompt them immediately
+            checkPendingReload(tab); 
+        }
+    }
+}
 
-    if (tab.id === activeTabId) {
-        if (tab.isDoc && quillView) {
-            quillView.root.innerHTML = content;
-        } else if (editorView) {
-            editorView.dispatch({
-                changes: { from: 0, to: editorView.state.doc.length, insert: content }
-            });
+let isPromptingReload = false;
+async function checkPendingReload(tab) {
+    if (!tab) return;
+    if (activeTabId === tab.id && tab.externalModified && !isPromptingReload && window.__TAURI__) {
+        isPromptingReload = true;
+        let answer = await askConfirmUI(`New changes detected on disk for "${getFilename(tab.path)}". Reload to see?`, true);
+        isPromptingReload = false;
+        
+        if (answer === 'yes') {
+            try {
+                const newContent = await window.__TAURI__.fs.readTextFile(tab.path);
+                tab.savedContent = newContent;
+                tab.lastModified = tab.externalModified;
+                tab.externalModified = null;
+                tab.isUnsaved = false;
+                tab.needsRender = true;
+                
+                // update editor text physically
+                if (activeTabId === tab.id) {
+                     if (tab.isDoc && quillView) quillView.root.innerHTML = newContent;
+                     else if (editorView) {
+                         editorView.dispatch({
+                             changes: { from: 0, to: editorView.state.doc.length, insert: newContent }
+                         });
+                     }
+                } else if (!tab.isDoc && tab.state) {
+                     tab.state = tab.state.update({
+                         changes: { from: 0, to: tab.state.doc.length, insert: newContent }
+                     }).state;
+                }
+                showStatus(`Reloaded ${getFilename(tab.path)}`);
+            } catch (e) {
+                console.error("Popup File Read error", e);
+            }
+        } else if (answer === 'no') {
+            tab.externalModified = null; 
+            // the file remains marked as unsaved locally indicating their frozen version has priority
+            tab.isUnsaved = true; 
+            showStatus(`Ignored external changes for ${getFilename(tab.path)}`);
         }
-        showStatus(`Reloaded ${getFilename(path)} (modified externally)`);
-    } else {
-        if (!tab.isDoc && tab.state) {
-            tab.state = tab.state.update({
-                changes: { from: 0, to: tab.state.doc.length, insert: content }
-            }).state;
-        }
-        tab.needsRender = true;
+        renderTabs();
     }
 }
 
@@ -691,6 +725,14 @@ function renderTabs() {
 }
 
 function updateActiveTabUI() {
+    const activeTab = tabs.find(t => t.id === activeTabId);
+    if (activeTab) {
+        document.body.classList.remove('theme-doc', 'theme-todo', 'theme-text');
+        if (activeTab.isDoc) document.body.classList.add('theme-doc');
+        else if (activeTab.isTodo) document.body.classList.add('theme-todo');
+        else document.body.classList.add('theme-text');
+    }
+
     const tabEls = tabBar.querySelectorAll('.tab');
     tabEls.forEach(el => {
         if (el.dataset.id === activeTabId) {
@@ -970,6 +1012,9 @@ function switchTab(id) {
     updateTitle();
     updateCursorStatus();
     saveSessionDebounced();
+    
+    // Explicitly prompt if we just switched to a tab that was modified on disk
+    checkPendingReload(tab);
 }
 
 function askConfirmUI(message, multiple = false, showCancel = false) {
@@ -1082,8 +1127,12 @@ async function closeTab(id, forceClose = false, multipleFiles = false) {
                 : tab.state.doc.toString();
         }
 
-        if (!tab.path && content.trim() === '') {
-            askPrompt = false;
+        if (!tab.path) {
+            // Smart bypass: If the buffer is completely empty, or simply the default checkbox, do not bother alerting.
+            const cleanContent = content.trim();
+            if (cleanContent === '' || cleanContent === '- [ ]') {
+                askPrompt = false;
+            }
         }
 
         if (tab.path && window.__TAURI__) {
@@ -1303,6 +1352,12 @@ async function deleteActiveFile() {
     const tab = tabs.find(t => t.id === activeTabId);
     if (!tab) return;
 
+    // Smart bypass: If the file was never actually written to disk, destroying it just closes the tab.
+    if (!tab.path) {
+        closeTab(tab.id, true);
+        return;
+    }
+
     let answer = await askConfirmUI(`Permanently delete "${getFilename(tab.path)}"?`, false);
     if (answer === 'yes') {
         if (tab.path && window.__TAURI__) {
@@ -1433,9 +1488,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     try {
                         let mtime = await invoke('get_file_modified', { path: tab.path });
                         if (tab.lastModified && mtime > tab.lastModified) {
-                            tab.lastModified = mtime;
-                            const newContent = await readTextFile(tab.path);
-                            handleExternalFileChange(tab.path, newContent, mtime);
+                            handleExternalFileChange(tab.path, mtime);
                         }
                     } catch (e) { }
                 }
@@ -1864,6 +1917,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     state
                 };
                 tabs.push(newTab);
+                renderTabs();
                 switchTab(id);
             }
 
@@ -2061,6 +2115,7 @@ async function spawnTodoList() {
     };
 
     tabs.push(newTab);
+    renderTabs();
     switchTab(id);
 
     // Auto focus the end of the checkbox
@@ -2093,6 +2148,7 @@ async function spawnDocProcess() {
     };
 
     tabs.push(newTab);
+    renderTabs();
     switchTab(id);
     saveSessionDebounced();
 }
