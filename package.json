@@ -1,6 +1,6 @@
 {
   "name": "lightpad",
-  "version": "1.0.12",
+  "version": "1.0.14",
   "description": "Lightweight Notepad",
   "scripts": {
     "dev": "vite",
@@ -37,6 +37,8 @@
     "quill-image-drop-and-paste": "^2.0.1"
   }
 }
+
+
 
 
 

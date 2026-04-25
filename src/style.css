@@ -806,7 +806,8 @@ body.theme-todo {
   user-select: none;
 }
 
-.menu-item:hover {
+.menu-item:hover,
+.menu-item.kb-active {
   background: var(--accent);
   color: white;
 }
@@ -918,6 +919,11 @@ body.theme-todo {
 
 .modal-btn:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+
+.modal-btn:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .modal-btn.primary {
@@ -1236,7 +1242,8 @@ body.theme-todo {
   border-left: 2px solid transparent;
 }
 
-.gs-result-item:hover {
+.gs-result-item:hover,
+.gs-result-item.kb-active {
   background-color: rgba(255, 255, 255, 0.05);
   border-left-color: var(--accent);
 }
