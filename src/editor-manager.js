@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { createEditorState, createEditorView, getLanguageExtension, setLanguageExtension, applyLanguageExtensionToState, detectLanguageFromContent } from './editor.js';
 import { renderTabs, updateActiveTabUI } from './tabs-ui.js';
-import { showStatus, updateCursorStatus, updateTitle } from './status-bar.js';
+import { showStatus, updateCursorStatus, updateTitle, updateLanguageStatus } from './status-bar.js';
 import { saveSessionDebounced, autoSaveDiskDebounced } from './session.js';
 import { askConfirmUI, askLinkUI } from './overlays.js';
 import { invoke, readTextFile, writeTextFile } from './tauri-bridge.js';
@@ -149,6 +149,7 @@ export function createUpdateListener(id) {
                                 if (state.activeTabId === tab.id && state.editorView) {
                                     setLanguageExtension(state.editorView, extensions);
                                     updateCursorStatus();
+                                    updateLanguageStatus();
                                 }
                             }
                         });
@@ -235,6 +236,7 @@ export function switchTab(id) {
 
         updateActiveTabUI();
         updateTitle();
+        updateLanguageStatus();
         if (statusCursor) statusCursor.textContent = '';
         saveSessionDebounced();
         return;
@@ -272,6 +274,7 @@ export function switchTab(id) {
     updateActiveTabUI();
     updateTitle();
     updateCursorStatus();
+    updateLanguageStatus();
     saveSessionDebounced();
     
     checkPendingReload(tab);

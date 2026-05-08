@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { getFilename, escapeHtml } from './utils.js';
 import { switchTab, createNewTab } from './editor-manager.js';
 import { renderTabs } from './tabs-ui.js';
-import { showStatus, updateCursorStatus } from './status-bar.js';
+import { showStatus, updateCursorStatus, updateLanguageStatus } from './status-bar.js';
 import { saveSessionDebounced } from './session.js';
 import { getLanguageExtension, applyLanguageExtensionToState, setLanguageExtension } from './editor.js';
 import { openFileFromHistory, openDroppedPaths } from './file-io.js';
@@ -291,6 +291,7 @@ async function setManualLanguage(ext) {
 
     saveSessionDebounced();
     updateCursorStatus(state.editorView);
+    updateLanguageStatus();
 }
 
 function updateLanguageSelection() {
@@ -402,7 +403,7 @@ export function closeGlobalSearch() {
     if (state.editorView) state.editorView.focus();
 }
 
-function performGlobalSearch() {
+async function performGlobalSearch() {
     const query = document.getElementById('global-search-input').value;
     const matchCase = document.getElementById('global-search-case').checked;
     const resultsContainer = document.getElementById('global-search-results');
@@ -411,6 +412,37 @@ function performGlobalSearch() {
     resultsContainer.innerHTML = '';
 
     if (!query) return;
+
+    if (window.__TAURI__) {
+        try {
+            const { invoke } = window.__TAURI__.tauri;
+            
+            const tabsData = state.tabs.map(tab => {
+                let content = '';
+                if (tab.id === state.activeTabId && state.editorView && !tab.isDoc) {
+                    content = state.editorView.state.doc.toString();
+                } else if (tab.id === state.activeTabId && state.quillView && tab.isDoc) {
+                    content = state.quillView.getText();
+                } else if (tab.state) {
+                    content = tab.state.doc.toString();
+                } else {
+                    content = tab.savedContent || '';
+                }
+                
+                return {
+                    id: String(tab.id),
+                    filename: getFilename(tab.path) || tab.title || 'Untitled',
+                    content
+                };
+            });
+            
+            globalSearchMatches = await invoke('global_search', { query, matchCase, tabs: tabsData });
+            renderGlobalSearchResults();
+            return;
+        } catch (e) {
+            console.error('Rust global search failed, falling back to JS:', e);
+        }
+    }
 
     state.tabs.forEach(tab => {
         let content = '';
@@ -433,8 +465,8 @@ function performGlobalSearch() {
             const col = searchLine.indexOf(searchQuery);
             if (col !== -1) {
                 globalSearchMatches.push({
-                    tabId: tab.id,
-                    filename: getFilename(tab.path) || tab.title,
+                    tabId: String(tab.id),
+                    filename: getFilename(tab.path) || tab.title || 'Untitled',
                     line: i + 1,
                     col: col + 1,
                     text: line.trim() || '...',
@@ -447,10 +479,16 @@ function performGlobalSearch() {
     renderGlobalSearchResults();
 }
 
+let renderQueue = [];
+let renderQueueIndex = 0;
+
 function renderGlobalSearchResults() {
     const resultsContainer = document.getElementById('global-search-results');
     const query = document.getElementById('global-search-input').value;
     resultsContainer.innerHTML = '';
+    renderQueue = [];
+    renderQueueIndex = 0;
+    resultsContainer.onscroll = null;
 
     if (globalSearchMatches.length === 0) {
         const noRes = document.createElement('div');
@@ -470,17 +508,46 @@ function renderGlobalSearchResults() {
 
     const countEl = document.createElement('div');
     countEl.className = 'gs-count';
-    countEl.textContent = `${globalSearchMatches.length} result${globalSearchMatches.length !== 1 ? 's' : ''} in ${Object.keys(grouped).length} file${Object.keys(grouped).length !== 1 ? 's' : ''}`;
+    const isCapped = globalSearchMatches.length >= 10000;
+    countEl.textContent = `${isCapped ? '10000+' : globalSearchMatches.length} result${globalSearchMatches.length !== 1 ? 's' : ''} in ${Object.keys(grouped).length} file${Object.keys(grouped).length !== 1 ? 's' : ''}`;
     resultsContainer.appendChild(countEl);
 
     Object.keys(grouped).forEach(tabId => {
         const group = grouped[tabId];
-        const fileHeader = document.createElement('div');
-        fileHeader.className = 'gs-file-header';
-        fileHeader.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>${group.filename}</span><span class="gs-file-count">${group.matches.length}</span>`;
-        resultsContainer.appendChild(fileHeader);
-
+        renderQueue.push({ type: 'header', filename: group.filename, count: group.matches.length });
         group.matches.forEach(match => {
+            renderQueue.push({ type: 'item', match, query });
+        });
+    });
+
+    renderNextChunk();
+
+    resultsContainer.onscroll = () => {
+        if (resultsContainer.scrollTop + resultsContainer.clientHeight >= resultsContainer.scrollHeight - 50) {
+            renderNextChunk();
+        }
+    };
+}
+
+function renderNextChunk() {
+    const resultsContainer = document.getElementById('global-search-results');
+    let itemsRenderedThisChunk = 0;
+
+    const oldWarning = resultsContainer.querySelector('.gs-chunk-warning');
+    if (oldWarning) oldWarning.remove();
+
+    while (renderQueueIndex < renderQueue.length && itemsRenderedThisChunk < 100) {
+        const qItem = renderQueue[renderQueueIndex];
+        
+        if (qItem.type === 'header') {
+            const fileHeader = document.createElement('div');
+            fileHeader.className = 'gs-file-header';
+            fileHeader.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>${escapeHtml(qItem.filename)}</span><span class="gs-file-count">${qItem.count}</span>`;
+            resultsContainer.appendChild(fileHeader);
+        } else {
+            const match = qItem.match;
+            const query = qItem.query;
+            
             const item = document.createElement('div');
             item.className = 'gs-result-item';
 
@@ -534,8 +601,24 @@ function renderGlobalSearchResults() {
             });
 
             resultsContainer.appendChild(item);
-        });
-    });
+            itemsRenderedThisChunk++;
+        }
+        renderQueueIndex++;
+    }
+
+    if (renderQueueIndex < renderQueue.length) {
+        const warning = document.createElement('div');
+        warning.className = 'gs-empty gs-chunk-warning';
+        warning.style.color = 'var(--text-muted)';
+        warning.textContent = `Scroll down to load more...`;
+        resultsContainer.appendChild(warning);
+    } else if (globalSearchMatches.length >= 10000) {
+        const warning = document.createElement('div');
+        warning.className = 'gs-empty gs-chunk-warning';
+        warning.style.color = 'var(--text-muted)';
+        warning.textContent = `Max limit of 10000 results reached.`;
+        resultsContainer.appendChild(warning);
+    }
 }
 
 function performGlobalReplaceAll() {

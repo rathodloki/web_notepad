@@ -66,12 +66,16 @@ export async function saveSession() {
 
     const sessionTabs = state.tabs.map(tab => {
         let content = null;
-        if (tab.isDoc) {
-            content = (tab.id === state.activeTabId && activeDocContent !== null) ? activeDocContent : tab.savedContent;
-        } else {
-            content = (tab.id === state.activeTabId && state.editorView)
-                ? state.editorView.state.doc.toString()
-                : tab.state.doc.toString();
+        const needsContent = tab.isUnsaved || !tab.path;
+        
+        if (needsContent) {
+            if (tab.isDoc) {
+                content = (tab.id === state.activeTabId && activeDocContent !== null) ? activeDocContent : tab.savedContent;
+            } else {
+                content = (tab.id === state.activeTabId && state.editorView)
+                    ? state.editorView.state.doc.toString()
+                    : tab.state.doc.toString();
+            }
         }
 
         return {
@@ -83,7 +87,7 @@ export async function saveSession() {
             isDoc: tab.isDoc,
             manualLanguage: tab.manualLanguage,
             autoLanguage: tab.autoLanguage,
-            content: tab.isUnsaved || !tab.path ? content : null
+            content: content
         };
     });
 
@@ -119,7 +123,9 @@ export async function saveSession() {
 
 export async function loadSession() {
     const { switchTab, createEditorStateFromContent } = await import('./editor-manager.js');
-    const sessionJson = localStorage.getItem('lightpad-session');
+    
+    let sessionJson = localStorage.getItem('lightpad-session');
+
     if (!sessionJson) {
         switchTab(null);
         return;
