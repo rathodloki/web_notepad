@@ -69,7 +69,7 @@ if (Test-Path -Path $exeSourcePath) {
     if (Test-Path -Path $setupSourcePath) {
         Copy-Item -Path $setupSourcePath -Destination "$releaseDir\LightPad-Setup.exe" -Force
     }
-    
+
     Write-Host "Applying Code Signature to bypass Defender/SmartScreen..." -ForegroundColor Yellow
     $cert = Get-Item "Cert:\CurrentUser\My\0653CD08D62617B0CF0C48FCCB373F3498016AF2" -ErrorAction SilentlyContinue
     if ($cert) {
@@ -84,7 +84,7 @@ if (Test-Path -Path $exeSourcePath) {
 
     Write-Host "Zipping Portable executable to protect Transit Stream..." -ForegroundColor Yellow
     Compress-Archive -Path "$releaseDir\LightPad-Portable.exe" -DestinationPath "$releaseDir\LightPad-Portable.zip" -Force
-    
+
     Write-Host "Successfully packaged release files." -ForegroundColor Green
 }
 else {
@@ -108,7 +108,7 @@ Write-Host "`n[5/5] Publishing GitHub Release..." -ForegroundColor Cyan
 $ghCheck = Get-Command gh -ErrorAction SilentlyContinue
 if ($null -ne $ghCheck) {
     Write-Host "Using GitHub CLI to create release v$newVersion..." -ForegroundColor DarkGray
-    # Create the release. 
+    # Create the release.
     # v$newVersion is the git tag.
     # --title matches the version
     # --notes passes the commit message
@@ -119,7 +119,7 @@ if ($null -ne $ghCheck) {
     }
 
     Invoke-Expression "gh release create `"v$newVersion`" $uploadAssets --title `"v$newVersion`" --notes `"$commitMessage`""
-    
+
     if ($LASTEXITCODE -eq 0) {
         Write-Host "`n>>> SUCCESS: LightPad v$newVersion successfully built and published to GitHub! <<<" -ForegroundColor Green
     }

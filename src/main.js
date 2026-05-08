@@ -444,6 +444,15 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('menu-format-sort').addEventListener('click', () => { modifyEditorSelection(t => t.split('\n').sort().join('\n')); textFormatMenu.style.display = 'none'; });
         document.getElementById('menu-format-reverse').addEventListener('click', () => { modifyEditorSelection(t => t.split('').reverse().join('')); textFormatMenu.style.display = 'none'; });
         document.getElementById('menu-format-remove-empty').addEventListener('click', () => { modifyEditorSelection(t => t.split('\n').filter(l => l.trim().length > 0).join('\n')); textFormatMenu.style.display = 'none'; });
+        document.getElementById('menu-format-remove-duplicates').addEventListener('click', () => { modifyEditorSelection(t => Array.from(new Set(t.split('\n'))).join('\n')); textFormatMenu.style.display = 'none'; });
+        document.getElementById('menu-format-trim').addEventListener('click', () => { modifyEditorSelection(t => t.split('\n').map(l => l.trim()).join('\n')); textFormatMenu.style.display = 'none'; });
+        document.getElementById('menu-format-duplicate').addEventListener('click', () => { modifyEditorSelection(t => t + '\n' + t); textFormatMenu.style.display = 'none'; });
+        document.getElementById('menu-format-json-format').addEventListener('click', () => { modifyEditorSelection(t => { try { return JSON.stringify(JSON.parse(t), null, 2); } catch(e){ showStatus('Invalid JSON'); return t; } }); textFormatMenu.style.display = 'none'; });
+        document.getElementById('menu-format-json-minify').addEventListener('click', () => { modifyEditorSelection(t => { try { return JSON.stringify(JSON.parse(t)); } catch(e){ showStatus('Invalid JSON'); return t; } }); textFormatMenu.style.display = 'none'; });
+        document.getElementById('menu-format-base64-enc').addEventListener('click', () => { modifyEditorSelection(t => { try { return btoa(t); } catch(e){ showStatus('Failed to encode'); return t; } }); textFormatMenu.style.display = 'none'; });
+        document.getElementById('menu-format-base64-dec').addEventListener('click', () => { modifyEditorSelection(t => { try { return atob(t); } catch(e){ showStatus('Invalid Base64'); return t; } }); textFormatMenu.style.display = 'none'; });
+        document.getElementById('menu-format-url-enc').addEventListener('click', () => { modifyEditorSelection(t => { try { return encodeURIComponent(t); } catch(e){ return t; } }); textFormatMenu.style.display = 'none'; });
+        document.getElementById('menu-format-url-dec').addEventListener('click', () => { modifyEditorSelection(t => { try { return decodeURIComponent(t); } catch(e){ showStatus('Invalid URL string'); return t; } }); textFormatMenu.style.display = 'none'; });
     }
 
     // Session manager menu

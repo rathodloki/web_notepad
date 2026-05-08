@@ -120,6 +120,15 @@ export function createUpdateListener(id) {
                     }
                 }
 
+                if (!tab.path && !tab.isTodo && !tab.isDoc) {
+                    const firstLine = currentContent.trim().split('\n')[0].trim();
+                    const newTitle = firstLine ? (firstLine.length > 20 ? firstLine.substring(0, 20) + '...' : firstLine) : 'Untitled';
+                    if (tab.title !== newTitle) {
+                        tab.title = newTitle;
+                        import('./tabs-ui.js').then(m => m.renderTabs());
+                    }
+                }
+
                 if (isNowUnsaved && state.isAutoSaveEnabled) {
                     autoSaveDiskDebounced(tab);
                 }
@@ -306,7 +315,7 @@ export async function closeTab(id, forceClose = false, multipleFiles = false) {
         if (askPrompt && !forceClose) {
             // Lazy import saveFile to break circular dependency
             const { saveFile } = await import('./file-io.js');
-            let answer = await askConfirmUI(`Do you want to save changes to "${getFilename(tab.path)}"?`, multipleFiles, true);
+            let answer = await askConfirmUI(`Do you want to save changes to "${getFilename(tab.path) || tab.title}"?`, multipleFiles, true);
             if (answer === 'cancel') return false;
 
             if (answer === 'all') {

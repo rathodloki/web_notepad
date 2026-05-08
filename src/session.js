@@ -92,10 +92,17 @@ export async function saveSession() {
         cursorPos = state.editorView.state.selection.main.head;
     }
 
+    let closedHistoryToSave = [];
+    try {
+        const em = await import('./editor-manager.js');
+        closedHistoryToSave = em.closedTabsHistory;
+    } catch(e) {}
+
     let sessionStateStr = JSON.stringify({
         tabs: sessionTabs,
         activeTabId: state.activeTabId,
-        cursorPos
+        cursorPos,
+        closedHistory: closedHistoryToSave
     });
 
     if (state.activeSessionPath && window.__TAURI__) {
@@ -122,6 +129,14 @@ export async function loadSession() {
         const session = JSON.parse(sessionJson);
         const validTabs = session.tabs || [];
         const tabsToRestore = validTabs.filter(t => t.path !== null || (t.content !== "" && t.content !== null));
+
+        if (session.closedHistory) {
+            try {
+                const em = await import('./editor-manager.js');
+                em.closedTabsHistory.length = 0;
+                em.closedTabsHistory.push(...session.closedHistory);
+            } catch(e) {}
+        }
 
         if (tabsToRestore.length === 0) {
             switchTab(null);

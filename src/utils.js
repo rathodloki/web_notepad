@@ -1,5 +1,5 @@
 export function getFilename(path) {
-    if (!path) return 'Untitled';
+    if (!path) return '';
     return path.split('\\').pop().split('/').pop();
 }
 

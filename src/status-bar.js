@@ -41,7 +41,7 @@ export function updateTitle() {
         document.title = text;
         return;
     }
-    const filename = getFilename(activeTab.path);
+    const filename = getFilename(activeTab.path) || activeTab.title;
     const text = `${filename} - LightPad - [${workspaceStr}]`;
     if (appWindow) appWindow.setTitle(text);
     document.title = text;

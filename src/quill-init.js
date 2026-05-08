@@ -134,6 +134,16 @@ export function initializeQuill() {
         if (!currentTab || !currentTab.isDoc) return;
         currentTab.isUnsaved = true;
         currentTab.needsRender = true;
+        if (!currentTab.path) {
+            const currentContent = state.quillView.getText().trim();
+            const firstLine = currentContent.split('\n')[0].trim();
+            const newTitle = firstLine ? (firstLine.length > 20 ? firstLine.substring(0, 20) + '...' : firstLine) : 'Untitled';
+            if (currentTab.title !== newTitle) {
+                currentTab.title = newTitle;
+                import('./tabs-ui.js').then(m => m.renderTabs());
+            }
+        }
+        
         const tabEl = document.querySelector(`.tab[data-id="${currentTab.id}"] .tab-dot`);
         if (tabEl) tabEl.classList.add('unsaved');
         saveSessionDebounced();
