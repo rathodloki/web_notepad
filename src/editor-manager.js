@@ -234,7 +234,7 @@ function activateTabUI(tab) {
             setTimeout(() => state.quillView.focus(), 50);
         }
     } else {
-        editorContainer.style.display = 'block';
+        editorContainer.style.display = 'flex';
         quillWrapper.style.display = 'none';
 
         if (state.editorView) {
