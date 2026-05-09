@@ -121,11 +121,13 @@ export function createUpdateListener(id) {
                 }
 
                 if (!tab.path && !tab.isTodo && !tab.isDoc) {
-                    const firstLine = currentContent.trim().split('\n')[0].trim();
-                    const newTitle = firstLine ? (firstLine.length > 20 ? firstLine.substring(0, 20) + '...' : firstLine) : 'Untitled';
-                    if (tab.title !== newTitle) {
-                        tab.title = newTitle;
-                        import('./tabs-ui.js').then(m => m.renderTabs());
+                    if (!tab.customTitle) {
+                        const firstLine = currentContent.trim().split('\n')[0].trim();
+                        const newTitle = firstLine ? (firstLine.length > 20 ? firstLine.substring(0, 20) + '...' : firstLine) : 'Untitled';
+                        if (tab.title !== newTitle) {
+                            tab.title = newTitle;
+                            import('./tabs-ui.js').then(m => m.renderTabs());
+                        }
                     }
                 }
 
@@ -138,8 +140,7 @@ export function createUpdateListener(id) {
                 }
 
                 if (!tab.manualLanguage && !tab.isTodo && !tab.isDoc) {
-                    let newAutoExt = detectLanguageFromContent(currentContent);
-                    if (!newAutoExt && tab.path) newAutoExt = tab.path.split('.').pop().toLowerCase();
+                    let newAutoExt = tab.path ? tab.path.split('.').pop().toLowerCase() : detectLanguageFromContent(currentContent);
 
                     if (newAutoExt !== tab.autoLanguage) {
                         tab.autoLanguage = newAutoExt;
@@ -185,8 +186,7 @@ export async function createNewTab(path = null, content = '') {
     let autoLanguage = null;
     if (!isDoc) {
         editorState = await createEditorStateFromContent(path, content, isTodo, isDoc, null, id);
-        autoLanguage = detectLanguageFromContent(content);
-        if (!autoLanguage && path) autoLanguage = path.split('.').pop().toLowerCase();
+        autoLanguage = path ? path.split('.').pop().toLowerCase() : detectLanguageFromContent(content);
     }
 
     const newTab = {
@@ -219,6 +219,8 @@ export function switchTab(id) {
     const editorContainer = document.getElementById('editor-container');
     const quillWrapper = document.getElementById('quill-wrapper');
     const statusCursor = document.getElementById('status-cursor');
+    const emptyState = document.getElementById('empty-state');
+    const editorWrapper = document.getElementById('editor-wrapper');
 
     if (id === null) {
         state.activeTabId = null;
@@ -229,7 +231,9 @@ export function switchTab(id) {
         if (state.quillView) {
             quillWrapper.style.display = 'none';
         }
-        editorContainer.style.display = 'block';
+        if (editorWrapper) editorWrapper.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'flex';
+        
         const mdPreview = document.getElementById('markdown-preview');
         if (mdPreview) mdPreview.style.display = 'none';
         state.isMarkdownPreviewEnabled = false;
@@ -245,6 +249,9 @@ export function switchTab(id) {
     state.activeTabId = id;
     const tab = state.tabs.find(t => t.id === id);
     if (!tab) return;
+
+    if (emptyState) emptyState.style.display = 'none';
+    if (editorWrapper) editorWrapper.style.display = 'flex';
 
     if (tab.isDoc) {
         editorContainer.style.display = 'none';
@@ -369,6 +376,7 @@ export async function closeTab(id, forceClose = false, multipleFiles = false) {
 
     state.tabs.splice(newTabIndex, 1);
     if (state.tabs.length === 0) {
+        renderTabs();
         switchTab(null);
     } else if (state.activeTabId === id) {
         renderTabs();

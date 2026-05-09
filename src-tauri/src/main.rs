@@ -82,9 +82,19 @@ async fn minify_json(text: String) -> Result<String, String> {
     serde_json::to_string(&parsed).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn fetch_url(url: String) -> Result<String, String> {
+    reqwest::get(&url)
+        .await
+        .map_err(|e| e.to_string())?
+        .text()
+        .await
+        .map_err(|e| e.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_file_modified, format_json, minify_json, global_search])
+        .invoke_handler(tauri::generate_handler![get_file_modified, format_json, minify_json, global_search, fetch_url])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

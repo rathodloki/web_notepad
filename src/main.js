@@ -149,34 +149,56 @@ window.addEventListener('keydown', async (e) => {
         return; // Absorb other keys while menu is open
     }
 
-    // 2) Modal overlays (discard, link, quick-open, language, global search)
-    const activeModal = document.querySelector('.modal-overlay[style*="display: flex"], .modal-overlay[style*="display: block"]');
+    // 2) Modal overlays (discard, link, quick-open, language, global search, open-url)
+    const modals = [
+        'discard-modal',
+        'link-modal',
+        'quick-open-modal',
+        'language-modal',
+        'global-search-modal',
+        'open-url-modal'
+    ];
+    const activeModal = modals.map(id => document.getElementById(id)).find(el => el && el.style.display !== 'none');
     if (activeModal) {
         if (e.key === 'Escape') {
-            if (activeModal.id === 'discard-modal') { /* buttons handle their own cleanup */ }
-            else if (activeModal.id === 'link-modal') { activeModal.style.display = 'none'; if (state.quillView) state.quillView.focus(); }
+            if (activeModal.id === 'discard-modal') document.getElementById('modal-btn-cancel')?.click();
+            else if (activeModal.id === 'link-modal') document.getElementById('link-modal-cancel')?.click();
             else if (activeModal.id === 'quick-open-modal') closeQuickOpen();
-            else if (activeModal.id === 'global-search-modal') closeGlobalSearch();
             else if (activeModal.id === 'language-modal') closeLanguageModal();
+            else if (activeModal.id === 'global-search-modal') closeGlobalSearch();
+            else if (activeModal.id === 'open-url-modal') document.getElementById('btn-cancel-url')?.click();
             return;
         }
 
-        // Discard/Link modal: ArrowLeft/Right to navigate between visible buttons
-        if (activeModal.id === 'discard-modal' || activeModal.id === 'link-modal') {
-            const buttons = Array.from(activeModal.querySelectorAll('button, input'))
+        // General Modal Keyboard Navigation (Discard, Link, Open URL)
+        if (activeModal.id === 'discard-modal' || activeModal.id === 'link-modal' || activeModal.id === 'open-url-modal') {
+            const focusables = Array.from(activeModal.querySelectorAll('button, input'))
                 .filter(el => window.getComputedStyle(el).display !== 'none');
-            if (buttons.length > 0) {
-                const fi = buttons.indexOf(document.activeElement);
-                if (e.key === 'ArrowRight' || e.key === 'Tab') {
+
+            // Handle Enter to submit (clicks primary button) when an input is focused
+            if (e.key === 'Enter') {
+                if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                    const primaryBtn = activeModal.querySelector('.modal-btn.primary') || activeModal.querySelector('#modal-btn-yes');
+                    if (primaryBtn) {
+                        e.preventDefault();
+                        primaryBtn.click();
+                        return;
+                    }
+                }
+            }
+
+            if (focusables.length > 0) {
+                const fi = focusables.indexOf(document.activeElement);
+                if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
                     e.preventDefault();
-                    const ni = fi + 1 >= buttons.length ? 0 : fi + 1;
-                    buttons[ni].focus();
+                    const ni = fi + 1 >= focusables.length ? 0 : fi + 1;
+                    focusables[ni].focus();
                     return;
                 }
                 if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
                     e.preventDefault();
-                    const ni = fi - 1 < 0 ? buttons.length - 1 : fi - 1;
-                    buttons[ni].focus();
+                    const ni = fi - 1 < 0 ? focusables.length - 1 : fi - 1;
+                    focusables[ni].focus();
                     return;
                 }
             }
@@ -422,6 +444,43 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-new-tab')?.addEventListener('click', async () => await createNewTab());
     document.getElementById('btn-todo')?.addEventListener('click', spawnTodoList);
     document.getElementById('btn-doc')?.addEventListener('click', spawnDocProcess);
+    document.getElementById('btn-open-url')?.addEventListener('click', () => {
+        document.getElementById('open-url-modal').style.display = 'flex';
+        document.getElementById('open-url-input').focus();
+    });
+
+    // Open URL Modal logic
+    document.getElementById('btn-cancel-url')?.addEventListener('click', () => {
+        document.getElementById('open-url-modal').style.display = 'none';
+        document.getElementById('open-url-input').value = '';
+    });
+    document.getElementById('btn-confirm-url')?.addEventListener('click', async () => {
+        const url = document.getElementById('open-url-input').value.trim();
+        if (url) {
+            try {
+                showStatus('Fetching...');
+                const content = await invoke('fetch_url', { url });
+                await createNewTab(null, content);
+                
+                // Get the newly created tab
+                const newTab = state.tabs[state.tabs.length - 1];
+                if (newTab) {
+                    const filename = url.split('/').pop().split('?')[0] || url;
+                    newTab.customTitle = filename;
+                    newTab.title = filename;
+                    const { renderTabs } = await import('./tabs-ui.js');
+                    renderTabs();
+                }
+
+                document.getElementById('open-url-modal').style.display = 'none';
+                document.getElementById('open-url-input').value = '';
+                showStatus('Fetched successfully');
+            } catch (e) {
+                console.error(e);
+                showStatus('Error fetching URL: ' + e);
+            }
+        }
+    });
 
     // Word wrap
     const wordWrapBtn = document.getElementById('btn-wordwrap');

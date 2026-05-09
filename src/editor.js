@@ -201,6 +201,15 @@ export function detectLanguageFromContent(content) {
     // basic content heuristics if shebang is missing
     if (content.startsWith('<#')) return 'ps1';
 
+    // JSON heuristics (must be before powershell to prevent {"Set-Cookie": "..."} triggering powershell)
+    const trimmedContent = content.trim();
+    if (trimmedContent.startsWith('{') || trimmedContent.startsWith('[')) {
+        try {
+            JSON.parse(content);
+            return 'json';
+        } catch (e) { }
+    }
+
     // PowerShell heuristics
     if (content.match(/\b(Write-|Get-|Set-|Invoke-|Out-|Start-|Stop-|New-|Remove-|Format-|ForEach-Object|Where-Object)\b/i) ||
         content.match(/^\$[a-zA-Z_]\w*\s*=/m) ||
@@ -215,12 +224,6 @@ export function detectLanguageFromContent(content) {
     if (content.match(/^(import|from\s+[\w.]+\s+import|def|class)\s+[a-zA-Z_]/m) ||
         content.match(/^print\(|^\s*try:|^\s*except.*:|^\s*elif.*:|^\s*def\s+\w+\s*\(/m)) {
         return 'py';
-    }
-    if (content.startsWith('{') || content.startsWith('[')) {
-        try {
-            JSON.parse(content);
-            return 'json';
-        } catch (e) { }
     }
 
     return null;

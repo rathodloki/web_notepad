@@ -98,7 +98,7 @@ body.theme-todo {
 .tab-bar-container {
   flex-grow: 1;
   display: flex;
-  align-items: stretch;
+  align-items: flex-end;
   overflow: hidden;
   position: relative;
   -webkit-app-region: drag;
@@ -110,7 +110,7 @@ body.theme-todo {
 .tab-scroll-shadow-left,
 .tab-scroll-shadow-right {
   position: absolute;
-  top: 0;
+  top: 6px;
   bottom: 0;
   width: 30px;
   pointer-events: none;
@@ -142,11 +142,10 @@ body.theme-todo {
   overflow-y: hidden;
   scrollbar-width: none;
   /* Firefox */
-  -webkit-app-region: no-drag;
   flex: 1 1 auto;
   min-width: 0;
   /* CRITICAL: allows flex children (tabs) to shrink */
-  height: 40px;
+  height: 34px;
   /* Force explicit container height */
   align-items: center;
 }
@@ -172,7 +171,8 @@ body.theme-todo {
   flex: 1 1 180px;
   min-width: 140px;
   max-width: 250px;
-  height: 40px;
+  height: 100%;
+  -webkit-app-region: no-drag;
   transition: var(--trans-smooth);
 }
 
@@ -768,6 +768,11 @@ body.theme-todo {
 
 .cm-editor {
   height: 100%;
+  font-family: 'JetBrains Mono', 'Consolas', monospace !important;
+}
+
+.cm-content {
+  font-family: 'JetBrains Mono', 'Consolas', monospace !important;
 }
 
 .cm-scroller {
