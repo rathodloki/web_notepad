@@ -159,9 +159,9 @@ export async function loadSession() {
                     try { t.lastModified = await invoke('get_file_modified', { path: t.path }); } catch (e) {}
                 } catch (e) {
                     console.warn(`File previously opened is missing or inaccessible: ${t.path}`, e);
-                    content = t.content || "";
-                    t.isUnsaved = true;
-                    setTimeout(() => showStatus(`Error: Could not load ${getFilename(t.path)}`, 5000), 1000);
+                    // File is gone from disk — skip this tab entirely
+                    setTimeout(() => showStatus(`Skipped missing file: ${getFilename(t.path)}`, 5000), 1000);
+                    continue;
                 }
             } else if (t.path && window.__TAURI__ && t.isUnsaved) {
                 try {

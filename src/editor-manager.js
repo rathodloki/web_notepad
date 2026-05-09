@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { createEditorState, createEditorView, getLanguageExtension, setLanguageExtension, applyLanguageExtensionToState, detectLanguageFromContent, createUpdateListenerExtension } from './editor.js';
 import { renderTabs, updateActiveTabUI } from './tabs-ui.js';
 import { showStatus, updateCursorStatus, updateTitle, updateLanguageStatus } from './status-bar.js';
-import { saveSessionDebounced, autoSaveDiskDebounced } from './session.js';
+import { saveSessionDebounced, saveSession, autoSaveDiskDebounced } from './session.js';
 import { askConfirmUI, askLinkUI } from './overlays.js';
 import { invoke, readTextFile, writeTextFile } from './tauri-bridge.js';
 import { getFilename } from './utils.js';
@@ -403,7 +403,7 @@ export async function closeTab(id, forceClose = false, multipleFiles = false) {
     } else {
         renderTabs();
     }
-    saveSessionDebounced();
+    saveSession();
     return result;
 }
 
