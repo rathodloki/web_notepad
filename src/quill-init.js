@@ -160,5 +160,4 @@ export function initializeQuill() {
     });
 }
 
-// Expose globally for editor-manager.js switchTab
-window.initializeQuill = initializeQuill;
+

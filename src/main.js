@@ -11,6 +11,9 @@ import { toggleQuickOpen, closeQuickOpen, toggleGlobalSearch, closeGlobalSearch,
 import { getLanguageExtension, createEditorState, detectLanguageFromContent } from './editor.js';
 import { invoke, readTextFile, writeTextFile, openDialog, saveDialog } from './tauri-bridge.js';
 import { getFilename } from './utils.js';
+import { setupTextFormatMenu } from './text-format.js';
+import { setupSessionMenu } from './session-manager.js';
+import { setupWindowManager } from './window-manager.js';
 import './quill-init.js';
 
 /* ── Toggle helpers ─────────────────────────────────────────────── */
@@ -74,6 +77,7 @@ function renderMarkdownPreview(content = null) {
     }
 }
 window.renderMarkdownPreview = renderMarkdownPreview;
+state.renderMarkdownPreview = renderMarkdownPreview;
 
 /* ── Keyboard shortcuts ─────────────────────────────────────────── */
 
@@ -233,176 +237,14 @@ window.addEventListener('keydown', async (e) => {
     }
 });
 
-/* ── Text format menu helper ────────────────────────────────────── */
-
-function modifyEditorSelection(transformFn) {
-    const tab = state.tabs.find(t => t.id === state.activeTabId);
-    if (!tab) return;
-    if (tab.isDoc && state.quillView) {
-        let range = state.quillView.getSelection();
-        if (!range || range.length === 0) range = { index: 0, length: state.quillView.getLength() - 1 };
-        if (range.length > 0) {
-            const text = state.quillView.getText(range.index, range.length);
-            const newText = transformFn(text);
-            state.quillView.deleteText(range.index, range.length);
-            state.quillView.insertText(range.index, newText);
-            state.quillView.setSelection(range.index, newText.length);
-        }
-    } else if (state.editorView) {
-        const sel = state.editorView.state.selection.main;
-        let from = sel.from, to = sel.to;
-        let targetText = state.editorView.state.doc.sliceString(from, to);
-        if (from === to) { from = 0; to = state.editorView.state.doc.length; targetText = state.editorView.state.doc.toString(); }
-        if (targetText.length > 0) {
-            const newText = transformFn(targetText);
-            state.editorView.dispatch({ changes: { from, to, insert: newText }, selection: { anchor: from, head: from + newText.length } });
-        }
-    }
-}
-
-async function modifyEditorSelectionAsync(transformFnAsync) {
-    const tab = state.tabs.find(t => t.id === state.activeTabId);
-    if (!tab) return;
-    if (tab.isDoc && state.quillView) {
-        let range = state.quillView.getSelection();
-        if (!range || range.length === 0) range = { index: 0, length: state.quillView.getLength() - 1 };
-        if (range.length > 0) {
-            const text = state.quillView.getText(range.index, range.length);
-            const newText = await transformFnAsync(text);
-            state.quillView.deleteText(range.index, range.length);
-            state.quillView.insertText(range.index, newText);
-            state.quillView.setSelection(range.index, newText.length);
-        }
-    } else if (state.editorView) {
-        const sel = state.editorView.state.selection.main;
-        let from = sel.from, to = sel.to;
-        let targetText = state.editorView.state.doc.sliceString(from, to);
-        if (from === to) { from = 0; to = state.editorView.state.doc.length; targetText = state.editorView.state.doc.toString(); }
-        if (targetText.length > 0) {
-            const newText = await transformFnAsync(targetText);
-            state.editorView.dispatch({ changes: { from, to, insert: newText }, selection: { anchor: from, head: from + newText.length } });
-        }
-    }
-}
-
-/* ── Session manager helpers ────────────────────────────────────── */
-
-async function saveExplicitSession() {
-    if (!window.__TAURI__) return alert('Saving sessions is only supported in the app.');
-    try {
-        let activeDocContent = null;
-        const activeTab = state.tabs.find(t => t.id === state.activeTabId);
-        if (activeTab && activeTab.isDoc && state.quillView) activeDocContent = state.quillView.root.innerHTML;
-        const sessionTabs = state.tabs.map(tab => {
-            let content = null;
-            if (tab.isDoc) content = (tab.id === state.activeTabId && activeDocContent !== null) ? activeDocContent : tab.savedContent;
-            else content = (tab.id === state.activeTabId && state.editorView) ? state.editorView.state.doc.toString() : tab.state.doc.toString();
-            return { path: tab.path, title: tab.title, isTodo: tab.isTodo, isDoc: tab.isDoc, manualLanguage: tab.manualLanguage, content: tab.isUnsaved || !tab.path || tab.isTodo || tab.isDoc ? content : null };
-        });
-        const sessionData = JSON.stringify({ tabs: sessionTabs, version: 1 }, null, 2);
-        const selected = await saveDialog({ filters: [{ name: 'LightPad Session', extensions: ['lpsession'] }] });
-        if (selected) {
-            await writeTextFile(selected, sessionData);
-            state.activeSessionPath = selected;
-            updateTitle();
-            showStatus('Workspace Session saved natively');
-        }
-    } catch (e) { console.error(e); showStatus('Error saving Workspace'); }
-}
-
-async function loadExplicitSession() {
-    if (!window.__TAURI__) return alert('Loading sessions is only supported in the app.');
-    try {
-        const selected = await openDialog({ filters: [{ name: 'LightPad Session', extensions: ['lpsession'] }] });
-        if (selected) {
-            const rawData = await readTextFile(selected);
-            let sessionParams;
-            try { sessionParams = JSON.parse(rawData); } catch (e) { return showStatus('Invalid or corrupted Session format'); }
-            if (!sessionParams.tabs || !Array.isArray(sessionParams.tabs)) return showStatus('No valid tabs found in session file');
-            if (state.tabs.length > 0) {
-                let answer = await askConfirmUI('Close current tabs before loading the Workspace?', true);
-                if (answer === 'yes') await closeMultipleTabs(state.tabs);
-                else if (answer === 'cancel') return;
-            }
-            state.activeSessionPath = selected;
-            for (const t of sessionParams.tabs) {
-                let content = t.content;
-                if (content === null && t.path) { try { content = await readTextFile(t.path); } catch (e) { content = ''; } }
-                else if (content === undefined || content === null) content = '';
-                await createNewTab(t.path || null, content);
-                const newT = state.tabs[state.tabs.length - 1];
-                if (t.isTodo) newT.isTodo = true;
-                if (t.isDoc) newT.isDoc = true;
-                if (t.title) newT.title = t.title;
-                if (t.manualLanguage) newT.manualLanguage = t.manualLanguage;
-                if (t.path) {
-                    try { newT.lastModified = await invoke('get_file_modified', { path: t.path }); } catch (err) {}
-                    addToFileHistory(t.path);
-                }
-            }
-            updateTitle();
-            showStatus('Workspace loaded successfully');
-        }
-    } catch (e) { console.error(e); showStatus('Error loading session'); }
-}
-
 /* ── DOMContentLoaded — wire everything ─────────────────────────── */
 
 window.addEventListener('DOMContentLoaded', () => {
     const appWindow = window.__TAURI__?.window?.appWindow;
 
     if (window.__TAURI__) {
-        // Version display
-        if (window.__TAURI__.app) {
-            window.__TAURI__.app.getVersion().then(v => {
-                const el = document.getElementById('status-version');
-                if (el) el.textContent = 'v' + v;
-            }).catch(() => {});
-        }
-
-        // Window size/position restore
-        requestAnimationFrame(() => {
-            setTimeout(async () => {
-                const { LogicalSize, PhysicalSize, PhysicalPosition } = window.__TAURI__.window;
-                await appWindow.setMinSize(new LogicalSize(400, 300));
-                try {
-                    const stateStr = localStorage.getItem('lightpad-window');
-                    if (stateStr) {
-                        const ws = JSON.parse(stateStr);
-                        if (ws.width >= 400 && ws.height >= 300) await appWindow.setSize(new PhysicalSize(ws.width, ws.height));
-                        else await appWindow.setSize(new LogicalSize(900, 650));
-                        if (ws.x !== undefined && ws.y !== undefined) await appWindow.setPosition(new PhysicalPosition(ws.x, ws.y));
-                        else await appWindow.center();
-                        if (ws.maximized) await appWindow.maximize();
-                    } else { await appWindow.setSize(new LogicalSize(900, 650)); await appWindow.center(); }
-                } catch (e) { await appWindow.setSize(new LogicalSize(900, 650)); await appWindow.center(); }
-                appWindow.show();
-                setInterval(async () => {
-                    if (!appWindow) return;
-                    try {
-                        const isMax = await appWindow.isMaximized();
-                        if (!isMax) {
-                            const size = await appWindow.outerSize();
-                            const pos = await appWindow.outerPosition();
-                            if (size.width >= 400 && size.height >= 300) {
-                                localStorage.setItem('lightpad-window', JSON.stringify({ width: size.width, height: size.height, x: pos.x, y: pos.y, maximized: false }));
-                            }
-                        } else {
-                            const saved = JSON.parse(localStorage.getItem('lightpad-window') || '{}');
-                            saved.maximized = true;
-                            localStorage.setItem('lightpad-window', JSON.stringify(saved));
-                        }
-                    } catch (e) {}
-                }, 1000);
-            }, 50);
-        });
-
-        // Titlebar buttons
-        document.getElementById('titlebar-minimize').addEventListener('click', () => appWindow.minimize());
-        document.getElementById('titlebar-maximize').addEventListener('click', () => appWindow.toggleMaximize());
-        document.getElementById('titlebar-close').addEventListener('click', async () => { saveSession(); appWindow.close(); });
-
-        window.addEventListener('beforeunload', () => saveSession());
+        // Window management (size, position, titlebar)
+        setupWindowManager(appWindow);
 
         // External file modification check on focus
         window.addEventListener('focus', async () => {
@@ -516,74 +358,9 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Text formatting menu
-    const textFormatBtn = document.getElementById('btn-text-format');
-    const textFormatMenu = document.getElementById('text-format-menu');
-    if (textFormatBtn && textFormatMenu) {
-        textFormatBtn.addEventListener('click', (e) => { e.stopPropagation(); textFormatMenu.style.display = textFormatMenu.style.display === 'block' ? 'none' : 'block'; });
-        document.addEventListener('click', (e) => { if (!textFormatBtn.contains(e.target) && !textFormatMenu.contains(e.target)) textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-upper').addEventListener('click', () => { modifyEditorSelection(t => t.toUpperCase()); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-lower').addEventListener('click', () => { modifyEditorSelection(t => t.toLowerCase()); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-title').addEventListener('click', () => { modifyEditorSelection(t => t.split(/(?<=\s|-|_)/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-sort').addEventListener('click', () => { modifyEditorSelection(t => t.split('\n').sort().join('\n')); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-reverse').addEventListener('click', () => { modifyEditorSelection(t => t.split('').reverse().join('')); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-remove-empty').addEventListener('click', () => { modifyEditorSelection(t => t.split('\n').filter(l => l.trim().length > 0).join('\n')); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-remove-duplicates').addEventListener('click', () => { modifyEditorSelection(t => Array.from(new Set(t.split('\n'))).join('\n')); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-trim').addEventListener('click', () => { modifyEditorSelection(t => t.split('\n').map(l => l.trim()).join('\n')); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-duplicate').addEventListener('click', () => { modifyEditorSelection(t => t + '\n' + t); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-json-format').addEventListener('click', async () => {
-            if (window.__TAURI__) {
-                await modifyEditorSelectionAsync(async t => { try { return await invoke('format_json', { text: t }); } catch(e) { showStatus('Invalid JSON'); return t; } });
-            } else {
-                modifyEditorSelection(t => { try { return JSON.stringify(JSON.parse(t), null, 2); } catch(e){ showStatus('Invalid JSON'); return t; } });
-            }
-            textFormatMenu.style.display = 'none';
-        });
-        document.getElementById('menu-format-json-minify').addEventListener('click', async () => {
-            if (window.__TAURI__) {
-                await modifyEditorSelectionAsync(async t => { try { return await invoke('minify_json', { text: t }); } catch(e) { showStatus('Invalid JSON'); return t; } });
-            } else {
-                modifyEditorSelection(t => { try { return JSON.stringify(JSON.parse(t)); } catch(e){ showStatus('Invalid JSON'); return t; } });
-            }
-            textFormatMenu.style.display = 'none';
-        });
-        document.getElementById('menu-format-base64-enc').addEventListener('click', () => { modifyEditorSelection(t => { try { return btoa(t); } catch(e){ showStatus('Failed to encode'); return t; } }); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-base64-dec').addEventListener('click', () => { modifyEditorSelection(t => { try { return atob(t); } catch(e){ showStatus('Invalid Base64'); return t; } }); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-url-enc').addEventListener('click', () => { modifyEditorSelection(t => { try { return encodeURIComponent(t); } catch(e){ return t; } }); textFormatMenu.style.display = 'none'; });
-        document.getElementById('menu-format-url-dec').addEventListener('click', () => { modifyEditorSelection(t => { try { return decodeURIComponent(t); } catch(e){ showStatus('Invalid URL string'); return t; } }); textFormatMenu.style.display = 'none'; });
-    }
-
-    // Session manager menu
-    const sessionManagerBtn = document.getElementById('btn-session-manager');
-    const sessionMenu = document.getElementById('session-menu');
-    if (sessionManagerBtn && sessionMenu) {
-        sessionManagerBtn.addEventListener('click', (e) => { e.stopPropagation(); sessionMenu.style.display = sessionMenu.style.display === 'block' ? 'none' : 'block'; });
-        document.addEventListener('click', (e) => { if (!sessionManagerBtn.contains(e.target) && !sessionMenu.contains(e.target)) sessionMenu.style.display = 'none'; });
-        document.getElementById('menu-session-save').addEventListener('click', async () => { sessionMenu.style.display = 'none'; await saveExplicitSession(); });
-        document.getElementById('menu-session-load').addEventListener('click', async () => { sessionMenu.style.display = 'none'; await loadExplicitSession(); });
-        document.getElementById('menu-session-set-default').addEventListener('click', async () => {
-            sessionMenu.style.display = 'none';
-            if (!state.activeSessionPath && state.isPrimaryInstance) return showStatus('Already using Default Session');
-            state.isPrimaryInstance = true;
-            state.activeSessionPath = null;
-            saveSession();
-            updateTitle();
-            showStatus('Current tabs set to Default Session');
-        });
-        document.getElementById('menu-session-load-default').addEventListener('click', async () => {
-            sessionMenu.style.display = 'none';
-            if (state.tabs.length > 0) {
-                let answer = await askConfirmUI('Close current tabs before reverting to Default Session?', true);
-                if (answer === 'yes') await closeMultipleTabs(state.tabs);
-                else if (answer === 'cancel') return;
-            }
-            state.activeSessionPath = null;
-            state.isPrimaryInstance = true;
-            loadSession();
-            updateTitle();
-            showStatus('Loaded Default Session');
-        });
-    }
+    // Extracted module setups
+    setupTextFormatMenu();
+    setupSessionMenu();
 
     // Context menu
     document.addEventListener('click', () => { const menu = document.getElementById('tab-context-menu'); if (menu) menu.style.display = 'none'; });
@@ -600,7 +377,7 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('menu-close-saved')?.addEventListener('click', async () => await closeMultipleTabs(state.tabs.filter(t => !t.isUnsaved)));
     document.getElementById('menu-undo-close')?.addEventListener('click', async () => {
         if (closedTabsHistory.length > 0) {
-            window.isRestoringTab = true;
+            state.isRestoringTab = true;
             const batch = closedTabsHistory.pop();
             for (let i = batch.length - 1; i >= 0; i--) {
                 const info = batch[i];
@@ -612,7 +389,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (info.manualLanguage) newTab.manualLanguage = info.manualLanguage;
             }
             showStatus(batch.length > 1 ? `Restored ${batch.length} tabs` : 'Tab restored');
-            window.isRestoringTab = false;
+            state.isRestoringTab = false;
         } else showStatus('No recently closed tabs');
     });
 

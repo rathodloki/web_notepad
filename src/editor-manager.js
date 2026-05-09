@@ -1,12 +1,11 @@
 import { state } from './state.js';
-import { createEditorState, createEditorView, getLanguageExtension, setLanguageExtension, applyLanguageExtensionToState, detectLanguageFromContent } from './editor.js';
+import { createEditorState, createEditorView, getLanguageExtension, setLanguageExtension, applyLanguageExtensionToState, detectLanguageFromContent, createUpdateListenerExtension } from './editor.js';
 import { renderTabs, updateActiveTabUI } from './tabs-ui.js';
 import { showStatus, updateCursorStatus, updateTitle, updateLanguageStatus } from './status-bar.js';
 import { saveSessionDebounced, autoSaveDiskDebounced } from './session.js';
 import { askConfirmUI, askLinkUI } from './overlays.js';
 import { invoke, readTextFile, writeTextFile } from './tauri-bridge.js';
 import { getFilename } from './utils.js';
-import { EditorView } from '@codemirror/view';
 
 export const syncChannel = new BroadcastChannel('lightpad_sync');
 
@@ -101,7 +100,7 @@ export async function checkPendingReload(tab) {
 }
 
 export function createUpdateListener(id) {
-    return EditorView.updateListener.of((update) => {
+    return createUpdateListenerExtension((update) => {
         if (update.docChanged) {
             const tab = state.tabs.find(t => t.id === id);
             if (tab) {
@@ -136,7 +135,7 @@ export function createUpdateListener(id) {
                 }
 
                 if (state.isMarkdownPreviewEnabled && id === state.activeTabId && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-                    if (window.renderMarkdownPreview) window.renderMarkdownPreview(currentContent);
+                    if (state.renderMarkdownPreview) state.renderMarkdownPreview(currentContent);
                 }
 
                 if (!tab.manualLanguage && !tab.isTodo && !tab.isDoc) {
@@ -208,47 +207,15 @@ export async function createNewTab(path = null, content = '') {
     saveSessionDebounced();
 }
 
-export function switchTab(id) {
-    if (state.editorView && state.activeTabId) {
-        const prevTab = state.tabs.find(t => t.id === state.activeTabId);
-        if (prevTab && !prevTab.isDoc) {
-            prevTab.state = state.editorView.state;
-        }
-    }
-
+/**
+ * Handles all UI activation for a tab: container visibility, editor/quill swap, status bar.
+ * Separated from switchTab() to reduce coupling.
+ */
+function activateTabUI(tab) {
     const editorContainer = document.getElementById('editor-container');
     const quillWrapper = document.getElementById('quill-wrapper');
-    const statusCursor = document.getElementById('status-cursor');
     const emptyState = document.getElementById('empty-state');
     const editorWrapper = document.getElementById('editor-wrapper');
-
-    if (id === null) {
-        state.activeTabId = null;
-        if (state.editorView) {
-            state.editorView.destroy();
-            state.editorView = null;
-        }
-        if (state.quillView) {
-            quillWrapper.style.display = 'none';
-        }
-        if (editorWrapper) editorWrapper.style.display = 'none';
-        if (emptyState) emptyState.style.display = 'flex';
-        
-        const mdPreview = document.getElementById('markdown-preview');
-        if (mdPreview) mdPreview.style.display = 'none';
-        state.isMarkdownPreviewEnabled = false;
-
-        updateActiveTabUI();
-        updateTitle();
-        updateLanguageStatus();
-        if (statusCursor) statusCursor.textContent = '';
-        saveSessionDebounced();
-        return;
-    }
-
-    state.activeTabId = id;
-    const tab = state.tabs.find(t => t.id === id);
-    if (!tab) return;
 
     if (emptyState) emptyState.style.display = 'none';
     if (editorWrapper) editorWrapper.style.display = 'flex';
@@ -258,7 +225,7 @@ export function switchTab(id) {
         quillWrapper.style.display = 'flex';
 
         if (!state.quillView) {
-            if (window.initializeQuill) window.initializeQuill();
+            import('./quill-init.js').then(m => m.initializeQuill());
         }
 
         if (state.quillView) {
@@ -282,8 +249,59 @@ export function switchTab(id) {
     updateTitle();
     updateCursorStatus();
     updateLanguageStatus();
+}
+
+/**
+ * Deactivates the UI when no tab is active: hides editors, shows empty state.
+ */
+function deactivateTabUI() {
+    const quillWrapper = document.getElementById('quill-wrapper');
+    const statusCursor = document.getElementById('status-cursor');
+    const emptyState = document.getElementById('empty-state');
+    const editorWrapper = document.getElementById('editor-wrapper');
+
+    if (state.editorView) {
+        state.editorView.destroy();
+        state.editorView = null;
+    }
+    if (state.quillView) {
+        quillWrapper.style.display = 'none';
+    }
+    if (editorWrapper) editorWrapper.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'flex';
+
+    const mdPreview = document.getElementById('markdown-preview');
+    if (mdPreview) mdPreview.style.display = 'none';
+    state.isMarkdownPreviewEnabled = false;
+
+    updateActiveTabUI();
+    updateTitle();
+    updateLanguageStatus();
+    if (statusCursor) statusCursor.textContent = '';
+}
+
+export function switchTab(id) {
+    // Save previous tab's editor state before switching
+    if (state.editorView && state.activeTabId) {
+        const prevTab = state.tabs.find(t => t.id === state.activeTabId);
+        if (prevTab && !prevTab.isDoc) {
+            prevTab.state = state.editorView.state;
+        }
+    }
+
+    if (id === null) {
+        state.activeTabId = null;
+        deactivateTabUI();
+        saveSessionDebounced();
+        return;
+    }
+
+    state.activeTabId = id;
+    const tab = state.tabs.find(t => t.id === id);
+    if (!tab) return;
+
+    activateTabUI(tab);
     saveSessionDebounced();
-    
     checkPendingReload(tab);
 }
 
@@ -352,7 +370,7 @@ export async function closeTab(id, forceClose = false, multipleFiles = false) {
     const newTabIndex = state.tabs.findIndex(t => t.id === id);
     if (newTabIndex === -1) return false;
 
-    if (!window.isRestoringTab) {
+    if (!state.isRestoringTab) {
         const closedTabInfo = {
             path: tab.path,
             title: tab.title,

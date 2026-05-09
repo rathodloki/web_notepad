@@ -359,3 +359,11 @@ export function applyLanguageExtensionToState(state, extensions) {
         effects: languageCompartment.reconfigure(extensions)
     }).state;
 }
+
+/**
+ * Creates an EditorView update listener extension.
+ * Centralizes EditorView import so other modules don't need it directly.
+ */
+export function createUpdateListenerExtension(callback) {
+    return EditorView.updateListener.of(callback);
+}
