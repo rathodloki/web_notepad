@@ -219,3 +219,86 @@ export function updateActiveTabUI() {
 
     requestAnimationFrame(updateScrollShadows);
 }
+
+/**
+ * Handles all UI activation for a tab: container visibility, editor/quill swap, status bar.
+ * Extracted from editor-manager.js to reduce God Node coupling.
+ */
+export function activateTabUI(tab) {
+    const editorContainer = document.getElementById('editor-container');
+    const quillWrapper = document.getElementById('quill-wrapper');
+    const emptyState = document.getElementById('empty-state');
+    const editorWrapper = document.getElementById('editor-wrapper');
+
+    if (emptyState) emptyState.style.display = 'none';
+    if (editorWrapper) editorWrapper.style.display = 'flex';
+
+    if (tab.isDoc) {
+        editorContainer.style.display = 'none';
+        quillWrapper.style.display = 'flex';
+
+        if (!state.quillView) {
+            import('./quill-init.js').then(m => m.initializeQuill());
+        }
+
+        if (state.quillView) {
+            const fallback = tab.savedContent !== undefined && tab.savedContent !== null ? tab.savedContent : '';
+            state.quillView.root.innerHTML = fallback;
+            setTimeout(() => state.quillView.focus(), 50);
+        }
+    } else {
+        editorContainer.style.display = 'flex';
+        quillWrapper.style.display = 'none';
+
+        if (state.editorView) {
+            state.editorView.setState(tab.state);
+        } else {
+            import('./editor.js').then(m => {
+                state.editorView = m.createEditorView(tab.state, editorContainer);
+                state.editorView.focus();
+            });
+        }
+        if (state.editorView) state.editorView.focus();
+    }
+
+    updateActiveTabUI();
+    
+    // Status updates
+    import('./status-bar.js').then(m => {
+        m.updateTitle();
+        m.updateCursorStatus();
+        m.updateLanguageStatus();
+    });
+}
+
+/**
+ * Deactivates the UI when no tab is active: hides editors, shows empty state.
+ */
+export function deactivateTabUI() {
+    const quillWrapper = document.getElementById('quill-wrapper');
+    const emptyState = document.getElementById('empty-state');
+    const editorWrapper = document.getElementById('editor-wrapper');
+
+    if (state.editorView) {
+        state.editorView.destroy();
+        state.editorView = null;
+    }
+    if (state.quillView) {
+        quillWrapper.style.display = 'none';
+    }
+    if (editorWrapper) editorWrapper.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'flex';
+
+    const mdPreview = document.getElementById('markdown-preview');
+    if (mdPreview) mdPreview.style.display = 'none';
+    state.isMarkdownPreviewEnabled = false;
+
+    updateActiveTabUI();
+    
+    import('./status-bar.js').then(m => {
+        m.updateTitle();
+        m.updateLanguageStatus();
+        const statusCursor = document.getElementById('status-cursor');
+        if (statusCursor) statusCursor.textContent = '';
+    });
+}

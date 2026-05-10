@@ -20,9 +20,16 @@ export function showStatus(msg, timeout = 3000) {
 
 export function updateCursorStatus(view) {
     const statusCursor = document.getElementById('status-cursor');
-    if (!view || !statusCursor) return;
-    const pos = view.state.selection.main.head;
-    const line = view.state.doc.lineAt(pos);
+    if (!statusCursor) return;
+    
+    const targetView = view || state.editorView;
+    if (!targetView) {
+        statusCursor.textContent = '';
+        return;
+    }
+
+    const pos = targetView.state.selection.main.head;
+    const line = targetView.state.doc.lineAt(pos);
     statusCursor.textContent = `Ln ${line.number}, Col ${pos - line.from + 1}`;
 }
 

@@ -9,7 +9,6 @@ import { getFilename } from './utils.js';
 
 export const syncChannel = new BroadcastChannel('lightpad_sync');
 
-let isPromptingReload = false;
 export let currentCloseBatch = null;
 export let closedTabsHistory = [];
 
@@ -60,10 +59,10 @@ export function handleExternalFileChange(path, mtime, content = null) {
 
 export async function checkPendingReload(tab) {
     if (!tab) return;
-    if (state.activeTabId === tab.id && tab.externalModified && !isPromptingReload && invoke) {
-        isPromptingReload = true;
+    if (state.activeTabId === tab.id && tab.externalModified && !state.isPromptingReload && invoke) {
+        state.isPromptingReload = true;
         let answer = await askConfirmUI(`New changes detected on disk for "${getFilename(tab.path)}". Reload to see?`, true);
-        isPromptingReload = false;
+        state.isPromptingReload = false;
         
         if (answer === 'yes') {
             try {
@@ -207,80 +206,7 @@ export async function createNewTab(path = null, content = '') {
     saveSessionDebounced();
 }
 
-/**
- * Handles all UI activation for a tab: container visibility, editor/quill swap, status bar.
- * Separated from switchTab() to reduce coupling.
- */
-function activateTabUI(tab) {
-    const editorContainer = document.getElementById('editor-container');
-    const quillWrapper = document.getElementById('quill-wrapper');
-    const emptyState = document.getElementById('empty-state');
-    const editorWrapper = document.getElementById('editor-wrapper');
-
-    if (emptyState) emptyState.style.display = 'none';
-    if (editorWrapper) editorWrapper.style.display = 'flex';
-
-    if (tab.isDoc) {
-        editorContainer.style.display = 'none';
-        quillWrapper.style.display = 'flex';
-
-        if (!state.quillView) {
-            import('./quill-init.js').then(m => m.initializeQuill());
-        }
-
-        if (state.quillView) {
-            const fallback = tab.savedContent !== undefined && tab.savedContent !== null ? tab.savedContent : '';
-            state.quillView.root.innerHTML = fallback;
-            setTimeout(() => state.quillView.focus(), 50);
-        }
-    } else {
-        editorContainer.style.display = 'flex';
-        quillWrapper.style.display = 'none';
-
-        if (state.editorView) {
-            state.editorView.setState(tab.state);
-        } else {
-            state.editorView = createEditorView(tab.state, editorContainer);
-        }
-        state.editorView.focus();
-    }
-
-    updateActiveTabUI();
-    updateTitle();
-    updateCursorStatus();
-    updateLanguageStatus();
-}
-
-/**
- * Deactivates the UI when no tab is active: hides editors, shows empty state.
- */
-function deactivateTabUI() {
-    const quillWrapper = document.getElementById('quill-wrapper');
-    const statusCursor = document.getElementById('status-cursor');
-    const emptyState = document.getElementById('empty-state');
-    const editorWrapper = document.getElementById('editor-wrapper');
-
-    if (state.editorView) {
-        state.editorView.destroy();
-        state.editorView = null;
-    }
-    if (state.quillView) {
-        quillWrapper.style.display = 'none';
-    }
-    if (editorWrapper) editorWrapper.style.display = 'none';
-    if (emptyState) emptyState.style.display = 'flex';
-
-    const mdPreview = document.getElementById('markdown-preview');
-    if (mdPreview) mdPreview.style.display = 'none';
-    state.isMarkdownPreviewEnabled = false;
-
-    updateActiveTabUI();
-    updateTitle();
-    updateLanguageStatus();
-    if (statusCursor) statusCursor.textContent = '';
-}
-
-export function switchTab(id) {
+export async function switchTab(id) {
     // Save previous tab's editor state before switching
     if (state.editorView && state.activeTabId) {
         const prevTab = state.tabs.find(t => t.id === state.activeTabId);
@@ -291,6 +217,7 @@ export function switchTab(id) {
 
     if (id === null) {
         state.activeTabId = null;
+        const { deactivateTabUI } = await import('./tabs-ui.js');
         deactivateTabUI();
         saveSessionDebounced();
         return;
@@ -300,6 +227,7 @@ export function switchTab(id) {
     const tab = state.tabs.find(t => t.id === id);
     if (!tab) return;
 
+    const { activateTabUI } = await import('./tabs-ui.js');
     activateTabUI(tab);
     saveSessionDebounced();
     checkPendingReload(tab);

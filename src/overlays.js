@@ -122,15 +122,10 @@ export function toggleQuickOpen() {
 }
 
 export function closeQuickOpen() {
-    window.closeQuickOpen();
-}
-
-// Attach close to window so it can be called from file-io
-window.closeQuickOpen = () => {
     const modal = document.getElementById('quick-open-modal');
     if (modal) modal.style.display = 'none';
     if (state.editorView) state.editorView.focus();
-};
+}
 
 function updateQuickOpenSelection() {
     const results = document.getElementById('quick-open-results');
@@ -688,14 +683,32 @@ function performGlobalReplaceAll() {
 /* -------------------------------------------------------------------------- */
 
 export function setupOverlays() {
-    // Quick Open
-    const qModal = document.getElementById('quick-open-modal');
-    if (qModal) {
-        qModal.addEventListener('click', (e) => {
-            if (e.target === qModal) closeQuickOpen();
-        });
-    }
+    // Background clicks for all modals
+    const modalIds = [
+        'discard-modal',
+        'link-modal',
+        'quick-open-modal',
+        'language-modal',
+        'global-search-modal',
+        'open-url-modal'
+    ];
+    modalIds.forEach(id => {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    if (id === 'discard-modal') document.getElementById('modal-btn-cancel')?.click();
+                    else if (id === 'link-modal') document.getElementById('link-modal-cancel')?.click();
+                    else if (id === 'quick-open-modal') closeQuickOpen();
+                    else if (id === 'language-modal') closeLanguageModal();
+                    else if (id === 'global-search-modal') closeGlobalSearch();
+                    else if (id === 'open-url-modal') document.getElementById('btn-cancel-url')?.click();
+                }
+            });
+        }
+    });
 
+    // Quick Open
     const qInput = document.getElementById('quick-open-input');
     if (qInput) {
         qInput.addEventListener('keydown', async (e) => {
@@ -726,13 +739,6 @@ export function setupOverlays() {
     }
 
     // Language Select
-    const langModal = document.getElementById('language-modal');
-    if (langModal) {
-        langModal.addEventListener('click', (e) => {
-            if (e.target === langModal) closeLanguageOpen();
-        });
-    }
-
     const langInput = document.getElementById('language-input');
     if (langInput) {
         langInput.addEventListener('keydown', async (e) => {
@@ -768,13 +774,6 @@ export function setupOverlays() {
     }
 
     // Global Search
-    const searchModal = document.getElementById('global-search-modal');
-    if (searchModal) {
-        searchModal.addEventListener('click', (e) => {
-            if (e.target === searchModal) closeGlobalSearch();
-        });
-    }
-
     const searchInput = document.getElementById('global-search-input');
     if (searchInput) {
         let debounceTimer;
@@ -784,6 +783,19 @@ export function setupOverlays() {
         });
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeGlobalSearch();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(debounceTimer);
+                performGlobalSearch();
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const firstResult = document.querySelector('#global-search-results .gs-result-item');
+                if (firstResult) {
+                    firstResult.classList.add('kb-active');
+                    firstResult.focus();
+                }
+            }
         });
     }
 
@@ -874,5 +886,131 @@ export async function setupFileDrop() {
                 }
             }
         });
+    }
+}
+
+/**
+ * Handles unified popup/menu keyboard navigation.
+ * Extracted from main.js to reduce God Node coupling.
+ */
+export function handleGlobalKeyboard(e) {
+    // 1) Context menus & dropdown menus (ArrowUp/Down, Enter, Escape)
+    const openMenu = document.querySelector('.context-menu[style*="display: block"]');
+    if (openMenu) {
+        const items = Array.from(openMenu.querySelectorAll('.menu-item:not(.divider)'));
+        if (items.length === 0) return;
+        const activeItem = openMenu.querySelector('.menu-item.kb-active');
+        let ci = activeItem ? items.indexOf(activeItem) : -1;
+
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            openMenu.style.display = 'none';
+            items.forEach(el => el.classList.remove('kb-active'));
+            return;
+        }
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            items.forEach(el => el.classList.remove('kb-active'));
+            const ni = ci + 1 >= items.length ? 0 : ci + 1;
+            items[ni].classList.add('kb-active');
+            items[ni].scrollIntoView({ block: 'nearest' });
+            return;
+        }
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            items.forEach(el => el.classList.remove('kb-active'));
+            const ni = ci - 1 < 0 ? items.length - 1 : ci - 1;
+            items[ni].classList.add('kb-active');
+            items[ni].scrollIntoView({ block: 'nearest' });
+            return;
+        }
+        if (e.key === 'Enter' && ci !== -1) {
+            e.preventDefault();
+            items[ci].click();
+            openMenu.style.display = 'none';
+            items.forEach(el => el.classList.remove('kb-active'));
+            return;
+        }
+        return; 
+    }
+
+    // 2) Modal overlays
+    const modals = [
+        'discard-modal',
+        'link-modal',
+        'quick-open-modal',
+        'language-modal',
+        'global-search-modal',
+        'open-url-modal'
+    ];
+    const activeModal = modals.map(id => document.getElementById(id)).find(el => el && el.style.display !== 'none');
+    if (activeModal) {
+        if (e.key === 'Escape') {
+            if (activeModal.id === 'discard-modal') document.getElementById('modal-btn-cancel')?.click();
+            else if (activeModal.id === 'link-modal') document.getElementById('link-modal-cancel')?.click();
+            else if (activeModal.id === 'quick-open-modal') closeQuickOpen();
+            else if (activeModal.id === 'language-modal') closeLanguageModal();
+            else if (activeModal.id === 'global-search-modal') closeGlobalSearch();
+            else if (activeModal.id === 'open-url-modal') document.getElementById('btn-cancel-url')?.click();
+            return;
+        }
+
+        if (activeModal.id === 'discard-modal' || activeModal.id === 'link-modal' || activeModal.id === 'open-url-modal') {
+            const focusables = Array.from(activeModal.querySelectorAll('button, input'))
+                .filter(el => window.getComputedStyle(el).display !== 'none');
+
+            if (e.key === 'Enter') {
+                if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                    const primaryBtn = activeModal.querySelector('.modal-btn.primary') || activeModal.querySelector('#modal-btn-yes');
+                    if (primaryBtn) {
+                        e.preventDefault();
+                        primaryBtn.click();
+                        return;
+                    }
+                }
+            }
+
+            if (focusables.length > 0) {
+                const fi = focusables.indexOf(document.activeElement);
+                if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
+                    e.preventDefault();
+                    const ni = fi + 1 >= focusables.length ? 0 : fi + 1;
+                    focusables[ni].focus();
+                    return;
+                }
+                if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
+                    e.preventDefault();
+                    const ni = fi - 1 < 0 ? focusables.length - 1 : fi - 1;
+                    focusables[ni].focus();
+                    return;
+                }
+            }
+        }
+
+        if (activeModal.id === 'global-search-modal') {
+            const resultsContainer = document.getElementById('global-search-results');
+            if (resultsContainer && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                const resultItems = Array.from(resultsContainer.querySelectorAll('.gs-result-item'));
+                if (resultItems.length > 0) {
+                    const activeResult = resultsContainer.querySelector('.gs-result-item.kb-active');
+                    let ri = activeResult ? resultItems.indexOf(activeResult) : -1;
+                    resultItems.forEach(el => el.classList.remove('kb-active'));
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        ri = ri + 1 >= resultItems.length ? 0 : ri + 1;
+                    } else {
+                        e.preventDefault();
+                        ri = ri - 1 < 0 ? resultItems.length - 1 : ri - 1;
+                    }
+                    resultItems[ri].classList.add('kb-active');
+                    resultItems[ri].scrollIntoView({ block: 'nearest' });
+                    return;
+                }
+            }
+            if (e.key === 'Enter') {
+                const activeResult = document.querySelector('#global-search-results .gs-result-item.kb-active');
+                if (activeResult) { e.preventDefault(); activeResult.click(); return; }
+            }
+        }
     }
 }

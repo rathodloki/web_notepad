@@ -82,7 +82,7 @@ state.renderMarkdownPreview = renderMarkdownPreview;
 /* ── Keyboard shortcuts ─────────────────────────────────────────── */
 
 window.addEventListener('keydown', async (e) => {
-    // Ctrl+Tab / Ctrl+Shift+Tab
+    // Core shortcuts remain here
     if ((e.ctrlKey || e.metaKey) && e.key === 'Tab') {
         e.preventDefault();
         if (state.tabs.length > 1) {
@@ -111,130 +111,9 @@ window.addEventListener('keydown', async (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === '2') { e.preventDefault(); spawnDocProcess(); }
     if (e.altKey && e.key.toLowerCase() === 'z') { e.preventDefault(); toggleWordWrap(); }
 
-    /* ── Unified popup/menu keyboard navigation ─────────────────── */
-
-    // 1) Context menus & dropdown menus (ArrowUp/Down, Enter, Escape)
-    const openMenu = document.querySelector('.context-menu[style*="display: block"]');
-    if (openMenu) {
-        const items = Array.from(openMenu.querySelectorAll('.menu-item:not(.divider)'));
-        if (items.length === 0) return;
-        const activeItem = openMenu.querySelector('.menu-item.kb-active');
-        let ci = activeItem ? items.indexOf(activeItem) : -1;
-
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            openMenu.style.display = 'none';
-            items.forEach(el => el.classList.remove('kb-active'));
-            return;
-        }
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            items.forEach(el => el.classList.remove('kb-active'));
-            const ni = ci + 1 >= items.length ? 0 : ci + 1;
-            items[ni].classList.add('kb-active');
-            items[ni].scrollIntoView({ block: 'nearest' });
-            return;
-        }
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            items.forEach(el => el.classList.remove('kb-active'));
-            const ni = ci - 1 < 0 ? items.length - 1 : ci - 1;
-            items[ni].classList.add('kb-active');
-            items[ni].scrollIntoView({ block: 'nearest' });
-            return;
-        }
-        if (e.key === 'Enter' && ci !== -1) {
-            e.preventDefault();
-            items[ci].click();
-            openMenu.style.display = 'none';
-            items.forEach(el => el.classList.remove('kb-active'));
-            return;
-        }
-        return; // Absorb other keys while menu is open
-    }
-
-    // 2) Modal overlays (discard, link, quick-open, language, global search, open-url)
-    const modals = [
-        'discard-modal',
-        'link-modal',
-        'quick-open-modal',
-        'language-modal',
-        'global-search-modal',
-        'open-url-modal'
-    ];
-    const activeModal = modals.map(id => document.getElementById(id)).find(el => el && el.style.display !== 'none');
-    if (activeModal) {
-        if (e.key === 'Escape') {
-            if (activeModal.id === 'discard-modal') document.getElementById('modal-btn-cancel')?.click();
-            else if (activeModal.id === 'link-modal') document.getElementById('link-modal-cancel')?.click();
-            else if (activeModal.id === 'quick-open-modal') closeQuickOpen();
-            else if (activeModal.id === 'language-modal') closeLanguageModal();
-            else if (activeModal.id === 'global-search-modal') closeGlobalSearch();
-            else if (activeModal.id === 'open-url-modal') document.getElementById('btn-cancel-url')?.click();
-            return;
-        }
-
-        // General Modal Keyboard Navigation (Discard, Link, Open URL)
-        if (activeModal.id === 'discard-modal' || activeModal.id === 'link-modal' || activeModal.id === 'open-url-modal') {
-            const focusables = Array.from(activeModal.querySelectorAll('button, input'))
-                .filter(el => window.getComputedStyle(el).display !== 'none');
-
-            // Handle Enter to submit (clicks primary button) when an input is focused
-            if (e.key === 'Enter') {
-                if (document.activeElement && document.activeElement.tagName === 'INPUT') {
-                    const primaryBtn = activeModal.querySelector('.modal-btn.primary') || activeModal.querySelector('#modal-btn-yes');
-                    if (primaryBtn) {
-                        e.preventDefault();
-                        primaryBtn.click();
-                        return;
-                    }
-                }
-            }
-
-            if (focusables.length > 0) {
-                const fi = focusables.indexOf(document.activeElement);
-                if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
-                    e.preventDefault();
-                    const ni = fi + 1 >= focusables.length ? 0 : fi + 1;
-                    focusables[ni].focus();
-                    return;
-                }
-                if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
-                    e.preventDefault();
-                    const ni = fi - 1 < 0 ? focusables.length - 1 : fi - 1;
-                    focusables[ni].focus();
-                    return;
-                }
-            }
-        }
-
-        // Global search results: ArrowUp/Down to navigate result items
-        if (activeModal.id === 'global-search-modal') {
-            const resultsContainer = document.getElementById('global-search-results');
-            if (resultsContainer && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-                const resultItems = Array.from(resultsContainer.querySelectorAll('.gs-result-item'));
-                if (resultItems.length > 0) {
-                    const activeResult = resultsContainer.querySelector('.gs-result-item.kb-active');
-                    let ri = activeResult ? resultItems.indexOf(activeResult) : -1;
-                    resultItems.forEach(el => el.classList.remove('kb-active'));
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        ri = ri + 1 >= resultItems.length ? 0 : ri + 1;
-                    } else {
-                        e.preventDefault();
-                        ri = ri - 1 < 0 ? resultItems.length - 1 : ri - 1;
-                    }
-                    resultItems[ri].classList.add('kb-active');
-                    resultItems[ri].scrollIntoView({ block: 'nearest' });
-                    return;
-                }
-            }
-            if (e.key === 'Enter') {
-                const activeResult = document.querySelector('#global-search-results .gs-result-item.kb-active');
-                if (activeResult) { e.preventDefault(); activeResult.click(); return; }
-            }
-        }
-    }
+    // Delegate Modal/Menu navigation to overlays.js
+    const { handleGlobalKeyboard } = await import('./overlays.js');
+    handleGlobalKeyboard(e);
 });
 
 /* ── DOMContentLoaded — wire everything ─────────────────────────── */
