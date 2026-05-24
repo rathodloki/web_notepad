@@ -8,7 +8,7 @@ import { saveSession, loadSession } from './session.js';
 import { addToFileHistory } from './history.js';
 import { getFilename } from './utils.js';
 
-async function saveExplicitSession() {
+export async function saveExplicitSession() {
     if (!window.__TAURI__) return alert('Saving sessions is only supported in the app.');
     try {
         let activeDocContent = null;
@@ -31,7 +31,7 @@ async function saveExplicitSession() {
     } catch (e) { console.error(e); showStatus('Error saving Workspace'); }
 }
 
-async function loadExplicitSession() {
+export async function loadExplicitSession() {
     if (!window.__TAURI__) return alert('Loading sessions is only supported in the app.');
     try {
         const selected = await openDialog({ filters: [{ name: 'LightPad Session', extensions: ['lpsession'] }] });
@@ -50,7 +50,7 @@ async function loadExplicitSession() {
                 let content = t.content;
                 if (content === null && t.path) { try { content = await readTextFile(t.path); } catch (e) { content = ''; } }
                 else if (content === undefined || content === null) content = '';
-                await createNewTab(t.path || null, content);
+                await createNewTab(t.path || null, content, t.isTodo, t.isDoc);
                 const newT = state.tabs[state.tabs.length - 1];
                 if (t.isTodo) newT.isTodo = true;
                 if (t.isDoc) newT.isDoc = true;
@@ -67,39 +67,4 @@ async function loadExplicitSession() {
     } catch (e) { console.error(e); showStatus('Error loading session'); }
 }
 
-/**
- * Wire up the session manager dropdown menu.
- * Call once from DOMContentLoaded.
- */
-export function setupSessionMenu() {
-    const sessionManagerBtn = document.getElementById('btn-session-manager');
-    const sessionMenu = document.getElementById('session-menu');
-    if (!sessionManagerBtn || !sessionMenu) return;
 
-    sessionManagerBtn.addEventListener('click', (e) => { e.stopPropagation(); sessionMenu.style.display = sessionMenu.style.display === 'block' ? 'none' : 'block'; });
-    document.addEventListener('click', (e) => { if (!sessionManagerBtn.contains(e.target) && !sessionMenu.contains(e.target)) sessionMenu.style.display = 'none'; });
-    document.getElementById('menu-session-save').addEventListener('click', async () => { sessionMenu.style.display = 'none'; await saveExplicitSession(); });
-    document.getElementById('menu-session-load').addEventListener('click', async () => { sessionMenu.style.display = 'none'; await loadExplicitSession(); });
-    document.getElementById('menu-session-set-default').addEventListener('click', async () => {
-        sessionMenu.style.display = 'none';
-        if (!state.activeSessionPath && state.isPrimaryInstance) return showStatus('Already using Default Session');
-        state.isPrimaryInstance = true;
-        state.activeSessionPath = null;
-        saveSession();
-        updateTitle();
-        showStatus('Current tabs set to Default Session');
-    });
-    document.getElementById('menu-session-load-default').addEventListener('click', async () => {
-        sessionMenu.style.display = 'none';
-        if (state.tabs.length > 0) {
-            let answer = await askConfirmUI('Close current tabs before reverting to Default Session?', true);
-            if (answer === 'yes') await closeMultipleTabs(state.tabs);
-            else if (answer === 'cancel') return;
-        }
-        state.activeSessionPath = null;
-        state.isPrimaryInstance = true;
-        loadSession();
-        updateTitle();
-        showStatus('Loaded Default Session');
-    });
-}

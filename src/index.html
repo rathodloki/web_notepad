@@ -83,54 +83,6 @@
                 <path d="M4 18v-2a4 4 0 011-2.9"></path>
             </svg>
         </button>
-        <div style="position: relative;">
-            <button id="btn-text-format" class="icon-btn" title="Text Formatting Options">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M12 20v-8m0 0V4m0 8h8m-8 0H4"></path>
-                    <path d="M4 4l6 6m10-6l-6 6M4 20l6-6m10 6l-6-6"></path>
-                </svg>
-            </button>
-            <div id="text-format-menu" class="context-menu"
-                style="display: none; position: absolute; top: 100%; left: 0; z-index: 2000; min-width: 150px;">
-                <div class="menu-item" id="menu-format-upper">UPPERCASE</div>
-                <div class="menu-item" id="menu-format-lower">lowercase</div>
-                <div class="menu-item" id="menu-format-title">Title Case</div>
-                <div class="menu-item divider"></div>
-                <div class="menu-item" id="menu-format-sort">Sort Lines</div>
-                <div class="menu-item" id="menu-format-reverse">Reverse String</div>
-                <div class="menu-item divider"></div>
-                <div class="menu-item" id="menu-format-remove-empty">Remove Empty Lines</div>
-                <div class="menu-item" id="menu-format-remove-duplicates">Remove Duplicate Lines</div>
-                <div class="menu-item" id="menu-format-trim">Trim Whitespace</div>
-                <div class="menu-item" id="menu-format-duplicate">Duplicate Content</div>
-                <div class="menu-item divider"></div>
-                <div class="menu-item" id="menu-format-json-format">Format JSON</div>
-                <div class="menu-item" id="menu-format-json-minify">Minify JSON</div>
-                <div class="menu-item divider"></div>
-                <div class="menu-item" id="menu-format-base64-enc">Base64 Encode</div>
-                <div class="menu-item" id="menu-format-base64-dec">Base64 Decode</div>
-                <div class="menu-item" id="menu-format-url-enc">URL Encode</div>
-                <div class="menu-item" id="menu-format-url-dec">URL Decode</div>
-            </div>
-        </div>
-        <div style="position: relative;">
-            <button id="btn-session-manager" class="icon-btn" title="Sessions (Save/Load Workspace)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    <path d="M12 11v6"></path>
-                    <path d="M9 14l3 3 3-3"></path>
-                </svg>
-            </button>
-            <div id="session-menu" class="context-menu"
-                style="display: none; position: absolute; top: 100%; left: 0; z-index: 2000; min-width: 170px;">
-                <div class="menu-item" id="menu-session-save">Save Workspace As...</div>
-                <div class="menu-item" id="menu-session-load">Load Workspace...</div>
-                <div class="menu-item divider"></div>
-                <div class="menu-item" id="menu-session-set-default">Set as Default Session</div>
-                <div class="menu-item" id="menu-session-load-default">Load Default Session</div>
-            </div>
-        </div>
-
         <button id="btn-delete" class="icon-btn" title="Delete File">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -161,31 +113,77 @@
                 <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
         </button>
-        <button id="btn-wordwrap" class="icon-btn" title="Toggle Word Wrap (Alt+Z)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <path d="M3 12h14a3 3 0 0 1 0 6h-4"></path>
-                <polyline points="16 16 13 18 16 20"></polyline>
-                <line x1="3" y1="18" x2="10" y2="18"></line>
-            </svg>
-        </button>
-        <button id="btn-auto-save" class="icon-btn" title="Toggle Auto-Save to Disk">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                <polyline points="7 3 7 8 15 8"></polyline>
-                <circle cx="12" cy="17" r="1.5"></circle>
-            </svg>
-        </button>
-        <button id="btn-markdown" class="icon-btn" title="Toggle Markdown Preview" style="display: none;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
-                <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path>
-                <path d="M18 12a2 2 0 0 0-2 2v4-2 2"></path>
-            </svg>
-        </button>
+        <div style="position: relative;">
+            <button id="btn-settings" class="icon-btn" title="Settings & Tools">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </button>
+            <div id="settings-menu" class="context-menu"
+                style="display: none; position: absolute; top: 100%; right: 0; z-index: 2000; min-width: 230px;">
+                <div class="menu-item-header" style="padding: 6px 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Preferences</div>
+                <div class="menu-item toggle-item" id="menu-toggle-autosave">
+                    <span>Auto-Save to Disk</span>
+                    <span class="check-icon" style="color: var(--accent); font-weight: bold;">✓</span>
+                </div>
+                <div class="menu-item toggle-item" id="menu-toggle-wordwrap">
+                    <span>Word Wrap</span>
+                    <span class="check-icon" style="color: var(--accent); font-weight: bold;">✓</span>
+                </div>
+                <div class="menu-item toggle-item" id="menu-toggle-markdown">
+                    <span>Markdown Preview</span>
+                    <span class="check-icon" style="color: var(--accent); font-weight: bold;">✓</span>
+                </div>
+                <div class="menu-item divider"></div>
+                <div class="menu-item-header" style="padding: 6px 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Default New File Type</div>
+                <div class="menu-item" id="menu-default-txt" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>Plain Text (.txt)</span>
+                    <span class="check-icon" style="color: var(--accent); font-weight: bold;">✓</span>
+                </div>
+                <div class="menu-item" id="menu-default-doc" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>Rich Text Document (.doc)</span>
+                    <span class="check-icon" style="color: var(--accent); font-weight: bold;">✓</span>
+                </div>
+                <div class="menu-item divider"></div>
+                <div class="menu-item has-submenu" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>Workspace Sessions</span>
+                    <span class="submenu-arrow">▶</span>
+                    <div id="submenu-sessions" class="submenu-palette context-menu" style="min-width: 180px;">
+                        <div class="menu-item" id="menu-session-save">Save Workspace As...</div>
+                        <div class="menu-item" id="menu-session-load">Load Workspace...</div>
+                        <div class="menu-item divider"></div>
+                        <div class="menu-item" id="menu-session-set-default">Set as Default Session</div>
+                        <div class="menu-item" id="menu-session-load-default">Load Default Session</div>
+                    </div>
+                </div>
+                <div class="menu-item has-submenu" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>Text Tools & Formatting</span>
+                    <span class="submenu-arrow">▶</span>
+                    <div id="submenu-formatting" class="submenu-palette context-menu" style="min-width: 190px;">
+                        <div class="menu-item" id="menu-format-upper">UPPERCASE</div>
+                        <div class="menu-item" id="menu-format-lower">lowercase</div>
+                        <div class="menu-item" id="menu-format-title">Title Case</div>
+                        <div class="menu-item divider"></div>
+                        <div class="menu-item" id="menu-format-sort">Sort Lines</div>
+                        <div class="menu-item" id="menu-format-reverse">Reverse String</div>
+                        <div class="menu-item divider"></div>
+                        <div class="menu-item" id="menu-format-remove-empty">Remove Empty Lines</div>
+                        <div class="menu-item" id="menu-format-remove-duplicates">Remove Duplicate Lines</div>
+                        <div class="menu-item" id="menu-format-trim">Trim Whitespace</div>
+                        <div class="menu-item" id="menu-format-duplicate">Duplicate Content</div>
+                        <div class="menu-item divider"></div>
+                        <div class="menu-item" id="menu-format-json-format">Format JSON</div>
+                        <div class="menu-item" id="menu-format-json-minify">Minify JSON</div>
+                        <div class="menu-item divider"></div>
+                        <div class="menu-item" id="menu-format-base64-enc">Base64 Encode</div>
+                        <div class="menu-item" id="menu-format-base64-dec">Base64 Decode</div>
+                        <div class="menu-item" id="menu-format-url-enc">URL Encode</div>
+                        <div class="menu-item" id="menu-format-url-dec">URL Decode</div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="status-container">
             <span class="status-item" id="status-cursor">Ln 1, Col 1</span>
             <span class="status-item divider">|</span>

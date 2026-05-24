@@ -78,8 +78,23 @@ export function renderTabs() {
             const menu = document.getElementById('tab-context-menu');
             if (menu) {
                 menu.style.display = 'flex';
-                menu.style.left = `${e.clientX}px`;
-                menu.style.top = `${e.clientY}px`;
+                // Reset positions to measure layout correctly
+                menu.style.left = '0px';
+                menu.style.top = '0px';
+
+                const menuRect = menu.getBoundingClientRect();
+                let left = e.clientX;
+                let top = e.clientY;
+
+                if (left + menuRect.width > window.innerWidth) {
+                    left = window.innerWidth - menuRect.width - 10;
+                }
+                if (top + menuRect.height > window.innerHeight) {
+                    top = window.innerHeight - menuRect.height - 10;
+                }
+
+                menu.style.left = `${left}px`;
+                menu.style.top = `${top}px`;
             }
         });
 
@@ -203,6 +218,8 @@ export function updateActiveTabUI() {
         else if (activeTab.isTodo) document.body.classList.add('theme-todo');
         else document.body.classList.add('theme-text');
     }
+
+    import('./settings-manager.js').then(m => m.updateCheckmarks());
 
     const tabEls = tabBar.querySelectorAll('.tab');
     tabEls.forEach(el => {

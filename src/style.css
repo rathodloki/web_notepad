@@ -1448,3 +1448,54 @@ body.theme-todo {
   letter-spacing: 0.3px;
   color: var(--accent);
 }
+
+/* Settings Submenu Flyouts & Toggles */
+.menu-item.has-submenu {
+  position: relative;
+}
+
+.menu-item .submenu-palette {
+  display: none !important;
+  position: absolute;
+  top: -5px;
+  right: 100%; /* Fly out to the left to prevent window overflow */
+  margin-right: 4px;
+  min-width: 190px;
+  background: linear-gradient(180deg, var(--active-mid) 0%, var(--active-bot) 100%);
+  border: 1px solid var(--active-accent);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 2100;
+}
+
+/* Show submenu on open class */
+.menu-item.has-submenu.open .submenu-palette {
+  display: flex !important;
+  flex-direction: column;
+}
+
+.submenu-arrow {
+  font-size: 9px;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+
+.menu-item:hover .submenu-arrow {
+  transform: translateX(-2px);
+  opacity: 0.9;
+}
+
+.menu-item.toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menu-item .check-icon {
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 13px;
+  transition: opacity 0.15s ease;
+  margin-left: 10px;
+}

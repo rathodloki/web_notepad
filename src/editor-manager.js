@@ -173,27 +173,27 @@ export async function createEditorStateFromContent(path, content, isTodo = false
     return createEditorState(content || '', extensions, listeners, state.isWordWrapEnabled);
 }
 
-export async function createNewTab(path = null, content = '') {
+export async function createNewTab(path = null, content = '', isTodo = null, isDoc = null) {
     state.tabCounter++;
     const id = `tab-${state.tabCounter}`;
 
-    const isTodo = path ? path.endsWith('.todo') : false;
-    const isDoc = path ? path.endsWith('.doc') : false;
+    const resolvedTodo = isTodo !== null ? isTodo : (path ? path.endsWith('.todo') : false);
+    const resolvedDoc = isDoc !== null ? isDoc : (path ? path.endsWith('.doc') : (path === null && content === '' && state.defaultNewFileType === 'doc'));
 
     let editorState = null;
     let autoLanguage = null;
-    if (!isDoc) {
-        editorState = await createEditorStateFromContent(path, content, isTodo, isDoc, null, id);
+    if (!resolvedDoc) {
+        editorState = await createEditorStateFromContent(path, content, resolvedTodo, resolvedDoc, null, id);
         autoLanguage = path ? path.split('.').pop().toLowerCase() : detectLanguageFromContent(content);
     }
 
     const newTab = {
         id,
         path,
-        title: 'Untitled',
+        title: resolvedDoc ? 'document.doc' : 'Untitled',
         isUnsaved: false,
-        isTodo,
-        isDoc,
+        isTodo: resolvedTodo,
+        isDoc: resolvedDoc,
         savedContent: content,
         manualLanguage: null,
         autoLanguage,

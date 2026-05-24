@@ -11,54 +11,13 @@ import { toggleQuickOpen, closeQuickOpen, toggleGlobalSearch, closeGlobalSearch,
 import { getLanguageExtension, createEditorState, detectLanguageFromContent } from './editor.js';
 import { invoke, readTextFile, writeTextFile, openDialog, saveDialog } from './tauri-bridge.js';
 import { getFilename } from './utils.js';
-import { setupTextFormatMenu } from './text-format.js';
-import { setupSessionMenu } from './session-manager.js';
+import { setupSettingsMenu } from './settings-manager.js';
 import { setupWindowManager } from './window-manager.js';
 import './quill-init.js';
 
 /* ── Toggle helpers ─────────────────────────────────────────────── */
 
-function toggleAutoSave() {
-    state.isAutoSaveEnabled = !state.isAutoSaveEnabled;
-    localStorage.setItem('lightpad-autosave', state.isAutoSaveEnabled.toString());
-    updateAutoSaveUI();
-    showStatus(state.isAutoSaveEnabled ? 'Auto-Save Enabled' : 'Auto-Save Disabled');
-    if (state.isAutoSaveEnabled) {
-        state.tabs.forEach(tab => {
-            if (tab.isUnsaved && tab.path) {
-                import('./session.js').then(m => m.autoSaveDiskDebounced(tab, 0));
-            }
-        });
-    }
-}
 
-function updateAutoSaveUI() {
-    const btn = document.getElementById('btn-auto-save');
-    const statusEl = document.getElementById('status-autosave');
-    if (btn) {
-        if (state.isAutoSaveEnabled) btn.classList.add('active');
-        else btn.classList.remove('active');
-    }
-    if (statusEl) {
-        statusEl.textContent = state.isAutoSaveEnabled ? 'Auto-Save: ON' : 'Auto-Save: OFF';
-    }
-}
-
-function toggleWordWrap() {
-    state.isWordWrapEnabled = !state.isWordWrapEnabled;
-    localStorage.setItem('lightpad-wordwrap', state.isWordWrapEnabled.toString());
-    const btn = document.getElementById('btn-wordwrap');
-    if (btn) {
-        if (state.isWordWrapEnabled) btn.classList.add('active');
-        else btn.classList.remove('active');
-    }
-    state.tabs.forEach(tab => {
-        if (!tab.isDoc && tab.state) {
-            tab.state = applyLineWrappingToState(tab.state, state.isWordWrapEnabled);
-        }
-    });
-    if (state.editorView) toggleLineWrapping(state.editorView, state.isWordWrapEnabled);
-}
 
 /* ── Markdown preview ───────────────────────────────────────────── */
 
@@ -94,6 +53,24 @@ window.addEventListener('keydown', async (e) => {
         }
         return;
     }
+    if (e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (state.tabs.length > 1) {
+            const ci = state.tabs.findIndex(t => t.id === state.activeTabId);
+            const ni = (Math.max(0, ci) + 1) % state.tabs.length;
+            switchTab(state.tabs[ni].id);
+        }
+        return;
+    }
+    if (e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (state.tabs.length > 1) {
+            const ci = state.tabs.findIndex(t => t.id === state.activeTabId);
+            const ni = (Math.max(0, ci) - 1 + state.tabs.length) % state.tabs.length;
+            switchTab(state.tabs[ni].id);
+        }
+        return;
+    }
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') { e.preventDefault(); await saveFile(); }
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'o') { e.preventDefault(); await openFile(); }
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') { e.preventDefault(); await closeMultipleTabs([...state.tabs]); return; }
@@ -109,7 +86,7 @@ window.addEventListener('keydown', async (e) => {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') { e.preventDefault(); toggleGlobalSearch(); }
     if ((e.ctrlKey || e.metaKey) && e.key === '1') { e.preventDefault(); spawnTodoList(); }
     if ((e.ctrlKey || e.metaKey) && e.key === '2') { e.preventDefault(); spawnDocProcess(); }
-    if (e.altKey && e.key.toLowerCase() === 'z') { e.preventDefault(); toggleWordWrap(); }
+    if (e.altKey && e.key.toLowerCase() === 'z') { e.preventDefault(); import('./settings-manager.js').then(m => m.toggleWordWrap()); }
 
     // Delegate Modal/Menu navigation to overlays.js
     const { handleGlobalKeyboard } = await import('./overlays.js');
@@ -203,30 +180,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Word wrap
-    const wordWrapBtn = document.getElementById('btn-wordwrap');
-    if (wordWrapBtn) {
-        if (state.isWordWrapEnabled) wordWrapBtn.classList.add('active');
-        wordWrapBtn.addEventListener('click', toggleWordWrap);
-    }
 
-    // Auto-save
-    const autoSaveBtn = document.getElementById('btn-auto-save');
-    if (autoSaveBtn) {
-        autoSaveBtn.addEventListener('click', toggleAutoSave);
-        updateAutoSaveUI();
-    }
-
-    // Markdown preview
-    const markdownBtn = document.getElementById('btn-markdown');
-    if (markdownBtn) {
-        markdownBtn.addEventListener('click', () => {
-            state.isMarkdownPreviewEnabled = !state.isMarkdownPreviewEnabled;
-            const preview = document.getElementById('markdown-preview');
-            if (state.isMarkdownPreviewEnabled) { preview.style.display = 'block'; markdownBtn.classList.add('active'); renderMarkdownPreview(); }
-            else { preview.style.display = 'none'; markdownBtn.classList.remove('active'); }
-        });
-    }
 
     // Tab bar double-click to create new tab
     const tabBarContainer = document.querySelector('.tab-bar-container');
@@ -238,8 +192,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // Extracted module setups
-    setupTextFormatMenu();
-    setupSessionMenu();
+    setupSettingsMenu();
 
     // Context menu
     document.addEventListener('click', () => { const menu = document.getElementById('tab-context-menu'); if (menu) menu.style.display = 'none'; });
@@ -260,7 +213,7 @@ window.addEventListener('DOMContentLoaded', () => {
             const batch = closedTabsHistory.pop();
             for (let i = batch.length - 1; i >= 0; i--) {
                 const info = batch[i];
-                await createNewTab(info.path || null, info.content || '');
+                await createNewTab(info.path || null, info.content || '', info.isTodo, info.isDoc);
                 const newTab = state.tabs[state.tabs.length - 1];
                 if (info.isTodo) newTab.isTodo = true;
                 if (info.isDoc) newTab.isDoc = true;
