@@ -1,26 +1,38 @@
 :root {
-  --bg-color: #0d1017;
-  --titlebar-bg: #11141c;
-  --titlebar-hover: rgba(255, 255, 255, 0.05);
-  --toolbar-bg: #14171c;
-  --toolbar-border: rgba(255, 255, 255, 0.06);
-  --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
+  --bg-primary: #09090b;
+  /* main editor background */
+  --bg-surface: #111113;
+  /* tab bar, toolbar */
+  --bg-hover: rgba(255, 255, 255, 0.04);
+  /* button hover, active tab */
+  --bg-active: rgba(255, 255, 255, 0.08);
+  /* active/selected state */
+  --border: rgba(255, 255, 255, 0.06);
+  /* subtle dividers */
+  --border-strong: rgba(255, 255, 255, 0.12);
+  /* stronger borders when needed */
+  --text-primary: #f3f4f6;
+  /* main text */
+  --text-secondary: #9ca3af;
+  /* status bar, hints */
+  --text-muted: #4e4e5a;
+  /* very subtle info */
   --accent: #3b82f6;
-  --accent-hover: #60a5fa;
-  --accent-alpha: rgba(59, 130, 246, 0.15);
-  --button-hover: rgba(255, 255, 255, 0.08);
-  --danger-hover: #e81123;
-  --scrollbar-bg: transparent;
-  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
-  --scrollbar-hover: rgba(255, 255, 255, 0.2);
-  /* Glassmorphism / Shadows completely stripped for flat minimal aesthetic */
-  --glass-bg: var(--titlebar-bg);
-  --glass-border: transparent;
-  --glass-blur: none;
-  
-  /* Transitions */
-  --trans-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  /* active tab indicator, focus ring, highlights */
+  --accent-soft: rgba(59, 130, 246, 0.1);
+  /* accent background tint */
+  --danger: #ef4444;
+  /* close button hover */
+
+  /* Missing variables used across components */
+  --toolbar-bg: transparent;
+  --toolbar-border: var(--border);
+  --text-main: var(--text-primary);
+  --bg-color: var(--bg-primary);
+  --sidebar-bg: var(--bg-surface);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+
+  --trans-smooth: all 0.15s ease;
 }
 
 body,
@@ -30,54 +42,42 @@ html {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: transparent;
-  color: var(--text-main);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at top, #0f172a 0%, #09090b 45%);
+  color: var(--text-primary);
+  font-family: 'Geist', 'Inter', 'SF Pro', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px var(--toolbar-border);
-  /* subtle inner border */
+  position: relative;
 }
 
-body, .theme-text {
-  background-color: var(--bg-color);
-  --active-top: #1c2a47; 
-  --active-mid: #141c2e; 
-  --active-bot: #0d1017; 
-  --active-accent: #3b82f6;
-  --accent: #3b82f6;
-  --accent-hover: #60a5fa;
-  --scrollbar-thumb: rgba(59, 130, 246, 0.15);
-  --scrollbar-hover: rgba(59, 130, 246, 0.3);
+/* Ambient Selection Highlights */
+::selection {
+  background: rgba(59, 130, 246, 0.18) !important;
+}
+.ql-editor ::selection {
+  background: rgba(59, 130, 246, 0.18) !important;
 }
 
-body.theme-doc {
-  --active-top: #123326;
-  --active-mid: #0f211a;
-  --active-bot: #0d1017;
-  --active-accent: #10b981; 
-  --accent: #10b981;
-  --accent-hover: #34d399;
-  --scrollbar-thumb: rgba(16, 185, 129, 0.15);
-  --scrollbar-hover: rgba(16, 185, 129, 0.3);
-}
-
-body.theme-todo {
-  --active-top: #2c1c43;
-  --active-mid: #1c152d;
-  --active-bot: #0d1017;
-  --active-accent: #bd93f9; 
-  --accent: #bd93f9;
-  --accent-hover: #d2a8ff;
-  --scrollbar-thumb: rgba(189, 147, 249, 0.15);
-  --scrollbar-hover: rgba(189, 147, 249, 0.3);
+/* Subtle noise texture overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  opacity: 0.015;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 .window-header {
-  height: 40px;
-  background: var(--titlebar-bg);
+  height: 42px;
+  background: transparent;
   display: flex;
   align-items: stretch;
-  border-bottom: none; /* Removed for seamless tab transition */
+  border-bottom: 1px solid var(--border);
   user-select: none;
   -webkit-app-region: drag;
   position: relative;
@@ -98,50 +98,48 @@ body.theme-todo {
 .app-brand {
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding-left: 16px;
+  margin-right: 24px;
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 0.5px;
-  width: 120px;
+  font-weight: 500;
+  color: var(--text-primary);
   flex-shrink: 0;
   cursor: default;
+  -webkit-app-region: drag;
 }
 
 .tab-bar-container {
   flex-grow: 1;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   overflow: hidden;
   position: relative;
   -webkit-app-region: drag;
   min-width: 0;
-  /* Critical: allows children to shrink below their innate width */
+  height: 100%;
 }
 
 /* --- Scroll Shadows --- */
 .tab-scroll-shadow-left,
 .tab-scroll-shadow-right {
   position: absolute;
-  top: 6px;
+  top: 0;
   bottom: 0;
-  width: 30px;
+  width: 20px;
   pointer-events: none;
   z-index: 50;
   opacity: 0;
-  transition: opacity 0.25s ease-in-out;
+  transition: opacity 0.15s ease;
 }
 
 .tab-scroll-shadow-left {
   left: 0;
-  /* Strong dark gradient starting from absolute black at the very edge */
-  background: linear-gradient(to right, rgba(10, 10, 15, 0.95) 0%, rgba(10, 10, 15, 0.5) 40%, transparent 100%);
+  background: linear-gradient(to right, rgba(9, 9, 11, 0.8) 0%, transparent 100%);
 }
 
 .tab-scroll-shadow-right {
   right: 32px;
-  /* Needs to sit just to the left of the New Tab button */
-  background: linear-gradient(to left, rgba(10, 10, 15, 0.95) 0%, rgba(10, 10, 15, 0.5) 40%, transparent 100%);
+  background: linear-gradient(to left, rgba(9, 9, 11, 0.8) 0%, transparent 100%);
 }
 
 .tab-scroll-shadow-right.show,
@@ -151,17 +149,15 @@ body.theme-todo {
 
 .tab-bar {
   display: flex;
+  align-items: center;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
-  /* Firefox */
   flex: 1 1 auto;
   min-width: 0;
-  /* CRITICAL: allows flex children (tabs) to shrink */
-  height: 34px;
-  /* Force explicit container height */
-  align-items: center;
+  height: 100%;
   -webkit-app-region: no-drag;
+  gap: 0;
 }
 
 .tab-bar::-webkit-scrollbar {
@@ -173,49 +169,34 @@ body.theme-todo {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 14px;
+  padding: 0 20px;
   margin: 0;
-  border-radius: 8px 8px 0 0; /* Only round top, flat bottom */
-  border-right: 1px solid rgba(255, 255, 255, 0.04); /* subtle contrast between inactive tabs */
-  border-top: 2px solid transparent; /* reserved for active line */
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 13px;
   cursor: pointer;
   flex: 1 1 180px;
-  min-width: 140px;
-  max-width: 250px;
+  min-width: 120px;
+  max-width: 200px;
   height: 100%;
-  -webkit-app-region: no-drag;
+  border-top: 2px solid transparent;
   transition: var(--trans-smooth);
-}
-
-.tab:hover {
-  background: var(--button-hover);
+  -webkit-app-region: no-drag;
+  opacity: 0.55;
 }
 
 .tab.active {
-  /* Top half of the unified continuous gradient */
-  background: linear-gradient(180deg, var(--active-top) 0%, var(--active-mid) 100%);
-  color: var(--text-main);
-  border-right: 1px solid transparent; 
-  border-top: 2px solid var(--active-accent); 
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  border-top: 2px solid var(--accent);
+  backdrop-filter: blur(10px);
+  opacity: 1;
 }
 
-/* Local context hints for the indicator dots only, no background overrides! */
-.tab.is-todo .tab-title {
-  color: #f8f8f2;
-}
-.tab.is-todo .tab-dot.unsaved {
-  background-color: #bd93f9;
-  box-shadow: 0 0 5px #bd93f9;
-}
-.tab.is-doc .tab-title {
-  color: #f8f8f2;
-}
-.tab.is-doc .tab-dot.unsaved {
-  background-color: #10b981;
-  box-shadow: 0 0 5px #10b981;
+.tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+  opacity: 0.85;
 }
 
 .tab-title {
@@ -223,9 +204,7 @@ body.theme-todo {
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1 1 0;
-  /* Consume remaining space, strictly allowed to shrink to 0 width */
   min-width: 0;
-  /* Prevent text from breaking out of flex container */
 }
 
 .tab-dot {
@@ -233,13 +212,12 @@ body.theme-todo {
   height: 6px;
   border-radius: 50%;
   background-color: transparent;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.15s ease;
   flex-shrink: 0;
 }
 
 .tab-dot.unsaved {
   background-color: var(--accent);
-  box-shadow: 0 0 5px var(--accent);
 }
 
 /* -------------------------------------
@@ -441,119 +419,185 @@ body.theme-todo {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
   opacity: 0;
-  transition: opacity 0.15s ease, background-color 0.1s ease;
+  font-size: 10px;
+  color: var(--text-secondary);
+  transition: all 0.1s ease;
 }
 
-.tab:hover .tab-close,
-.tab.active .tab-close {
+.tab:hover .tab-close {
   opacity: 1;
 }
 
 .tab-close:hover {
-  background-color: var(--button-hover);
-  color: var(--text-main);
+  background: rgba(224, 92, 92, 0.15);
+  color: var(--danger);
 }
 
 .new-tab-btn {
   margin-left: 4px;
   align-self: center;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: var(--trans-smooth);
   -webkit-app-region: no-drag;
+}
+
+.new-tab-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
 }
 
 .window-controls {
   display: flex;
   flex-shrink: 0;
   -webkit-app-region: no-drag;
+  height: 100%;
 }
 
 .window-btn {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 48px;
-  color: var(--text-muted);
-  transition: background-color 0.1s ease, color 0.1s ease;
+  width: 46px;
+  height: 100%;
+  color: var(--text-secondary);
+  transition: var(--trans-smooth);
 }
 
 .window-btn:hover {
-  background: linear-gradient(180deg, var(--active-top) 0%, var(--active-mid) 100%);
-  color: var(--text-main);
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .window-btn.close-btn:hover {
-  /* Glossy candy-red gradient */
-  background: linear-gradient(180deg, #f04747 0%, var(--danger-hover) 100%);
+  background: var(--danger);
   color: white;
 }
 
 .window-btn svg {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
 }
 
 .toolbar {
   display: flex;
-  padding: 6px 16px;
-  /* Bottom half of the unified continuous gradient */
-  background: linear-gradient(180deg, var(--active-mid) 0%, var(--active-bot) 100%);
   align-items: center;
-  gap: 12px;
+  height: 46px;
+  padding: 0 18px;
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  box-sizing: border-box;
 }
 
-.icon-btn {
+.icon-btn,
+.toolbar-btn {
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 6px;
+  color: var(--text-secondary);
   background: transparent;
   border: none;
-  color: var(--text-muted);
-  padding: 6px;
-  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--trans-smooth);
   -webkit-app-region: no-drag;
+  padding: 0;
+  opacity: 0.65;
 }
 
-.icon-btn:hover {
-  background: var(--button-hover);
-  color: var(--text-main);
+.toolbar .icon-btn,
+.toolbar .toolbar-btn {
+  width: 30px;
+  height: 30px;
 }
 
-.icon-btn.active {
-  background: var(--accent);
-  color: white;
+.icon-btn:hover,
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  opacity: 1;
 }
 
-.icon-btn:active {
-  transform: translateY(1px);
+.icon-btn.active,
+.toolbar-btn.active,
+.icon-btn:active,
+.toolbar-btn:active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  opacity: 1;
 }
 
-.status-container {
-  margin-left: auto;
+.toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 0 8px;
+}
+
+/* 4. Status Bar Redesign */
+.status-bar {
+  height: 28px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  box-sizing: border-box;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.status-left,
+.status-right {
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 .status-item {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  font-weight: 500;
+  padding: 0 10px;
+  height: 100%;
   display: flex;
   align-items: center;
-  font-family: 'Inter', system-ui, sans-serif;
-  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-secondary);
+  font-family: 'Geist', 'Inter', 'SF Pro', 'Segoe UI', system-ui, sans-serif;
+}
+
+.status-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
 }
 
 .status-item.divider {
-  color: #2a2d36;
-  margin: 0 10px;
+  padding: 0;
+  margin: 0 2px;
+  cursor: default;
+  color: rgba(255, 255, 255, 0.1);
   font-size: 10px;
 }
+
+.status-item.divider:hover {
+  background: transparent;
+}
+
+
 
 /* ── Editor shell (the main content area) ─────────────────────────────────── */
 .editor-shell {
@@ -563,8 +607,52 @@ body.theme-todo {
   /* default: no split */
   position: relative;
   overflow: hidden;
-  background: var(--bg-color);
-  border-top: 1px solid var(--toolbar-border);
+  background: transparent;
+}
+
+#editor-wrapper {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+#editor-wrapper,
+#empty-state,
+#markdown-preview {
+  background: #0f0f12;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 20px 60px rgba(0, 0, 0, 0.45);
+  margin: 4px 4px 4px 4px;
+  overflow: hidden;
+}
+
+#empty-state {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-family: 'Geist', 'Inter', sans-serif;
+  box-sizing: border-box;
+}
+
+#markdown-preview {
+  display: none;
+  flex: 1;
+  height: 100%;
+  padding: 20px;
+  overflow-y: auto;
+  color: var(--text-primary);
+  font-family: 'Geist', 'Inter', sans-serif;
+  box-sizing: border-box;
 }
 
 /* ── Editor pane ─────────────────────────────────────────────────────────── */
@@ -599,7 +687,7 @@ body.theme-todo {
   background: var(--titlebar-bg);
   border-bottom: 1px solid var(--toolbar-border);
   flex-shrink: 0;
-  min-height: 36px;
+  min-height: 42px;
 }
 
 .pane2-header .tab-bar {
@@ -652,7 +740,8 @@ body.theme-todo {
   font-family: 'Inter', system-ui, sans-serif !important;
   font-size: 15px;
   color: var(--text-main);
-  padding: 10px 40px;
+  background-color: var(--bg-color);
+  padding: 0;
 }
 
 /* Base Toolbar Styling */
@@ -721,11 +810,29 @@ body.theme-todo {
   color: var(--accent) !important;
 }
 
-/* Editable Area Constraints */
+/* Editable Area Constraints (Sheet of Paper) */
 .ql-editor {
+  position: relative !important;
   max-width: 800px;
-  margin: 0 auto;
-  line-height: 1.6;
+  margin: 30px auto !important;
+  padding: 40px 50px !important;
+  min-height: calc(100% - 60px) !important;
+  background-color: rgba(17, 17, 19, 0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 20px 60px rgba(0, 0, 0, 0.45) !important;
+  line-height: 1.8;
+}
+
+.ql-editor.ql-blank::before {
+  left: 50px !important;
+  right: 50px !important;
+  top: 40px !important;
+  color: #3a3a4a !important;
+  font-style: normal !important;
 }
 
 .ql-editor img {
@@ -786,43 +893,114 @@ body.theme-todo {
 .cm-editor {
   flex: 1 1 0;
   min-height: 0;
-  font-family: 'JetBrains Mono', 'Consolas', monospace !important;
+  width: 100%;
+  font-family: 'Geist Mono', 'JetBrains Mono', 'Consolas', monospace !important;
 }
 
 .cm-content {
-  font-family: 'JetBrains Mono', 'Consolas', monospace !important;
+  font-family: 'Geist Mono', 'JetBrains Mono', 'Consolas', monospace !important;
 }
 
 .cm-scroller {
-  font-family: 'JetBrains Mono', 'Consolas', monospace !important;
-  font-size: 14.5px;
-  line-height: 1.6;
+  font-family: 'Geist Mono', 'JetBrains Mono', 'Consolas', monospace !important;
+  font-size: 16px;
+  font-weight: 450;
+  letter-spacing: -0.02em;
+  line-height: 1.9;
+}
+
+/* Caret Blinking Animation */
+@keyframes cm-blink-smooth {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Floating Selection Toolbar */
+.selection-toolbar {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  background: rgba(17, 17, 19, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
+  z-index: 9999;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+.selection-toolbar.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sel-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: 'Geist', 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.sel-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.sel-btn.bold-btn {
+  font-weight: bold;
+}
+
+.sel-btn.italic-btn {
+  font-style: italic;
 }
 
 .context-menu {
   position: absolute;
-  /* Contextual popup inheritances */
-  background: linear-gradient(180deg, var(--active-mid) 0%, var(--active-bot) 100%);
-  border: 1px solid var(--active-accent);
-  border-radius: 6px;
+  background: rgba(21, 21, 24, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px;
   padding: 4px;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   min-width: 150px;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 28px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
   animation: flyoutMenu 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top left;
 }
 
 @keyframes flyoutMenu {
-  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .menu-item {
   padding: 8px 12px;
   font-size: 13px;
-  color: var(--text-main);
+  color: var(--text-primary);
   cursor: pointer;
   border-radius: 4px;
   transition: background-color 0.1s;
@@ -831,8 +1009,8 @@ body.theme-todo {
 
 .menu-item:hover,
 .menu-item.kb-active {
-  background: var(--accent);
-  color: white;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 /* Modal Styles */
@@ -842,37 +1020,48 @@ body.theme-todo {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
   -webkit-app-region: no-drag;
-  animation: fadeIn 0.1s ease forwards;
+  animation: fadeIn 0.15s ease forwards;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .modal {
-  /* Inherit the glow properties from the current active file */
-  background: linear-gradient(180deg, var(--active-mid) 0%, var(--active-bot) 100%);
-  border: 1px solid var(--active-accent); /* Colored outline! */
-  border-radius: 8px;
+  background: rgba(17, 17, 19, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   width: 400px;
   max-width: 90%;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Geist', 'Inter', system-ui, sans-serif;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transform: translateY(10px) scale(0.98);
   animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 48px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
 }
 
 @keyframes popIn {
-  to { transform: translateY(0) scale(1); }
+  to {
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {
@@ -881,13 +1070,13 @@ body.theme-todo {
   align-items: center;
   gap: 12px;
   background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* very soft line */
+  border-bottom: 1px solid var(--border);
 }
 
 .modal-title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-main);
+  color: var(--text-primary);
 }
 
 .modal-icon {
@@ -897,14 +1086,14 @@ body.theme-todo {
 .modal-body {
   padding: 24px 16px;
   font-size: 14px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
 .modal-footer {
   padding: 12px 16px;
-  background: var(--titlebar-bg);
-  border-top: 1px solid var(--toolbar-border);
+  background: var(--bg-active);
+  border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -914,9 +1103,9 @@ body.theme-todo {
 .link-input {
   width: 100%;
   padding: 8px 12px;
-  background-color: var(--bg-color);
-  border: 1px solid var(--toolbar-border);
-  color: var(--text-main);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
   border-radius: 4px;
   font-family: inherit;
   font-size: 13px;
@@ -932,8 +1121,8 @@ body.theme-todo {
   padding: 8px 16px;
   border-radius: 6px;
   border: 1px solid transparent;
-  background: var(--button-hover);
-  color: var(--text-main);
+  background: var(--bg-active);
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -941,7 +1130,7 @@ body.theme-todo {
 }
 
 .modal-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--bg-hover);
 }
 
 .modal-btn:focus {
@@ -952,44 +1141,41 @@ body.theme-todo {
 .modal-btn.primary {
   background: var(--accent);
   color: white;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .modal-btn.primary:hover {
-  background: var(--accent-hover);
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
+  background: #60a5fa;
 }
 
 /* -------------------------------------
    Todo Checklist Styling
    ------------------------------------- */
 
-.cm-todo-row {
-  display: block;
-  background-color: rgba(40, 42, 54, 0.4);
-  /* #282a36 basically */
-  border-radius: 6px;
-  margin: 0 8px 0 4px;
-  /* Ensure 0 vertical margin to keep CodeMirror alignment happy */
-  padding: 6px 2px 6px 6px;
-  /* Use padding for vertical space instead */
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-sizing: border-box;
+.cm-editor .cm-line.cm-todo-row {
+  display: flex !important;
+  align-items: center !important;
+  background-color: transparent !important;
+  border-radius: 4px !important;
+  padding: 4px 6px !important;
+  margin: 2px 0 !important;
+  box-sizing: border-box !important;
+  border: none !important;
+  transition: background-color 0.15s ease !important;
 }
 
-.cm-todo-completed-row {
-  text-decoration: line-through;
-  text-decoration-color: #6272A4;
-  text-decoration-thickness: 2px;
-  color: #6272A4 !important;
-  opacity: 0.8;
-  background-color: rgba(30, 32, 40, 0.4);
+.cm-editor .cm-line.cm-todo-row:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.cm-editor .cm-line.cm-todo-completed-row {
+  text-decoration: line-through !important;
+  text-decoration-color: var(--text-muted) !important;
+  color: var(--text-secondary) !important;
+  opacity: 0.6 !important;
 }
 
 .cm-todo-widget svg {
-  display: block;
-  margin-top: -2px;
-  /* Slight optical adjustment if needed */
+  display: block !important;
 }
 
 /* -------------------------------------
@@ -999,29 +1185,32 @@ body.theme-todo {
 .quick-open-overlay {
   align-items: flex-start;
   padding-top: 8vh;
-  background-color: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(2px);
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
 }
 
 .quick-open-palette {
   width: 500px;
   max-width: 90vw;
-  background-color: #1a1c23;
-  border: 1px solid var(--toolbar-border);
-  border-radius: 8px;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  background: rgba(17, 17, 19, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 48px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: modalIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .quick-open-input-wrapper {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--toolbar-border);
-  background: #14161c;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
 }
 
 .quick-open-icon {
@@ -1039,7 +1228,7 @@ body.theme-todo {
   background: transparent;
   border: none;
   outline: none;
-  color: var(--text-main);
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 14px;
 }
@@ -1048,7 +1237,7 @@ body.theme-todo {
 #language-input::placeholder,
 #global-search-input::placeholder,
 #global-replace-input::placeholder {
-  color: #5a5f6e;
+  color: var(--text-muted);
 }
 
 .quick-open-results {
@@ -1076,7 +1265,7 @@ body.theme-todo {
 
 .quick-open-item:hover,
 .quick-open-item.selected {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-hover);
 }
 
 .quick-open-item.selected {
@@ -1085,7 +1274,7 @@ body.theme-todo {
 
 .quick-open-filename {
   font-size: 13px;
-  color: var(--text-main);
+  color: var(--text-primary);
   margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -1094,7 +1283,7 @@ body.theme-todo {
 
 .quick-open-path {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1122,7 +1311,7 @@ body.theme-todo {
 }
 
 .quick-open-result:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-hover);
 }
 
 /* -------------------------------------
@@ -1139,17 +1328,17 @@ body.theme-todo {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border-bottom: 1px solid var(--toolbar-border);
-  background: #14161c;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-active);
 }
 
 .gs-input-row {
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  border: 1px solid var(--toolbar-border);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: #0a0c10;
+  background: var(--bg-primary);
   transition: border-color 0.15s ease;
 }
 
@@ -1458,11 +1647,12 @@ body.theme-todo {
   display: none !important;
   position: absolute;
   top: -5px;
-  right: 100%; /* Fly out to the left to prevent window overflow */
+  right: 100%;
+  /* Fly out to the left to prevent window overflow */
   margin-right: 4px;
   min-width: 190px;
-  background: linear-gradient(180deg, var(--active-mid) 0%, var(--active-bot) 100%);
-  border: 1px solid var(--active-accent);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);

@@ -54,12 +54,12 @@ class CheckboxWidget extends WidgetType {
         });
 
         if (this.isChecked) {
-            wrap.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#50FA7B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="4" fill="#50FA7B30"></rect>
+            wrap.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="4" fill="var(--accent-soft)"></rect>
                 <path d="M8 12.5l3 3 5-6"></path>
             </svg>`;
         } else {
-            wrap.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6272a4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            wrap.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="4"></rect>
             </svg>`;
         }

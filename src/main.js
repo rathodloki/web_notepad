@@ -1,14 +1,18 @@
 // main.js — Application entry point (orchestrator)
 import { state } from './state.js';
-import { toggleLineWrapping, applyLineWrappingToState } from './editor.js';
+
+if (window.__lightpadHarness) {
+    window.__lightpadHarness.state = state;
+}
+import { toggleLineWrapping, applyLineWrappingToState, getLanguageExtension, createEditorState, detectLanguageFromContent } from './editor.js';
 import { switchTab, createNewTab, closeTab, closeMultipleTabs, spawnTodoList, spawnDocProcess, closedTabsHistory, createEditorStateFromContent } from './editor-manager.js';
-import { openFile, saveFile, deleteActiveFile } from './file-io.js';
+import { openFile, saveFile, deleteActiveFile, renameActiveFile } from './file-io.js';
+import { undo, redo } from "@codemirror/commands";
 import { saveSession, loadSession, saveSessionDebounced } from './session.js';
 import { renderTabs } from './tabs-ui.js';
 import { showStatus, updateCursorStatus, updateTitle } from './status-bar.js';
 import { loadFileHistory, addToFileHistory } from './history.js';
 import { toggleQuickOpen, closeQuickOpen, toggleGlobalSearch, closeGlobalSearch, toggleLanguageOpen, closeLanguageOpen as closeLanguageModal, setupOverlays, setupFileDrop, askConfirmUI } from './overlays.js';
-import { getLanguageExtension, createEditorState, detectLanguageFromContent } from './editor.js';
 import { invoke, readTextFile, writeTextFile, openDialog, saveDialog } from './tauri-bridge.js';
 import { getFilename } from './utils.js';
 import { setupSettingsMenu } from './settings-manager.js';
@@ -137,6 +141,25 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-find').addEventListener('click', () => {
         if (state.editorView) import('@codemirror/search').then(({ openSearchPanel }) => openSearchPanel(state.editorView));
     });
+    document.getElementById('btn-undo')?.addEventListener('click', () => {
+        const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+        if (activeTab?.isDoc && state.quillView) {
+            state.quillView.history.undo();
+        } else if (state.editorView) {
+            undo(state.editorView);
+            state.editorView.focus();
+        }
+    });
+    document.getElementById('btn-redo')?.addEventListener('click', () => {
+        const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+        if (activeTab?.isDoc && state.quillView) {
+            state.quillView.history.redo();
+        } else if (state.editorView) {
+            redo(state.editorView);
+            state.editorView.focus();
+        }
+    });
+    document.getElementById('btn-move')?.addEventListener('click', renameActiveFile);
     document.getElementById('btn-delete')?.addEventListener('click', deleteActiveFile);
     document.getElementById('btn-quick-open')?.addEventListener('click', toggleQuickOpen);
     document.getElementById('btn-new-tab')?.addEventListener('click', async () => await createNewTab());

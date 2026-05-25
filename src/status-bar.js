@@ -40,7 +40,7 @@ export function updateTitle() {
     const statusWorkspace = document.getElementById('status-workspace');
     if (statusWorkspace) {
         statusWorkspace.textContent = `Workspace: ${workspaceStr}`;
-        statusWorkspace.style.color = state.activeSessionPath ? 'var(--accent)' : '';
+        statusWorkspace.style.fontWeight = state.activeSessionPath ? '600' : '500';
     }
 
     if (!activeTab) {

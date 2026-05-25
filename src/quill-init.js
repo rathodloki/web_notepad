@@ -14,6 +14,7 @@ export function initializeQuill() {
 
     state.quillView = new Quill('#quill-editor', {
         theme: 'snow',
+        placeholder: '',
         modules: {
             blotFormatter: {},
             imageDropAndPaste: {

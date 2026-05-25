@@ -679,6 +679,139 @@ function performGlobalReplaceAll() {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Floating Selection Toolbar                                                 */
+/* -------------------------------------------------------------------------- */
+
+function setupSelectionToolbar() {
+    const toolbar = document.getElementById('floating-selection-toolbar');
+    if (!toolbar) return;
+
+    let hideTimer = null;
+
+    function hideToolbar() {
+        toolbar.classList.remove('visible');
+        hideTimer = setTimeout(() => {
+            toolbar.style.display = 'none';
+        }, 160);
+    }
+
+    function showToolbar(x, y) {
+        clearTimeout(hideTimer);
+        toolbar.style.display = 'flex';
+        toolbar.style.left = `${x}px`;
+        toolbar.style.top = `${y}px`;
+        // Force reflow for animation
+        toolbar.offsetHeight;
+        toolbar.classList.add('visible');
+    }
+
+    function getSelectionRect() {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) return null;
+        return rect;
+    }
+
+    function positionToolbar() {
+        const rect = getSelectionRect();
+        if (!rect) { hideToolbar(); return; }
+
+        // Only show if selection is inside editor-container or quill-editor
+        const editorContainer = document.getElementById('editor-container');
+        const quillEditor = document.getElementById('quill-editor');
+        const sel = window.getSelection();
+        const anchorNode = sel?.anchorNode;
+        if (!anchorNode) { hideToolbar(); return; }
+
+        const inCm = editorContainer && editorContainer.contains(anchorNode);
+        const inQuill = quillEditor && quillEditor.contains(anchorNode);
+        if (!inCm && !inQuill) { hideToolbar(); return; }
+
+        const toolbarWidth = toolbar.offsetWidth || 200;
+        let x = rect.left + (rect.width / 2) - (toolbarWidth / 2);
+        let y = rect.top - 44;
+
+        // Keep in viewport
+        x = Math.max(8, Math.min(x, window.innerWidth - toolbarWidth - 8));
+        if (y < 8) y = rect.bottom + 8;
+
+        showToolbar(x, y);
+    }
+
+    // Listen for selection changes
+    document.addEventListener('selectionchange', () => {
+        clearTimeout(hideTimer);
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+            hideToolbar();
+            return;
+        }
+        // Delay slightly to wait for selection to stabilize
+        setTimeout(positionToolbar, 50);
+    });
+
+    // Prevent toolbar from stealing focus and killing selection
+    toolbar.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+    });
+
+    // Button actions
+    toolbar.querySelectorAll('.sel-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const action = btn.dataset.action;
+            const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+
+            if (activeTab?.isDoc && state.quillView) {
+                // Quill rich text formatting
+                const range = state.quillView.getSelection();
+                if (!range || range.length === 0) return;
+                switch (action) {
+                    case 'bold':
+                        state.quillView.format('bold', !state.quillView.getFormat(range).bold);
+                        break;
+                    case 'italic':
+                        state.quillView.format('italic', !state.quillView.getFormat(range).italic);
+                        break;
+                    case 'link': {
+                        const quillToolbar = state.quillView.getModule('toolbar');
+                        quillToolbar.handlers.link.call(quillToolbar, true);
+                        break;
+                    }
+                    case 'code':
+                        state.quillView.format('code', !state.quillView.getFormat(range).code);
+                        break;
+                    case 'color':
+                        state.quillView.format('background', state.quillView.getFormat(range).background ? false : '#3b82f633');
+                        break;
+                }
+            } else if (state.editorView) {
+                // CodeMirror markdown wrapping
+                const { from, to } = state.editorView.state.selection.main;
+                if (from === to) return;
+                const selectedText = state.editorView.state.sliceDoc(from, to);
+                let wrapped = selectedText;
+                switch (action) {
+                    case 'bold':   wrapped = `**${selectedText}**`; break;
+                    case 'italic': wrapped = `*${selectedText}*`; break;
+                    case 'link':   wrapped = `[${selectedText}](url)`; break;
+                    case 'code':   wrapped = `\`${selectedText}\``; break;
+                    case 'color':  wrapped = `==${selectedText}==`; break;
+                }
+                state.editorView.dispatch({
+                    changes: { from, to, insert: wrapped }
+                });
+                state.editorView.focus();
+            }
+            hideToolbar();
+        });
+    });
+}
+
+/* -------------------------------------------------------------------------- */
 /* Setup Event Listeners                                                      */
 /* -------------------------------------------------------------------------- */
 
@@ -817,6 +950,9 @@ export function setupOverlays() {
     if (btnGlobalSearchIcon) {
         btnGlobalSearchIcon.addEventListener('click', toggleGlobalSearch);
     }
+
+    // Floating selection toolbar
+    setupSelectionToolbar();
 }
 
 export async function setupFileDrop() {

@@ -1,5 +1,5 @@
 import { EditorState, Compartment, StateEffect } from "@codemirror/state";
-import { EditorView, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, keymap } from "@codemirror/view";
+import { EditorView, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { syntaxHighlighting, HighlightStyle, bracketMatching, foldGutter, foldKeymap, indentOnInput, StreamLanguage } from "@codemirror/language";
@@ -27,29 +27,58 @@ const cyberpunkHighlightStyle = HighlightStyle.define([
 
 const customTheme = EditorView.theme({
     "&": {
-        backgroundColor: "#000000 !important",
-        color: "#ABB2BF",
+        backgroundColor: "transparent !important",
+        color: "var(--text-primary)",
         height: "100%",
-        fontSize: "14.5px",
-        fontFamily: "'JetBrains Mono', 'Consolas', monospace"
+        fontSize: "16px",
+        fontWeight: "450",
+        letterSpacing: "-0.02em",
+        fontFamily: "'Geist Mono', 'JetBrains Mono', 'Fira Code', monospace"
+    },
+    ".cm-scroller": {
+        padding: "8px 0",
+        fontFamily: "inherit"
     },
     ".cm-content": {
-        caretColor: "#528BFF"
+        caretColor: "#60a5fa",
+        paddingLeft: "12px"
     },
     "&.cm-focused .cm-cursor": {
-        borderLeftColor: "#528BFF"
+        borderLeftColor: "#60a5fa !important",
+        borderLeftWidth: "2px !important",
+        animation: "cm-blink-smooth 1s ease-in-out infinite"
     },
     "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
-        backgroundColor: "rgba(59, 130, 246, 0.4)"
+        backgroundColor: "rgba(59, 130, 246, 0.18) !important"
+    },
+    ".cm-activeLine": {
+        backgroundColor: "rgba(255, 255, 255, 0.03)"
+    },
+    ".cm-activeLineGutter": {
+        backgroundColor: "transparent !important",
+        color: "#60a5fa !important",
+        fontWeight: "bold"
+    },
+    ".cm-gutters": {
+        backgroundColor: "transparent",
+        color: "rgba(255, 255, 255, 0.28) !important",
+        border: "none",
+        borderRight: "1px solid var(--border)",
+        minWidth: "56px"
+    },
+    ".cm-gutterElement": {
+        padding: "0 12px 0 16px",
+        textAlign: "right",
+        color: "rgba(255, 255, 255, 0.28) !important"
     },
     ".cm-panels": {
-        backgroundColor: "#14171c",
-        color: "#f0f0f0",
-        borderTop: "1px solid #ffffff10 !important",
+        backgroundColor: "var(--bg-surface)",
+        color: "var(--text-primary)",
+        borderTop: "1px solid var(--border) !important",
         fontFamily: "'Inter', system-ui, sans-serif"
     },
     ".cm-panels.cm-panels-bottom": {
-        borderTop: "1px solid #ffffff10"
+        borderTop: "1px solid var(--border)"
     },
     ".cm-search": {
         padding: "8px 12px",
@@ -59,9 +88,9 @@ const customTheme = EditorView.theme({
         gap: "8px"
     },
     ".cm-search input": {
-        backgroundColor: "#0f1115",
-        border: "1px solid #ffffff10",
-        color: "#f0f0f0",
+        backgroundColor: "var(--bg-primary)",
+        border: "1px solid var(--border)",
+        color: "var(--text-primary)",
         borderRadius: "4px",
         padding: "4px 8px",
         fontSize: "13px",
@@ -69,12 +98,12 @@ const customTheme = EditorView.theme({
         transition: "border-color 0.15s"
     },
     ".cm-search input:focus": {
-        borderColor: "#3b82f6"
+        borderColor: "var(--accent)"
     },
     ".cm-search button": {
         backgroundColor: "transparent",
-        color: "#8b92a5",
-        border: "1px solid #ffffff10",
+        color: "var(--text-secondary)",
+        border: "1px solid var(--border)",
         borderRadius: "4px",
         padding: "4px 10px",
         fontSize: "12px",
@@ -90,19 +119,19 @@ const customTheme = EditorView.theme({
         border: "none",
         fontSize: "16px",
         padding: "0 6px",
-        color: "#8b92a5",
+        color: "var(--text-secondary)",
         textTransform: "none"
     },
     ".cm-search button[name=close]:hover": {
-        color: "#FF5555"
+        color: "var(--danger)"
     },
     ".cm-search button:hover": {
-        backgroundColor: "#ffffff0a",
-        color: "#f0f0f0"
+        backgroundColor: "var(--bg-hover)",
+        color: "var(--text-primary)"
     },
     ".cm-search label": {
         fontSize: "12px",
-        color: "#8b92a5",
+        color: "var(--text-secondary)",
         display: "flex",
         alignItems: "center",
         gap: "4px",
@@ -110,35 +139,26 @@ const customTheme = EditorView.theme({
         textTransform: "capitalize"
     },
     ".cm-search input[type=checkbox]": {
-        accentColor: "#3b82f6",
+        accentColor: "var(--accent)",
         cursor: "pointer"
     },
     ".cm-searchMatch": {
-        backgroundColor: "#3b82f630"
+        backgroundColor: "var(--accent-soft)"
     },
     ".cm-searchMatch.cm-searchMatch-selected": {
-        backgroundColor: "#3b82f660",
-        color: "#f0f0f0",
-        outline: "1px solid #3b82f6",
+        backgroundColor: "var(--accent)",
+        color: "#ffffff",
+        outline: "1px solid var(--accent)",
         outlineOffset: "-1px"
-    },
-    ".cm-activeLine": {
-        backgroundColor: "rgba(255, 255, 255, 0.08)"
-    },
-    ".cm-activeLineGutter": {
-        backgroundColor: "rgba(255, 255, 255, 0.08)",
-        color: "#C678DD"
-    },
-    ".cm-gutters": {
-        backgroundColor: "#000000",
-        color: "#4B5263",
-        border: "none",
-        borderRight: "1px solid #181A1F"
     },
     ".cm-foldPlaceholder": {
         backgroundColor: "transparent",
         border: "none",
-        color: "#528BFF"
+        color: "var(--accent)"
+    },
+    ".cm-placeholder": {
+        color: "#3a3a4a !important",
+        fontStyle: "normal"
     }
 }, { dark: true });
 
@@ -158,6 +178,7 @@ export function createEditorState(initialDoc, langExtensions = [], otherExtensio
             bracketMatching(),
             closeBrackets(),
             autocompletion(),
+            placeholder("Start typing..."),
             rectangularSelection(),
             crosshairCursor(),
             highlightActiveLine(),

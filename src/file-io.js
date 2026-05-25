@@ -89,7 +89,7 @@ export async function saveFile(returnResult = false) {
             addToFileHistory(pathToSave);
             renderTabs();
             updateTitle();
-            showStatus('Saved successfully');
+            showStatus('Saved ✓', 1500);
             saveSessionDebounced();
             return returnResult ? true : undefined;
         } else {
@@ -185,6 +185,62 @@ export async function openDroppedPaths(paths) {
         } catch (err) {
             console.error('Error opening dropped file:', err);
             showStatus(`Error opening: ${getFilename(filePath)}`);
+        }
+    }
+}
+
+export async function renameActiveFile() {
+    const tab = state.tabs.find(t => t.id === state.activeTabId);
+    if (!tab) return;
+    if (!tab.path) {
+        showStatus('Save the file first before renaming');
+        return;
+    }
+    if (!window.__TAURI__) {
+        alert('Renaming files is only supported in the app.');
+        return;
+    }
+    
+    const oldPath = tab.path;
+    let newPath = await saveDialog({
+        defaultPath: oldPath,
+        filters: [{ name: 'All Files', extensions: ['*'] }]
+    });
+    
+    if (newPath && newPath !== oldPath) {
+        try {
+            let content = '';
+            if (tab.isDoc) {
+                if (state.quillView) {
+                    content = state.quillView.root.innerHTML;
+                } else {
+                    content = tab.savedContent || '';
+                }
+            } else {
+                content = state.editorView.state.doc.toString();
+            }
+            
+            await writeTextFile(newPath, content);
+            await window.__TAURI__.fs.removeFile(oldPath);
+            
+            tab.path = newPath;
+            tab.title = getFilename(newPath);
+            tab.isUnsaved = false;
+            tab.savedContent = content;
+            try {
+                tab.lastModified = await invoke('get_file_modified', { path: newPath });
+            } catch(e){}
+            
+            removeFromFileHistory(oldPath);
+            addToFileHistory(newPath);
+            
+            renderTabs();
+            updateTitle();
+            showStatus('File moved successfully');
+            saveSessionDebounced();
+        } catch (e) {
+            console.error(e);
+            showStatus('Error moving file');
         }
     }
 }
