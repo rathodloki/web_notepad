@@ -235,15 +235,84 @@
         <div class="editor-pane" id="pane-1" style="display: flex; flex-direction: row; height: 100%;">
             <!-- Empty State -->
             <div id="empty-state" style="display: none;">
-                <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1.5" fill="none"
-                    style="opacity: 0.5; margin-bottom: 20px;">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                </svg>
-                <h2 style="font-weight: 500; margin-bottom: 30px; color: var(--text-primary);">LightPad</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px 30px; font-size: 13px;">
-                    <span style="text-align: right;">New File</span><span style="color: var(--accent);">Ctrl+N</span>
-                    <span style="text-align: right;">Open File</span><span style="color: var(--accent);">Ctrl+O</span>
-                    <span style="text-align: right;">Command Palette</span><span style="color: var(--accent);">Ctrl+Shift+P</span>
+                <!-- Canvas for game elements -->
+                <canvas id="game-canvas"></canvas>
+
+                <!-- CRT Scanline overlay -->
+                <div class="game-crt-overlay"></div>
+
+                <!-- Glassmorphic HUD: Top Left (Score & Highscore) -->
+                <div class="game-hud-panel game-hud-top-left">
+                    <div class="hud-label">SCORE</div>
+                    <div class="hud-value" id="game-score">000000</div>
+                    <div class="hud-label-small" style="margin-top: 4px;">HIGHSCORE</div>
+                    <div class="hud-value-small" id="game-highscore">000000</div>
+                </div>
+
+                <!-- Glassmorphic HUD: Top Right (Energy & Combo) -->
+                <div class="game-hud-panel game-hud-top-right">
+                    <div class="hud-label">ENERGY</div>
+                    <div class="game-energy-bar" id="game-energy-bar">
+                        <div class="energy-segment active"></div>
+                        <div class="energy-segment active"></div>
+                        <div class="energy-segment active"></div>
+                        <div class="energy-segment active"></div>
+                        <div class="energy-segment active"></div>
+                        <div class="energy-segment active"></div>
+                        <div class="energy-segment active"></div>
+                        <div class="energy-segment active"></div>
+                        <div class="energy-segment active"></div>
+                        <div class="energy-segment active"></div>
+                    </div>
+                    <div class="hud-label-small" style="margin-top: 6px;">COMBO</div>
+                    <div class="hud-value-accent" id="game-combo">x1.0</div>
+                </div>
+
+                <!-- Glassmorphic HUD: Bottom Left (Music Visualizer / BGM Toggle) -->
+                <div class="game-hud-panel game-hud-bottom-left" id="game-music-panel" title="Click to Toggle Retro Synth Music">
+                    <div class="visualizer-container">
+                        <svg class="music-icon" id="game-music-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                            <path d="M9 18V5l12-2v13" />
+                            <circle cx="6" cy="18" r="3" />
+                            <circle cx="18" cy="16" r="3" />
+                        </svg>
+                        <div class="visualizer-bars" id="visualizer-bars">
+                            <div class="v-bar" style="height: 4px;"></div>
+                            <div class="v-bar" style="height: 8px;"></div>
+                            <div class="v-bar" style="height: 12px;"></div>
+                            <div class="v-bar" style="height: 6px;"></div>
+                            <div class="v-bar" style="height: 10px;"></div>
+                            <div class="v-bar" style="height: 14px;"></div>
+                            <div class="v-bar" style="height: 5px;"></div>
+                            <div class="v-bar" style="height: 9px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Glassmorphic HUD: Bottom Right (Controls) -->
+                <div class="game-hud-panel game-hud-bottom-right">
+                    <div class="hud-controls-title">CONTROLS</div>
+                    <div class="hud-controls-item"><span>WASD / ARROWS</span><span>- MOVE</span></div>
+                    <div class="hud-controls-item"><span>P</span><span>- PAUSE</span></div>
+                </div>
+
+                <!-- Screens overlay (Idle, Paused, Game Over) -->
+                <div class="game-screen-overlay" id="game-screen-overlay">
+                    <div class="game-screen-content" id="game-screen-idle">
+                        <div class="retro-title-text">[ PRESS ENTER TO START ]</div>
+                        <div class="retro-subtitle-text">WASD / ARROWS TO MOVE</div>
+                    </div>
+                    <div class="game-screen-content" id="game-screen-paused" style="display: none;">
+                        <div class="retro-title-text">[ GAME PAUSED ]</div>
+                        <div class="retro-subtitle-text">PRESS P TO RESUME</div>
+                    </div>
+                    <div class="game-screen-content" id="game-screen-over" style="display: none;">
+                        <div class="retro-title-text system-error">[ SYSTEM CORRUPTED ]</div>
+                        <div class="retro-stats-box">
+                            <div>FINAL SCORE: <span id="game-final-score" style="color: var(--accent);">000000</span></div>
+                        </div>
+                        <div class="retro-subtitle-text" style="margin-top: 15px;">PRESS ENTER TO REBOOT</div>
+                    </div>
                 </div>
             </div>
 

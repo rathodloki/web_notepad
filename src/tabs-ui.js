@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { getFilename } from './utils.js';
 import { switchTab, closeTab } from './editor-manager.js';
 import { saveSessionDebounced } from './session.js';
+import { initGame, stopGame } from './game.js';
 
 const tabBar = document.getElementById('tab-bar');
 let draggedTabId = null;
@@ -247,6 +248,7 @@ export function activateTabUI(tab) {
     const emptyState = document.getElementById('empty-state');
     const editorWrapper = document.getElementById('editor-wrapper');
 
+    stopGame();
     if (emptyState) emptyState.style.display = 'none';
     if (editorWrapper) editorWrapper.style.display = 'flex';
 
@@ -304,7 +306,10 @@ export function deactivateTabUI() {
         quillWrapper.style.display = 'none';
     }
     if (editorWrapper) editorWrapper.style.display = 'none';
-    if (emptyState) emptyState.style.display = 'flex';
+    if (emptyState) {
+        emptyState.style.display = 'flex';
+        initGame();
+    }
 
     const mdPreview = document.getElementById('markdown-preview');
     if (mdPreview) mdPreview.style.display = 'none';
