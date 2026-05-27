@@ -715,6 +715,22 @@ function setupSelectionToolbar() {
     }
 
     function positionToolbar() {
+        const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+        if (!activeTab) { hideToolbar(); return; }
+
+        const isDoc = !!activeTab.isDoc;
+        const isMarkdown = (activeTab.path && (activeTab.path.toLowerCase().endsWith('.md') || activeTab.path.toLowerCase().endsWith('.markdown'))) ||
+                           (activeTab.title && (activeTab.title.toLowerCase().endsWith('.md') || activeTab.title.toLowerCase().endsWith('.markdown'))) ||
+                           activeTab.manualLanguage === 'md' ||
+                           activeTab.manualLanguage === 'markdown' ||
+                           activeTab.autoLanguage === 'md' ||
+                           activeTab.autoLanguage === 'markdown';
+
+        if (!isDoc && !isMarkdown) {
+            hideToolbar();
+            return;
+        }
+
         const rect = getSelectionRect();
         if (!rect) { hideToolbar(); return; }
 
@@ -748,6 +764,25 @@ function setupSelectionToolbar() {
             hideToolbar();
             return;
         }
+
+        const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+        if (!activeTab) {
+            hideToolbar();
+            return;
+        }
+        const isDoc = !!activeTab.isDoc;
+        const isMarkdown = (activeTab.path && (activeTab.path.toLowerCase().endsWith('.md') || activeTab.path.toLowerCase().endsWith('.markdown'))) ||
+                           (activeTab.title && (activeTab.title.toLowerCase().endsWith('.md') || activeTab.title.toLowerCase().endsWith('.markdown'))) ||
+                           activeTab.manualLanguage === 'md' ||
+                           activeTab.manualLanguage === 'markdown' ||
+                           activeTab.autoLanguage === 'md' ||
+                           activeTab.autoLanguage === 'markdown';
+
+        if (!isDoc && !isMarkdown) {
+            hideToolbar();
+            return;
+        }
+
         // Delay slightly to wait for selection to stabilize
         setTimeout(positionToolbar, 50);
     });

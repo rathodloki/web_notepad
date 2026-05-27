@@ -954,6 +954,22 @@ body::before {
   to { transform: scale(1); opacity: 1; }
 }
 
+.retro-status-tag {
+  font-family: 'Geist Mono', 'Courier New', monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: #ffb86c; /* Gold warning color */
+  text-shadow: 0 0 8px rgba(255, 184, 108, 0.4);
+  margin-bottom: 15px;
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(255, 184, 108, 0.06);
+  border: 1px solid rgba(255, 184, 108, 0.2);
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
 .retro-title-text {
   font-family: 'Geist Mono', 'Courier New', monospace;
   font-size: 16px;
@@ -2047,4 +2063,125 @@ body::before {
   font-size: 13px;
   transition: opacity 0.15s ease;
   margin-left: 10px;
+}
+
+/* Music play button active state pulse animation */
+#btn-music-play.active {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+  animation: musicPulse 2s infinite ease-in-out;
+}
+
+@keyframes musicPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
+  }
+}
+
+/* Music Status Indicator in Footer (Right Section) */
+#status-music-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.music-title-wrap {
+  width: 130px;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 4px;
+  font-family: 'Geist Mono', 'Inter', monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  transition: background-color 0.15s, color 0.15s;
+  mask-image: linear-gradient(to right, transparent, black 10px, black 120px, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black 120px, transparent);
+}
+
+.music-title-wrap:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.music-title-marquee {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.music-title-wrap.playing .music-title-marquee {
+  width: auto;
+  text-align: left;
+  padding-left: 100%;
+  animation: marquee-scroll 12s linear infinite;
+}
+
+@keyframes marquee-scroll {
+  0 {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+.status-item-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  height: 20px;
+  width: 20px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.status-item-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  transform: scale(1.08);
+}
+
+.status-item-btn:active {
+  transform: scale(0.92);
+}
+
+#btn-music-fav:hover {
+  color: #ef4444 !important;
+}
+
+/* Scrollbar for music history/favorites lists */
+#music-menu-favorites::-webkit-scrollbar,
+#music-menu-history::-webkit-scrollbar {
+  width: 4px;
+}
+
+#music-menu-favorites::-webkit-scrollbar-track,
+#music-menu-history::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#music-menu-favorites::-webkit-scrollbar-thumb,
+#music-menu-history::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+#music-menu-favorites::-webkit-scrollbar-thumb:hover,
+#music-menu-history::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }

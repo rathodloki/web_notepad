@@ -8,7 +8,7 @@
     },
     "package": {
         "productName": "LightPad",
-        "version": "1.0.26"
+        "version": "1.0.27"
     },
     "tauri": {
         "allowlist": {
@@ -76,6 +76,9 @@
             "windows": {
                 "wix": {
                     "template": "main.wxs"
+                },
+                "nsis": {
+                    "installMode": "currentUser"
                 }
             }
         },
@@ -102,6 +105,7 @@
         ]
     }
 }
+
 
 
 

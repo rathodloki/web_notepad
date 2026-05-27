@@ -63,11 +63,15 @@ if (!(Test-Path -Path $releaseDir)) {
 
 $exeSourcePath = ".\src-tauri\target\release\lightpad.exe"
 $setupSourcePath = ".\src-tauri\target\release\bundle\nsis\LightPad_$newVersion`_x64-setup.exe"
+$msiSourcePath = ".\src-tauri\target\release\bundle\msi\LightPad_$newVersion`_x64_en-US.msi"
 
 if (Test-Path -Path $exeSourcePath) {
     Copy-Item -Path $exeSourcePath -Destination "$releaseDir\LightPad-Portable.exe" -Force
     if (Test-Path -Path $setupSourcePath) {
         Copy-Item -Path $setupSourcePath -Destination "$releaseDir\LightPad-Setup.exe" -Force
+    }
+    if (Test-Path -Path $msiSourcePath) {
+        Copy-Item -Path $msiSourcePath -Destination "$releaseDir\LightPad-Installer.msi" -Force
     }
 
     Write-Host "Applying Code Signature to bypass Defender/SmartScreen..." -ForegroundColor Yellow
@@ -76,6 +80,23 @@ if (Test-Path -Path $exeSourcePath) {
         Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Portable.exe" -Certificate $cert | Out-Null
         if (Test-Path -Path "$releaseDir\LightPad-Setup.exe") {
             Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Setup.exe" -Certificate $cert | Out-Null
+        }
+        if (Test-Path -Path "$releaseDir\LightPad-Installer.msi") {
+            Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Installer.msi" -Certificate $cert | Out-Null
+        }
+
+        # Verify all signatures and report status
+        Write-Host "Verifying signatures..." -ForegroundColor DarkGray
+        foreach ($artifact in @("LightPad-Portable.exe", "LightPad-Setup.exe", "LightPad-Installer.msi")) {
+            $artifactPath = Join-Path $releaseDir $artifact
+            if (Test-Path $artifactPath) {
+                $sig = Get-AuthenticodeSignature -FilePath $artifactPath
+                if ($sig.Status -eq "Valid") {
+                    Write-Host "  [SIGNED] $artifact" -ForegroundColor Green
+                } else {
+                    Write-Host "  [WARN]   $artifact — $($sig.StatusMessage)" -ForegroundColor Yellow
+                }
+            }
         }
         Write-Host "Certificates attached!" -ForegroundColor Green
     } else {
@@ -108,17 +129,18 @@ Write-Host "`n[5/5] Publishing GitHub Release..." -ForegroundColor Cyan
 $ghCheck = Get-Command gh -ErrorAction SilentlyContinue
 if ($null -ne $ghCheck) {
     Write-Host "Using GitHub CLI to create release v$newVersion..." -ForegroundColor DarkGray
-    # Create the release.
-    # v$newVersion is the git tag.
-    # --title matches the version
-    # --notes passes the commit message
-    # and .exe Setup.
-    $uploadAssets = "$releaseDir\LightPad-Portable.zip"
+
+    # Build the list of assets to upload
+    $uploadAssets = @("$releaseDir\LightPad-Portable.zip")
     if (Test-Path -Path "$releaseDir\LightPad-Setup.exe") {
-        $uploadAssets += " $releaseDir\LightPad-Setup.exe"
+        $uploadAssets += "$releaseDir\LightPad-Setup.exe"
+    }
+    if (Test-Path -Path "$releaseDir\LightPad-Installer.msi") {
+        $uploadAssets += "$releaseDir\LightPad-Installer.msi"
     }
 
-    Invoke-Expression "gh release create `"v$newVersion`" $uploadAssets --title `"v$newVersion`" --notes `"$commitMessage`""
+    # Use safe argument array instead of Invoke-Expression to prevent injection
+    & gh release create "v$newVersion" @uploadAssets --title "v$newVersion" --notes $commitMessage
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host "`n>>> SUCCESS: LightPad v$newVersion successfully built and published to GitHub! <<<" -ForegroundColor Green

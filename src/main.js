@@ -18,6 +18,7 @@ import { getFilename } from './utils.js';
 import { setupSettingsMenu } from './settings-manager.js';
 import { setupWindowManager } from './window-manager.js';
 import './quill-init.js';
+import { setupMusicPlayer } from './music-manager.js';
 
 /* ── Toggle helpers ─────────────────────────────────────────────── */
 
@@ -216,9 +217,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Extracted module setups
     setupSettingsMenu();
+    setupMusicPlayer();
 
     // Context menu
-    document.addEventListener('click', () => { const menu = document.getElementById('tab-context-menu'); if (menu) menu.style.display = 'none'; });
+    document.addEventListener('click', () => {
+        const tabMenu = document.getElementById('tab-context-menu');
+        if (tabMenu) tabMenu.style.display = 'none';
+        const musicMenu = document.getElementById('music-context-menu');
+        if (musicMenu) musicMenu.style.display = 'none';
+    });
     document.getElementById('menu-close-all')?.addEventListener('click', async () => await closeMultipleTabs([...state.tabs]));
     document.getElementById('menu-close-others')?.addEventListener('click', async () => {
         if (!state.contextMenuTargetId) return;
