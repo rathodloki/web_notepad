@@ -74,15 +74,18 @@ if (Test-Path -Path $exeSourcePath) {
         Copy-Item -Path $msiSourcePath -Destination "$releaseDir\LightPad-Installer.msi" -Force
     }
 
-    Write-Host "Applying Code Signature to bypass Defender/SmartScreen..." -ForegroundColor Yellow
+    Write-Host "Applying Code Signature with RFC 3161 Timestamp..." -ForegroundColor Yellow
     $cert = Get-Item "Cert:\CurrentUser\My\0653CD08D62617B0CF0C48FCCB373F3498016AF2" -ErrorAction SilentlyContinue
+    # RFC 3161 timestamp from a trusted CA — proves when the file was signed
+    # and improves trust reputation with SmartScreen and corporate EDR
+    $timestampServer = "http://timestamp.digicert.com"
     if ($cert) {
-        Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Portable.exe" -Certificate $cert | Out-Null
+        Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Portable.exe" -Certificate $cert -TimestampServer $timestampServer | Out-Null
         if (Test-Path -Path "$releaseDir\LightPad-Setup.exe") {
-            Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Setup.exe" -Certificate $cert | Out-Null
+            Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Setup.exe" -Certificate $cert -TimestampServer $timestampServer | Out-Null
         }
         if (Test-Path -Path "$releaseDir\LightPad-Installer.msi") {
-            Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Installer.msi" -Certificate $cert | Out-Null
+            Set-AuthenticodeSignature -FilePath "$releaseDir\LightPad-Installer.msi" -Certificate $cert -TimestampServer $timestampServer | Out-Null
         }
 
         # Verify all signatures and report status
@@ -103,8 +106,25 @@ if (Test-Path -Path $exeSourcePath) {
         Write-Host "WARNING: 0653CD08D62617B0CF0C48FCCB373F3498016AF2 Cert not found. Binaries are UNSIGNED." -ForegroundColor Red
     }
 
+    # Strip Mark of the Web (MOTW) Zone.Identifier from all release artifacts.
+    # When files are downloaded from the internet, Windows tags them with a Zone.Identifier
+    # alternate data stream. This MOTW flag triggers extra SmartScreen scanning and
+    # corporate EDR quarantine. Removing it from the source artifacts before zipping
+    # means the zip contents won't inherit the "downloaded from internet" flag.
+    Write-Host "Stripping Mark of the Web from release artifacts..." -ForegroundColor Yellow
+    Get-ChildItem -Path $releaseDir -File | ForEach-Object {
+        Unblock-File -Path $_.FullName -ErrorAction SilentlyContinue
+    }
+
     Write-Host "Zipping Portable executable to protect Transit Stream..." -ForegroundColor Yellow
     Compress-Archive -Path "$releaseDir\LightPad-Portable.exe" -DestinationPath "$releaseDir\LightPad-Portable.zip" -Force
+
+    # Copy the install helper script for corporate users
+    $helperPath = ".\install-helper.bat"
+    if (Test-Path -Path $helperPath) {
+        Copy-Item -Path $helperPath -Destination "$releaseDir\install-helper.bat" -Force
+        Write-Host "Included install-helper.bat for corporate deployments." -ForegroundColor DarkGray
+    }
 
     Write-Host "Successfully packaged release files." -ForegroundColor Green
 }
@@ -137,6 +157,9 @@ if ($null -ne $ghCheck) {
     }
     if (Test-Path -Path "$releaseDir\LightPad-Installer.msi") {
         $uploadAssets += "$releaseDir\LightPad-Installer.msi"
+    }
+    if (Test-Path -Path "$releaseDir\install-helper.bat") {
+        $uploadAssets += "$releaseDir\install-helper.bat"
     }
 
     # Use safe argument array instead of Invoke-Expression to prevent injection
