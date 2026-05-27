@@ -12,6 +12,9 @@ const STATIONS = [
 export let audio = null;
 let currentStationIndex = 0;
 let isPlaying = false;
+let currentVolume = parseFloat(localStorage.getItem('lightpad_music_volume') ?? '0.7');
+let isMuted = false;
+let preMuteVolume = currentVolume;
 
 // Web Audio API variables for frequency analysis
 let audioCtx = null;
@@ -90,6 +93,7 @@ function initAudio() {
     // Enable CORS to allow Web Audio API AnalyserNode to inspect the stream frequencies
     audio.crossOrigin = "anonymous";
     audio.preload = "none";
+    audio.volume = isMuted ? 0 : currentVolume;
     
     audio.addEventListener('error', (e) => {
         console.error("Audio stream error:", e);
@@ -259,12 +263,12 @@ function updateMusicFooterUI() {
     
     if (currentSongMetadata) {
         if (currentSongMetadata.type === 'song') {
-            titleEl.textContent = `Playing: ${currentSongMetadata.artist} - ${currentSongMetadata.title}`;
+            titleEl.textContent = `${currentSongMetadata.artist} - ${currentSongMetadata.title}`;
         } else {
-            titleEl.textContent = `Playing: ${currentSongMetadata.name}`;
+            titleEl.textContent = `${currentSongMetadata.name}`;
         }
     } else {
-        titleEl.textContent = `Playing: ${STATIONS[currentStationIndex].name}`;
+        titleEl.textContent = `${STATIONS[currentStationIndex].name}`;
     }
     
     updateFavoriteIconUI();
@@ -671,6 +675,52 @@ export function getMusicReactionData() {
     }
 }
 
+function updateVolumeUI() {
+    const slider = document.getElementById('music-volume-slider');
+    const iconOn = document.getElementById('volume-icon-on');
+    const iconMuted = document.getElementById('volume-icon-muted');
+    const muteBtn = document.getElementById('btn-music-mute');
+    
+    if (slider) {
+        const displayVal = isMuted ? 0 : Math.round(currentVolume * 100);
+        slider.value = displayVal;
+        slider.style.setProperty('--volume-pct', `${displayVal}%`);
+    }
+    
+    if (iconOn && iconMuted && muteBtn) {
+        if (isMuted || currentVolume === 0) {
+            iconOn.style.display = 'none';
+            iconMuted.style.display = 'block';
+            muteBtn.title = 'Unmute';
+        } else {
+            iconOn.style.display = 'block';
+            iconMuted.style.display = 'none';
+            muteBtn.title = 'Mute';
+        }
+    }
+}
+
+function setVolume(val) {
+    currentVolume = Math.max(0, Math.min(1, val));
+    if (audio) {
+        audio.volume = isMuted ? 0 : currentVolume;
+    }
+    localStorage.setItem('lightpad_music_volume', String(currentVolume));
+    updateVolumeUI();
+}
+
+function toggleMute() {
+    if (isMuted) {
+        isMuted = false;
+        if (audio) audio.volume = currentVolume;
+    } else {
+        preMuteVolume = currentVolume;
+        isMuted = true;
+        if (audio) audio.volume = 0;
+    }
+    updateVolumeUI();
+}
+
 export function setupMusicPlayer() {
     const playBtn = document.getElementById('btn-music-play');
     const nextBtn = document.getElementById('btn-music-next');
@@ -713,6 +763,35 @@ export function setupMusicPlayer() {
         });
         nextFooterBtn.dataset.listenerAdded = 'true';
     }
+
+    // Wire up volume slider & mute button
+    const volumeSlider = document.getElementById('music-volume-slider');
+    const muteBtn = document.getElementById('btn-music-mute');
+
+    if (volumeSlider && !volumeSlider.dataset.listenerAdded) {
+        // Initialize slider to saved volume
+        volumeSlider.value = Math.round(currentVolume * 100);
+        volumeSlider.style.setProperty('--volume-pct', `${Math.round(currentVolume * 100)}%`);
+
+        volumeSlider.addEventListener('input', (e) => {
+            e.stopPropagation();
+            isMuted = false;
+            setVolume(parseInt(e.target.value, 10) / 100);
+        });
+        volumeSlider.addEventListener('click', (e) => e.stopPropagation());
+        volumeSlider.addEventListener('mousedown', (e) => e.stopPropagation());
+        volumeSlider.dataset.listenerAdded = 'true';
+    }
+    if (muteBtn && !muteBtn.dataset.listenerAdded) {
+        muteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMute();
+        });
+        muteBtn.dataset.listenerAdded = 'true';
+    }
+
+    // Set initial volume icon state
+    updateVolumeUI();
 
     // Wire up footer status container click/contextmenu and heart favorite button
     const musicContainer = document.getElementById('status-music-container');

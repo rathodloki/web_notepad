@@ -63,12 +63,20 @@ const customTheme = EditorView.theme({
         backgroundColor: "transparent",
         color: "rgba(255, 255, 255, 0.28) !important",
         border: "none",
-        borderRight: "1px solid var(--border)",
-        minWidth: "56px"
+        borderRight: "1px solid var(--border)"
     },
-    ".cm-gutterElement": {
-        padding: "0 12px 0 16px",
+    ".cm-lineNumbers .cm-gutterElement": {
+        padding: "0 8px 0 16px",
+        minWidth: "40px",
         textAlign: "right",
+        color: "rgba(255, 255, 255, 0.28) !important"
+    },
+    ".cm-foldGutter .cm-gutterElement": {
+        width: "12px",
+        padding: "0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         color: "rgba(255, 255, 255, 0.28) !important"
     },
     ".cm-panels": {

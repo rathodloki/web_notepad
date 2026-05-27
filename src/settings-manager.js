@@ -71,6 +71,9 @@ export function updateCheckmarks() {
     if (wordwrapCheck) wordwrapCheck.style.opacity = state.isWordWrapEnabled ? '1' : '0';
     if (markdownCheck) markdownCheck.style.opacity = state.isMarkdownPreviewEnabled ? '1' : '0';
 
+    const arcadeCheck = document.querySelector('#menu-toggle-arcademode .check-icon');
+    if (arcadeCheck) arcadeCheck.style.opacity = state.isArcadeModeEnabled ? '1' : '0';
+
     // 2) Default New Tab checkmarks
     const defaultVal = state.defaultNewFileType || 'txt';
     const txtCheck = document.querySelector('#menu-default-txt .check-icon');
@@ -131,6 +134,39 @@ export function toggleMarkdownPreview() {
     updateCheckmarks();
 }
 
+export function toggleArcadeMode() {
+    state.isArcadeModeEnabled = !state.isArcadeModeEnabled;
+    localStorage.setItem('lightpad-arcademode', state.isArcadeModeEnabled.toString());
+    showStatus(state.isArcadeModeEnabled ? 'Idle Arcade Mode Enabled' : 'Idle Arcade Mode Disabled');
+    updateCheckmarks();
+
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState && emptyState.style.display === 'flex') {
+        import('./game.js').then(m => {
+            if (state.isArcadeModeEnabled) {
+                m.initGame();
+            } else {
+                m.stopGame();
+                // Manually transition to disabled layout
+                const canvas = document.getElementById('game-canvas');
+                if (canvas) canvas.style.display = 'none';
+                
+                const crt = document.querySelector('.game-crt-overlay');
+                if (crt) crt.style.display = 'none';
+                
+                const panels = document.querySelectorAll('.game-hud-panel');
+                panels.forEach(p => p.style.display = 'none');
+                
+                const arcadeStarter = document.getElementById('console-arcade-starter');
+                if (arcadeStarter) arcadeStarter.style.display = 'none';
+                
+                const tagline = document.getElementById('console-tagline');
+                if (tagline) tagline.textContent = 'No files open — start coding to begin';
+            }
+        });
+    }
+}
+
 export function setupSettingsMenu() {
     const settingsBtn = document.getElementById('btn-settings');
     const settingsMenu = document.getElementById('settings-menu');
@@ -185,6 +221,11 @@ export function setupSettingsMenu() {
     document.getElementById('menu-toggle-markdown').addEventListener('click', (e) => {
         e.stopPropagation();
         toggleMarkdownPreview();
+    });
+
+    document.getElementById('menu-toggle-arcademode').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArcadeMode();
     });
 
     // Default New Tab type selector

@@ -1,10 +1,14 @@
 // game.js - Mini Retro Space Shooter Game for LightPad
 import { getMusicReactionData } from './music-manager.js';
+import { state } from './state.js';
+import { getFilename } from './utils.js';
 
 let canvas = null;
 let ctx = null;
 let animationFrameId = null;
 let bgImage = null;
+let visualizerBars = null;
+let spriteCache = null;
 
 // Game states
 const STATE_IDLE = 'IDLE';
@@ -217,6 +221,7 @@ const FRAGMENT_SYMBOLS = ['{}', '</>', ';', '[]', '()', '=>', '++', '01', '&&', 
 // -------------------------------------------------------------
 
 function handleKeyDown(e) {
+    if (!state.isArcadeModeEnabled) return;
     if (gameState === STATE_RUNNING) {
         if (e.key === 'p' || e.key === 'P') {
             e.preventDefault();
@@ -245,6 +250,7 @@ function handleKeyDown(e) {
 }
 
 function handleKeyUp(e) {
+    if (!state.isArcadeModeEnabled) return;
     if (['w', 'a', 's', 'd', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', ' '].includes(e.key)) {
         keys[e.key] = false;
         e.preventDefault();
@@ -444,6 +450,83 @@ function drawMultiPixelSprite(sprite, sx, sy, pixelSize, colorMap, glowColor) {
     ctx.restore();
 }
 
+function renderToOffscreenCanvas(sprite, width, height, pixelSize, colorMap, color, glowColor) {
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = width;
+    offCanvas.height = height;
+    const offCtx = offCanvas.getContext('2d');
+    
+    offCtx.save();
+    if (glowColor) {
+        offCtx.shadowBlur = 4;
+        offCtx.shadowColor = glowColor;
+    }
+    
+    const rows = sprite.length;
+    const cols = sprite[0].length;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const offsetX = - (cols * pixelSize) / 2;
+    const offsetY = - (rows * pixelSize) / 2;
+
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const val = sprite[r][c];
+            if (val > 0) {
+                if (colorMap && colorMap[val]) {
+                    offCtx.fillStyle = colorMap[val];
+                } else {
+                    offCtx.fillStyle = color;
+                }
+                offCtx.fillRect(
+                    centerX + offsetX + c * pixelSize,
+                    centerY + offsetY + r * pixelSize,
+                    pixelSize,
+                    pixelSize
+                );
+            }
+        }
+    }
+    offCtx.restore();
+    return offCanvas;
+}
+
+function initSpriteCache() {
+    if (spriteCache) return;
+    spriteCache = {
+        playerNormal: renderToOffscreenCanvas(PLAYER_SHIP_SPRITE, 48, 48, 2.0, {
+            1: '#ffffff',
+            2: '#00f0ff',
+            3: '#3b82f6'
+        }, null, '#00f0ff'),
+        
+        playerDamaged: renderToOffscreenCanvas(PLAYER_SHIP_SPRITE, 48, 48, 2.0, {
+            1: '#ffffff',
+            2: '#ff3366',
+            3: '#ff0000'
+        }, null, '#ff0033'),
+        
+        bugFlap1: renderToOffscreenCanvas(BUG_SPRITE, 32, 32, 2.2, null, '#ff5555', 'rgba(255, 85, 85, 0.7)'),
+        bugFlap2: renderToOffscreenCanvas(BUG_SPRITE_FLAP, 32, 32, 2.2, null, '#ff5555', 'rgba(255, 85, 85, 0.7)'),
+        
+        orb: renderToOffscreenCanvas(VIRUS_SPRITE, 32, 32, 2.4, {
+            1: '#ffffff',
+            2: '#50fa7b'
+        }, '#50fa7b', 'rgba(80, 250, 123, 0.7)'),
+        
+        swarm: renderToOffscreenCanvas(SWARM_SPRITE, 24, 24, 2.0, {
+            1: '#ffffff',
+            2: '#ffb86c'
+        }, '#ffb86c', 'rgba(255, 184, 108, 0.7)'),
+        
+        drone: renderToOffscreenCanvas(DRONE_SPRITE, 36, 36, 2.6, {
+            1: '#ffffff',
+            2: '#8be9fd',
+            3: '#bd93f9'
+        }, '#8be9fd', 'rgba(139, 233, 253, 0.7)')
+    };
+}
+
 function drawWireframeCube(cx, cy, size, angleX, angleY) {
     const vertices = [
         {x: -1, y: -1, z: -1}, {x: 1, y: -1, z: -1}, {x: 1, y: 1, z: -1}, {x: -1, y: 1, z: -1},
@@ -497,20 +580,9 @@ function drawSpaceship(x, y) {
         drawY += (Math.random() - 0.5) * 4.5;
     }
 
-    const colorMap = isDamaged ? {
-        1: '#ffffff',
-        2: '#ff3366',
-        3: '#ff0000'
-    } : {
-        1: '#ffffff',
-        2: '#00f0ff',
-        3: '#3b82f6'
-    };
-    
-    const glowColor = isDamaged ? '#ff0033' : '#00f0ff';
-
-    // Renders the color-mapped 16x16 pixel ship at scale 2.0 (32x32 bounding box)
-    drawMultiPixelSprite(PLAYER_SHIP_SPRITE, drawX, drawY, 2.0, colorMap, glowColor);
+    // Renders the pre-rendered color-mapped ship directly from cache
+    const img = isDamaged ? spriteCache.playerDamaged : spriteCache.playerNormal;
+    ctx.drawImage(img, drawX - img.width / 2, drawY - img.height / 2);
 
     // Dynamic dual exhaust engine thruster flames
     const isMoving = keys.w || keys.ArrowUp;
@@ -652,19 +724,146 @@ function drawFragment(frag) {
 // GAME INITIALIZATION & RESET
 // -------------------------------------------------------------
 
+export function populateConsoleRecents() {
+    const listContainer = document.getElementById('console-recents-list');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    const recents = state.fileHistory.slice(0, 4);
+    if (recents.length === 0) {
+        listContainer.innerHTML = '<div class="console-no-recents">No recent files</div>';
+        return;
+    }
+
+    recents.forEach(path => {
+        const item = document.createElement('div');
+        item.className = 'console-recent-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'recent-name';
+        nameSpan.textContent = getFilename(path);
+
+        const pathSpan = document.createElement('span');
+        pathSpan.className = 'recent-path';
+        pathSpan.textContent = path;
+        pathSpan.title = path;
+
+        item.appendChild(nameSpan);
+        item.appendChild(pathSpan);
+
+        item.onclick = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const { openFileFromHistory } = await import('./file-io.js');
+            await openFileFromHistory(path);
+        };
+
+        listContainer.appendChild(item);
+    });
+}
+
 export function initGame() {
     canvas = document.getElementById('game-canvas');
     if (!canvas) return;
 
     ctx = canvas.getContext('2d');
+    initSpriteCache();
+    visualizerBars = document.querySelectorAll('.v-bar');
+
     if (!bgImage) {
         bgImage = new Image();
         bgImage.src = 'game-bg.webp';
     }
     resizeCanvas();
 
+    // Wire up Console action buttons
+    const btnNew = document.getElementById('console-btn-new');
+    if (btnNew) {
+        btnNew.onclick = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const { createNewTab } = await import('./editor-manager.js');
+            await createNewTab();
+        };
+    }
+
+    const btnOpen = document.getElementById('console-btn-open');
+    if (btnOpen) {
+        btnOpen.onclick = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const { openFile } = await import('./file-io.js');
+            await openFile();
+        };
+    }
+
+    const btnUrl = document.getElementById('console-btn-url');
+    if (btnUrl) {
+        btnUrl.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const modal = document.getElementById('open-url-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                const input = document.getElementById('open-url-input');
+                if (input) input.focus();
+            }
+        };
+    }
+
+    const btnSession = document.getElementById('console-btn-session');
+    if (btnSession) {
+        btnSession.onclick = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const { loadExplicitSession } = await import('./session-manager.js');
+            await loadExplicitSession();
+        };
+    }
+
+    const btnPlay = document.getElementById('console-btn-play-game');
+    if (btnPlay) {
+        btnPlay.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            startGame();
+        };
+    }
+
+    // Populate recents
+    populateConsoleRecents();
+
     // Reset controls
     Object.keys(keys).forEach(k => keys[k] = false);
+
+    // Dynamic visibility based on setting
+    const crt = document.querySelector('.game-crt-overlay');
+    const hudPanels = document.querySelectorAll('.game-hud-panel');
+    const arcadeStarter = document.getElementById('console-arcade-starter');
+    const tagline = document.getElementById('console-tagline');
+
+    if (!state.isArcadeModeEnabled) {
+        // Arcade disabled layout
+        if (canvas) canvas.style.display = 'none';
+        if (crt) crt.style.display = 'none';
+        hudPanels.forEach(p => p.style.display = 'none');
+        if (arcadeStarter) arcadeStarter.style.display = 'none';
+        if (tagline) tagline.textContent = 'No files open — start coding to begin';
+
+        // Clear any animation frame and stop loop
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        return;
+    }
+
+    // Arcade enabled layout
+    if (canvas) canvas.style.display = 'block';
+    if (crt) crt.style.display = 'block';
+    hudPanels.forEach(p => p.style.display = 'block');
+    if (arcadeStarter) arcadeStarter.style.display = 'block';
+    if (tagline) tagline.textContent = 'No files open — start coding or play while idle';
 
     // Initial positioning
     player.x = canvas.width / 2;
@@ -1137,6 +1336,7 @@ function triggerEMPEffect() {
 
 function gameLoop() {
     if (!canvas || !ctx) return;
+    if (!state.isArcadeModeEnabled) return;
 
     animationFrameId = requestAnimationFrame(gameLoop);
 
@@ -1186,6 +1386,12 @@ function gameLoop() {
                 sx = (bgImage.width - sWidth) / 2;
             }
             ctx.drawImage(bgImage, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+            
+            // Draw a semi-transparent dark overlay to reduce visual dominance/brightness
+            ctx.save();
+            ctx.fillStyle = 'rgba(5, 5, 8, 0.45)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
             
             // Draw a subtle music-reactive neon pink color overlay (tints the background to the beat)
             if (reaction && (reaction.isPlaying || reaction.volume > 0.01)) {
@@ -1898,7 +2104,6 @@ function drawPowerUp(pup) {
 function renderEntities() {
     // 1. Draw Exhaust/Trail Particles
     particles.forEach(p => {
-        ctx.save();
         ctx.globalAlpha = p.alpha;
         
         if (p.type === 'smoke') {
@@ -1907,6 +2112,7 @@ function renderEntities() {
             ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
             ctx.fill();
         } else if (p.type === 'shockwave') {
+            ctx.save();
             ctx.strokeStyle = p.color;
             ctx.lineWidth = 3.5;
             ctx.shadowBlur = 15;
@@ -1914,7 +2120,9 @@ function renderEntities() {
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
             ctx.stroke();
+            ctx.restore();
         } else if (p.type === 'text') {
+            ctx.save();
             ctx.fillStyle = p.color;
             ctx.shadowBlur = 8;
             ctx.shadowColor = p.color;
@@ -1922,34 +2130,32 @@ function renderEntities() {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(p.text, p.x, p.y);
+            ctx.restore();
         } else {
             ctx.fillStyle = p.color;
             ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
         }
-        
-        ctx.restore();
     });
+    ctx.globalAlpha = 1.0; // Reset global alpha
 
-    // 2. Draw Player Laser Bullets
+    // 2. Draw Player Laser Bullets (Batched)
     bullets.forEach(b => {
-        ctx.save();
-        // Double-draw neon style: draw a slightly larger rect in glow color, then a thinner white core
         ctx.fillStyle = b.color;
         ctx.fillRect(b.x - 3, b.y - 7, 6, 14);
-        ctx.fillStyle = '#ffffff';
+    });
+    ctx.fillStyle = '#ffffff';
+    bullets.forEach(b => {
         ctx.fillRect(b.x - 1, b.y - 5, 2, 10);
-        ctx.restore();
     });
 
-    // 3. Draw Enemy Projectiles
+    // 3. Draw Enemy Projectiles (Batched)
     enemyProjectiles.forEach(ep => {
-        ctx.save();
-        // Double-draw neon style: draw a slightly larger rect in glow color, then a thinner white core
         ctx.fillStyle = ep.color;
         ctx.fillRect(ep.x - 4, ep.y - 4, 8, 8);
-        ctx.fillStyle = '#ffffff';
+    });
+    ctx.fillStyle = '#ffffff';
+    enemyProjectiles.forEach(ep => {
         ctx.fillRect(ep.x - 1.5, ep.y - 1.5, 3, 3);
-        ctx.restore();
     });
 
     // 4. Draw Spaceship
@@ -1973,20 +2179,46 @@ function renderEntities() {
             bug.rotY += bug.rotSpeedY;
             drawWireframeCube(bug.x, bug.y, bug.width, bug.rotX, bug.rotY);
         } else if (bug.type === 'bug') {
-            const flap = Math.sin(Date.now() / 110) > 0;
-            const sprite = flap ? BUG_SPRITE : BUG_SPRITE_FLAP;
-            drawPixelSprite(sprite, bug.x, bug.y, 2.2, color, glow);
+            if (isHitFlashing) {
+                const flap = Math.sin(Date.now() / 110) > 0;
+                const sprite = flap ? BUG_SPRITE : BUG_SPRITE_FLAP;
+                drawPixelSprite(sprite, bug.x, bug.y, 2.2, color, glow);
+            } else {
+                const flap = Math.sin(Date.now() / 110) > 0;
+                const img = flap ? spriteCache.bugFlap1 : spriteCache.bugFlap2;
+                ctx.drawImage(img, bug.x - img.width / 2, bug.y - img.height / 2);
+            }
         } else if (bug.type === 'orb') {
-            const pulse = 1.0 + Math.sin(Date.now() / 130) * 0.15;
-            ctx.save();
-            ctx.translate(bug.x, bug.y);
-            ctx.scale(pulse, pulse);
-            drawPixelSprite(VIRUS_SPRITE, 0, 0, 2.4, color, glow);
-            ctx.restore();
+            if (isHitFlashing) {
+                const pulse = 1.0 + Math.sin(Date.now() / 130) * 0.15;
+                ctx.save();
+                ctx.translate(bug.x, bug.y);
+                ctx.scale(pulse, pulse);
+                drawPixelSprite(VIRUS_SPRITE, 0, 0, 2.4, color, glow);
+                ctx.restore();
+            } else {
+                const pulse = 1.0 + Math.sin(Date.now() / 130) * 0.15;
+                const img = spriteCache.orb;
+                ctx.save();
+                ctx.translate(bug.x, bug.y);
+                ctx.scale(pulse, pulse);
+                ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                ctx.restore();
+            }
         } else if (bug.type === 'swarm') {
-            drawPixelSprite(SWARM_SPRITE, bug.x, bug.y, 2.0, color, glow);
+            if (isHitFlashing) {
+                drawPixelSprite(SWARM_SPRITE, bug.x, bug.y, 2.0, color, glow);
+            } else {
+                const img = spriteCache.swarm;
+                ctx.drawImage(img, bug.x - img.width / 2, bug.y - img.height / 2);
+            }
         } else if (bug.type === 'drone') {
-            drawPixelSprite(DRONE_SPRITE, bug.x, bug.y, 2.6, color, glow);
+            if (isHitFlashing) {
+                drawPixelSprite(DRONE_SPRITE, bug.x, bug.y, 2.6, color, glow);
+            } else {
+                const img = spriteCache.drone;
+                ctx.drawImage(img, bug.x - img.width / 2, bug.y - img.height / 2);
+            }
         } else if (bug.type === 'cube_shard') {
             ctx.save();
             ctx.translate(bug.x, bug.y);
@@ -2071,13 +2303,15 @@ function renderEntities() {
 // -------------------------------------------------------------
 
 function tickVisualizer() {
-    const bars = document.querySelectorAll('.v-bar');
-    if (!bars.length) return;
+    if (!visualizerBars || !visualizerBars.length) {
+        visualizerBars = document.querySelectorAll('.v-bar');
+        if (!visualizerBars || !visualizerBars.length) return;
+    }
 
     const reaction = getMusicReactionData();
     const hasActiveMusic = reaction && (reaction.isPlaying || (reaction.volume > 0.01));
 
-    bars.forEach((bar, idx) => {
+    visualizerBars.forEach((bar, idx) => {
         let targetHeight = 3;
 
         if (hasActiveMusic) {

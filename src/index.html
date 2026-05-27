@@ -174,6 +174,10 @@
                     <span>Markdown Preview</span>
                     <span class="check-icon" style="color: var(--accent); font-weight: bold;">✓</span>
                 </div>
+                <div class="menu-item toggle-item" id="menu-toggle-arcademode">
+                    <span>Idle Arcade Mode</span>
+                    <span class="check-icon" style="color: var(--accent); font-weight: bold;">✓</span>
+                </div>
                 <div class="menu-item divider"></div>
                 <div class="menu-item-header"
                     style="padding: 6px 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">
@@ -299,10 +303,67 @@
 
                 <!-- Screens overlay (Idle, Paused, Game Over) -->
                 <div class="game-screen-overlay" id="game-screen-overlay">
-                    <div class="game-screen-content" id="game-screen-idle">
-                        <div class="retro-status-tag">NO ACTIVE FILES · LET'S PLAY A GAME!</div>
-                        <div class="retro-title-text">[ PRESS ENTER TO START ]</div>
-                        <div class="retro-subtitle-text">WASD / ARROWS TO MOVE</div>
+                    <div class="game-screen-content console-content" id="game-screen-idle">
+                        <div class="console-header">
+                            <div class="console-logo">LIGHTPAD</div>
+                            <div class="console-tagline" id="console-tagline">No files open — start coding or play while idle</div>
+                        </div>
+                        
+                        <div class="console-body">
+                            <!-- Quick Actions Column -->
+                            <div class="console-column quick-actions-col">
+                                <div class="console-section-title">QUICK ACTIONS</div>
+                                <div class="console-buttons">
+                                    <button class="console-btn-action" id="console-btn-new">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
+                                            <path d="M12 5v14M5 12h14" />
+                                        </svg>
+                                        <span>New File</span>
+                                        <span class="btn-shortcut">Ctrl+N</span>
+                                    </button>
+                                    <button class="console-btn-action" id="console-btn-open">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
+                                            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                        </svg>
+                                        <span>Open File</span>
+                                        <span class="btn-shortcut">Ctrl+O</span>
+                                    </button>
+                                    <button class="console-btn-action" id="console-btn-url">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
+                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                        </svg>
+                                        <span>Open from URL</span>
+                                    </button>
+                                    <button class="console-btn-action" id="console-btn-session">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
+                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                            <polyline points="7 3 7 8 15 8"></polyline>
+                                        </svg>
+                                        <span>Load Workspace</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Recent Files Column -->
+                            <div class="console-column recents-col" id="console-recents-col">
+                                <div class="console-section-title">RECENT FILES</div>
+                                <div class="console-list" id="console-recents-list">
+                                    <!-- Populated dynamically via JS -->
+                                    <div class="console-no-recents">No recent files</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Arcade Mode / Mini Game Starter Section -->
+                        <div class="console-footer" id="console-arcade-starter">
+                            <div class="retro-status-tag game-tag">IDLE ARCADE MODE ENABLED</div>
+                            <button class="console-play-btn" id="console-btn-play-game">
+                                [ PRESS ENTER OR CLICK TO PLAY ]
+                            </button>
+                            <div class="retro-subtitle-text">WASD / ARROWS TO MOVE · SPACE TO SHOOT · P TO PAUSE</div>
+                        </div>
                     </div>
                     <div class="game-screen-content" id="game-screen-paused" style="display: none;">
                         <div class="retro-title-text">[ GAME PAUSED ]</div>
@@ -365,6 +426,20 @@
                         <line x1="19" y1="5" x2="19" y2="19"></line>
                     </svg>
                 </button>
+                <div class="music-volume-control" id="music-volume-control">
+                    <button id="btn-music-mute" class="status-item-btn" title="Mute" style="padding: 0 2px;">
+                        <svg id="volume-icon-on" viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                        <svg id="volume-icon-muted" viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" style="display: none;">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
+                            <line x1="23" y1="9" x2="17" y2="15"></line>
+                            <line x1="17" y1="9" x2="23" y2="15"></line>
+                        </svg>
+                    </button>
+                    <input type="range" id="music-volume-slider" min="0" max="100" value="70" title="Volume" class="music-volume-slider">
+                </div>
                 <div class="music-title-wrap" id="status-music-info">
                     <span id="status-music-title" class="music-title-marquee">Music Off</span>
                 </div>

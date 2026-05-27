@@ -13,6 +13,7 @@ export const state = {
     isPromptingReload: false,
     isWordWrapEnabled: localStorage.getItem('lightpad-wordwrap') === 'true',
     isAutoSaveEnabled: localStorage.getItem('lightpad-autosave') === 'true',
+    isArcadeModeEnabled: localStorage.getItem('lightpad-arcademode') !== 'false',
     isMarkdownPreviewEnabled: false,
     isRestoringTab: false,
     renderMarkdownPreview: null,

@@ -700,15 +700,15 @@ body::before {
 /* Glassmorphic HUD Panel */
 .game-hud-panel {
   position: absolute;
-  background: rgba(10, 10, 15, 0.45);
-  backdrop-filter: blur(8px) saturate(120%);
-  -webkit-backdrop-filter: blur(8px) saturate(120%);
-  border: 1px solid rgba(0, 191, 255, 0.15);
+  background: rgba(10, 10, 15, 0.35);
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  border: 1px solid rgba(0, 191, 255, 0.12);
   box-shadow: 
-    0 4px 15px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 10px 14px;
+    0 3px 10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 6px 10px;
   font-family: 'Geist Mono', 'Inter', monospace;
   color: var(--text-primary);
   z-index: 10;
@@ -717,112 +717,345 @@ body::before {
 }
 
 .game-hud-panel:hover {
-  border-color: rgba(0, 191, 255, 0.35);
+  border-color: rgba(0, 191, 255, 0.25);
   box-shadow: 
-    0 4px 20px rgba(0, 191, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 3px 12px rgba(0, 191, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .game-hud-top-left {
-  top: 15px;
-  left: 15px;
-  min-width: 120px;
+  top: 12px;
+  left: 12px;
+  min-width: 100px;
 }
 
 .game-hud-top-right {
-  top: 15px;
-  right: 15px;
-  min-width: 140px;
+  top: 12px;
+  right: 12px;
+  min-width: 110px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
 }
 
 .game-hud-bottom-left {
-  bottom: 15px;
-  left: 15px;
-  padding: 8px 12px;
+  bottom: 12px;
+  left: 12px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
   cursor: pointer;
 }
 
 .game-hud-bottom-right {
-  bottom: 15px;
-  right: 15px;
-  font-size: 11px;
-  min-width: 150px;
+  bottom: 12px;
+  right: 12px;
+  font-size: 9.5px;
+  min-width: 120px;
+  padding: 6px 10px;
 }
 
 /* HUD elements */
 .hud-label {
-  font-size: 9px;
-  font-weight: bold;
-  letter-spacing: 0.1em;
-  color: rgba(0, 191, 255, 0.7);
-  text-shadow: 0 0 5px rgba(0, 191, 255, 0.3);
-  margin-bottom: 2px;
-}
-
-.hud-label-small {
   font-size: 8px;
   font-weight: bold;
-  letter-spacing: 0.1em;
-  color: rgba(147, 51, 234, 0.7);
-  text-shadow: 0 0 5px rgba(147, 51, 234, 0.3);
+  letter-spacing: 0.08em;
+  color: rgba(0, 191, 255, 0.6);
+  text-shadow: 0 0 4px rgba(0, 191, 255, 0.2);
   margin-bottom: 1px;
 }
 
+.hud-label-small {
+  font-size: 7.5px;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  color: rgba(147, 51, 234, 0.6);
+  text-shadow: 0 0 4px rgba(147, 51, 234, 0.2);
+  margin-top: 2px;
+}
+
 .hud-value {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
   letter-spacing: 0.05em;
   color: #00d2ff;
-  text-shadow: 0 0 8px rgba(0, 210, 255, 0.5);
+  text-shadow: 0 0 6px rgba(0, 210, 255, 0.4);
 }
 
 .hud-value-small {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: bold;
   letter-spacing: 0.05em;
   color: #c084fc;
-  text-shadow: 0 0 5px rgba(192, 132, 252, 0.4);
+  text-shadow: 0 0 4px rgba(192, 132, 252, 0.3);
 }
 
 .hud-value-accent {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: bold;
   color: #ff007f;
-  text-shadow: 0 0 8px rgba(255, 0, 127, 0.6);
+  text-shadow: 0 0 6px rgba(255, 0, 127, 0.5);
 }
 
 /* Energy bar */
 .game-energy-bar {
   display: flex;
-  gap: 3px;
-  margin-top: 3px;
+  gap: 2px;
+  margin-top: 2px;
 }
 
 .energy-segment {
-  width: 6px;
-  height: 10px;
+  width: 4px;
+  height: 8px;
   border-radius: 1px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.01);
   transition: all 0.15s ease;
 }
 
 .energy-segment.active {
   background: #00f0ff;
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.5);
   border-color: #00f0ff;
 }
 
 /* Purple/pink energy segments for high power */
 .energy-segment.active:nth-child(n+8) {
   background: #c084fc;
-  box-shadow: 0 0 8px rgba(192, 132, 252, 0.6);
+  box-shadow: 0 0 6px rgba(192, 132, 252, 0.5);
   border-color: #c084fc;
+}
+
+/* Central Console Styles */
+.console-content {
+  width: 540px;
+  max-width: 90%;
+  padding: 18px 22px;
+  background: rgba(10, 10, 15, 0.65);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  box-shadow: 
+    0 15px 45px rgba(0, 0, 0, 0.75),
+    0 0 1px 1px rgba(0, 240, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.console-header {
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 10px;
+}
+
+.console-logo {
+  font-family: 'Geist Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #00f0ff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  margin-bottom: 2px;
+}
+
+.console-tagline {
+  font-family: 'Geist', sans-serif;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.02em;
+}
+
+.console-body {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  min-height: 140px;
+}
+
+.console-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.console-section-title {
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  color: rgba(0, 191, 255, 0.75);
+  text-shadow: 0 0 4px rgba(0, 191, 255, 0.2);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.console-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.console-btn-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 5px;
+  padding: 6px 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.console-btn-action svg {
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.console-btn-action span {
+  flex-grow: 1;
+}
+
+.btn-shortcut {
+  font-family: 'Geist Mono', monospace;
+  font-size: 8.5px;
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1.5px 4px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.console-btn-action:hover {
+  background: rgba(0, 240, 255, 0.05);
+  border-color: rgba(0, 240, 255, 0.25);
+  color: #00f0ff;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 240, 255, 0.05);
+}
+
+.console-btn-action:hover svg {
+  color: #00f0ff;
+}
+
+.console-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  max-height: 140px;
+  padding-right: 4px;
+}
+
+/* Custom Scrollbar for recents */
+.console-list::-webkit-scrollbar {
+  width: 3px;
+}
+.console-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1.5px;
+}
+
+.console-recent-item {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.recent-name {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-path {
+  font-family: 'Inter', sans-serif;
+  font-size: 8.5px;
+  color: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.console-recent-item:hover {
+  background: rgba(192, 132, 252, 0.04);
+  border-color: rgba(192, 132, 252, 0.2);
+  transform: translateX(4px);
+}
+
+.console-recent-item:hover .recent-name {
+  color: #c084fc;
+}
+
+.console-no-recents {
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  padding: 15px 0;
+  border: 1px dashed rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+}
+
+.console-footer {
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 10px;
+}
+
+.game-tag {
+  color: #ff79c6 !important;
+  background: rgba(255, 121, 198, 0.06) !important;
+  border: 1px solid rgba(255, 121, 198, 0.18) !important;
+  text-shadow: 0 0 5px rgba(255, 121, 198, 0.25) !important;
+  font-size: 7.5px !important;
+  margin-bottom: 6px !important;
+}
+
+.console-play-btn {
+  background: transparent;
+  border: none;
+  font-family: 'Geist Mono', monospace;
+  font-size: 12.5px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  color: #50fa7b;
+  text-shadow: 0 0 6px rgba(80, 250, 123, 0.4);
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 2px 0;
+  transition: transform 0.2s ease, text-shadow 0.2s ease;
+  animation: retro-blink 1.4s infinite;
+}
+
+.console-play-btn:hover {
+  transform: scale(1.02);
+  text-shadow: 0 0 12px rgba(80, 250, 123, 0.75);
+  color: #85f996;
 }
 
 /* Music Visualizer HUD */
@@ -2081,6 +2314,90 @@ body::before {
 }
 
 /* Music Status Indicator in Footer (Right Section) */
+
+/* Volume Slider Control */
+.music-volume-control {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+}
+
+.music-volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0;
+  height: 12px;
+  background: transparent;
+  outline: none;
+  opacity: 0;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  cursor: pointer;
+  margin: 0;
+}
+
+.music-volume-control:hover .music-volume-slider,
+.music-volume-slider:focus {
+  width: 60px;
+  opacity: 1;
+}
+
+/* Webkit (Chrome, Edge, Safari) slider thumb */
+.music-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  margin-top: -2.5px; /* Centers 8px thumb on 3px track: (3px - 8px) / 2 */
+}
+
+.music-volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+/* Firefox slider thumb */
+.music-volume-slider::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.music-volume-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+.music-volume-slider::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.music-volume-slider::-moz-range-progress {
+  height: 3px;
+  border-radius: 2px;
+  background: #ffffff;
+}
+
+/* Webkit slider track — uses a gradient for the filled portion */
+.music-volume-slider::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #ffffff 0%, #ffffff var(--volume-pct, 70%), rgba(255, 255, 255, 0.15) var(--volume-pct, 70%));
+}
+
+
 #status-music-container {
   display: flex;
   align-items: center;
