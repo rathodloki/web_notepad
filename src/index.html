@@ -246,12 +246,19 @@
                 <!-- CRT Scanline overlay -->
                 <div class="game-crt-overlay"></div>
 
-                <!-- Glassmorphic HUD: Top Left (Score & Highscore) -->
+                <!-- Glassmorphic HUD: Top Left (Score & Highscore & Boss Signal) -->
                 <div class="game-hud-panel game-hud-top-left">
                     <div class="hud-label">SCORE</div>
                     <div class="hud-value" id="game-score">000000</div>
                     <div class="hud-label-small" style="margin-top: 4px;">HIGHSCORE</div>
                     <div class="hud-value-small" id="game-highscore">000000</div>
+                    <div class="hud-label-small" id="hud-boss-progress-label-container" style="margin-top: 6px; display: flex; justify-content: space-between; width: 100%;">
+                        <span id="hud-boss-progress-label">BOSS SIGNAL</span>
+                        <span id="hud-boss-progress-value" style="color: #00d2ff; text-shadow: 0 0 4px rgba(0, 210, 255, 0.3);">0%</span>
+                    </div>
+                    <div class="boss-progress-bar-container" style="width: 100%; height: 3px; background: rgba(255, 255, 255, 0.05); border-radius: 1px; margin-top: 2px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.02);">
+                        <div id="hud-boss-progress-bar" style="width: 0%; height: 100%; background: #00d2ff; box-shadow: 0 0 6px rgba(0, 240, 255, 0.5); transition: width 0.3s ease;"></div>
+                    </div>
                 </div>
 
                 <!-- Glassmorphic HUD: Top Right (Energy & Combo) -->
@@ -373,8 +380,11 @@
                         <div class="retro-title-text system-error">[ SYSTEM CORRUPTED ]</div>
                         <div class="retro-stats-box">
                             <div>FINAL SCORE: <span id="game-final-score" style="color: var(--accent);">000000</span></div>
+                            <div id="game-checkpoint-info" style="margin-top: 8px; font-size: 10px; color: #ffd700; display: none;">
+                                CHECKPOINT: LEVEL <span id="game-checkpoint-level">0</span> (SCORE <span id="game-checkpoint-score">000000</span>)
+                            </div>
                         </div>
-                        <div class="retro-subtitle-text" style="margin-top: 15px;">PRESS ENTER TO REBOOT</div>
+                        <div class="retro-subtitle-text" id="game-over-instructions" style="margin-top: 15px; line-height: 1.4;">PRESS ENTER TO REBOOT</div>
                     </div>
                 </div>
             </div>
@@ -443,11 +453,6 @@
                 <div class="music-title-wrap" id="status-music-info">
                     <span id="status-music-title" class="music-title-marquee">Music Off</span>
                 </div>
-                <button id="btn-music-fav" class="status-item-btn" title="Add to Favorites" style="padding: 0 2px;">
-                    <svg id="music-heart-icon" viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                    </svg>
-                </button>
             </div>
             <span class="status-item divider" id="status-music-divider">|</span>
 
@@ -468,14 +473,9 @@
     </div>
 
     <!-- Music Context Menu -->
-    <div id="music-context-menu" class="context-menu" style="display: none; min-width: 220px;">
-        <div class="menu-item-header" style="padding: 6px 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Favorites</div>
-        <div id="music-menu-favorites" style="display: flex; flex-direction: column; max-height: 150px; overflow-y: auto;">
-            <!-- Populate dynamically -->
-        </div>
-        <div class="menu-item divider" style="margin: 4px 0; height: 1px; background: rgba(255,255,255,0.06);"></div>
-        <div class="menu-item-header" style="padding: 6px 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Play History</div>
-        <div id="music-menu-history" style="display: flex; flex-direction: column; max-height: 150px; overflow-y: auto;">
+    <div id="music-context-menu" class="context-menu" style="display: none; min-width: 240px;">
+        <div class="menu-item-header" style="padding: 6px 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Select Station</div>
+        <div id="music-menu-stations" style="display: flex; flex-direction: column; max-height: 250px; overflow-y: auto; padding: 2px 0;">
             <!-- Populate dynamically -->
         </div>
     </div>

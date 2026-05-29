@@ -179,4 +179,80 @@
             }
         }
     };
+
+    // Mock Audio & AudioContext for headless test environments to bypass browser autoplay/network limitations
+    class MockAudio {
+        constructor() {
+            this.volume = 1;
+            this.src = '';
+            this.crossOrigin = '';
+            this.preload = '';
+            this.listeners = {};
+        }
+        addEventListener(event, callback) {
+            if (!this.listeners[event]) this.listeners[event] = [];
+            this.listeners[event].push(callback);
+        }
+        removeEventListener(event, callback) {
+            if (!this.listeners[event]) return;
+            this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
+        }
+        dispatchEvent(event, data) {
+            if (this.listeners[event]) {
+                this.listeners[event].forEach(cb => cb(data));
+            }
+        }
+        play() {
+            setTimeout(() => {
+                this.dispatchEvent('canplay');
+                this.dispatchEvent('playing');
+            }, 10);
+            return Promise.resolve();
+        }
+        pause() {
+            setTimeout(() => {
+                this.dispatchEvent('pause');
+            }, 10);
+        }
+        load() {}
+    }
+
+    class MockAudioContext {
+        constructor() {
+            this.state = 'running';
+            this.destination = {};
+        }
+        resume() {
+            this.state = 'running';
+            return Promise.resolve();
+        }
+        suspend() {
+            this.state = 'suspended';
+            return Promise.resolve();
+        }
+        createAnalyser() {
+            return {
+                fftSize: 256,
+                frequencyBinCount: 128,
+                getByteFrequencyData(array) {
+                    for (let i = 0; i < array.length; i++) {
+                        array[i] = Math.floor(Math.random() * 100);
+                    }
+                },
+                connect() {}
+            };
+        }
+        createMediaElementSource() {
+            return {
+                connect() {}
+            };
+        }
+        close() {
+            return Promise.resolve();
+        }
+    }
+
+    window.Audio = MockAudio;
+    window.AudioContext = MockAudioContext;
+    window.webkitAudioContext = MockAudioContext;
 })();

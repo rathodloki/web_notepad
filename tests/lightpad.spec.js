@@ -149,4 +149,29 @@ test.describe('LightPad Test Harness Suite', () => {
         const activeTabTitle = await page.locator('.tab.active .tab-title').textContent();
         expect(activeTabTitle).toBe('notes.txt');
     });
+
+    test('should open music stations list on left-click and play selected station', async ({ page }) => {
+        // Confirm music menu is hidden initially
+        await expect(page.locator('#music-context-menu')).toBeHidden();
+
+        // Left-click on status music info marquee container
+        await page.click('#status-music-info');
+
+        // Verify the music stations menu is now visible
+        await expect(page.locator('#music-context-menu')).toBeVisible();
+
+        // Check that it lists some stations
+        const stationsCount = await page.locator('#music-menu-stations .menu-item').count();
+        expect(stationsCount).toBeGreaterThan(0);
+
+        // Click the second station
+        await page.locator('#music-menu-stations .menu-item').nth(1).click();
+
+        // Verify menu is hidden after selection
+        await expect(page.locator('#music-context-menu')).toBeHidden();
+
+        // Check if the music title matches selected station or changed from "Music Off"
+        const currentTitle = await page.locator('#status-music-title').textContent();
+        expect(currentTitle).not.toBe('Music Off');
+    });
 });
