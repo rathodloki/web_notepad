@@ -1,6 +1,5 @@
 import { state } from './state.js';
 import { invoke, writeTextFile, readTextFile } from './tauri-bridge.js';
-import { renderTabs } from './tabs-ui.js';
 import { showStatus } from './status-bar.js';
 import { removeFromFileHistory } from './history.js';
 import { getFilename } from './utils.js';
@@ -44,6 +43,7 @@ export function autoSaveDiskDebounced(tab, delay = 2000) {
             } catch (e) {}
             tab.isUnsaved = false;
             tab.savedContent = content;
+            const { renderTabs } = await import('./tabs-ui.js');
             renderTabs();
             // TODO: dispatch event to update Title
         } catch (e) {
@@ -202,6 +202,7 @@ export async function loadSession() {
             state.tabs.push(newTab);
         }
 
+        const { renderTabs } = await import('./tabs-ui.js');
         renderTabs();
 
         if (session.activeTabId && state.tabs.find(t => t.id === session.activeTabId)) {

@@ -11,7 +11,7 @@ export function loadFileHistory() {
     }
 }
 
-export function saveFileHistory() {
+function saveFileHistory() {
     localStorage.setItem('lightpad-history', JSON.stringify(state.fileHistory));
 }
 

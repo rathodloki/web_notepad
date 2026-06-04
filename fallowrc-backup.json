@@ -1,0 +1,74 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "src/editor.js",
+    "src/music-manager.js",
+    "src/boss.js",
+    "src/csv.js",
+    "src/game.js"
+  ],
+  "ignorePatterns": [
+    "src/main.js",
+    "src/session-manager.js",
+    "src/overlays.js",
+    "src/editor-manager.js",
+    "src/session.js",
+    "src/settings-manager.js",
+    "src/file-io.js",
+    "src/quill-init.js",
+    "src/tabs-ui.js",
+    "src/status-bar.js",
+    "src/window-manager.js",
+    "src/tauri-bridge.js",
+    "src/tauri-mock.js",
+    "src/text-format.js",
+    "src/todo.js",
+    "src/utils.js",
+    "src/history.js",
+    "src/languages.js",
+    "src/music-ui.js",
+    "src/csv.js",
+    "src/editor-impl.js",
+    "src/editor-theme.js",
+    "src/music-impl.js",
+    "src/music-reaction.js",
+    "tests/**"
+  ],
+  "ignoreDependencies": [
+    "quill",
+    "quill-blot-formatter",
+    "quill-image-drop-and-paste",
+    "@codemirror/lang-cpp",
+    "@codemirror/lang-css",
+    "@codemirror/lang-html",
+    "@codemirror/lang-java",
+    "@codemirror/lang-javascript",
+    "@codemirror/lang-json",
+    "@codemirror/lang-markdown",
+    "@codemirror/lang-python",
+    "@codemirror/legacy-modes",
+    "@codemirror/autocomplete",
+    "@codemirror/commands",
+    "@codemirror/search",
+    "@codemirror/state",
+    "@codemirror/language",
+    "@codemirror/view",
+    "@lezer/highlight"
+  ],
+  "ignoreUnresolvedImports": [
+    "/tauri-mock.js"
+  ],
+  "duplicates": {
+    "enabled": false,
+    "ignore": ["src/game.js", "src/boss.js"]
+  },
+  "health": {
+    "maxCyclomatic": 50,
+    "maxCognitive": 60,
+    "maxCrap": 2000,
+    "ignore": ["src/game.js", "src/boss.js"]
+  },
+  "rules": {
+    "circular-dependencies": "off"
+  }
+}

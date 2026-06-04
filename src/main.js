@@ -4,25 +4,23 @@ import { state } from './state.js';
 if (window.__lightpadHarness) {
     window.__lightpadHarness.state = state;
 }
-import { toggleLineWrapping, applyLineWrappingToState, getLanguageExtension, createEditorState, detectLanguageFromContent } from './editor.js';
-import { switchTab, createNewTab, closeTab, closeMultipleTabs, spawnTodoList, spawnDocProcess, closedTabsHistory, createEditorStateFromContent } from './editor-manager.js';
-import { openFile, saveFile, deleteActiveFile, renameActiveFile } from './file-io.js';
 import { undo, redo } from "@codemirror/commands";
-import { saveSession, loadSession, saveSessionDebounced } from './session.js';
-import { renderTabs } from './tabs-ui.js';
-import { showStatus, updateCursorStatus, updateTitle } from './status-bar.js';
-import { loadFileHistory, addToFileHistory } from './history.js';
-import { toggleQuickOpen, closeQuickOpen, toggleGlobalSearch, closeGlobalSearch, toggleLanguageOpen, closeLanguageOpen as closeLanguageModal, setupOverlays, setupFileDrop, askConfirmUI } from './overlays.js';
-import { invoke, readTextFile, writeTextFile, openDialog, saveDialog } from './tauri-bridge.js';
-import { getFilename } from './utils.js';
-import { setupSettingsMenu } from './settings-manager.js';
-import { setupWindowManager } from './window-manager.js';
 import './quill-init.js';
+
+// Static imports to keep UI interactions synchronous and responsive
+import { createNewTab, switchTab, closeTab, closeMultipleTabs, closedTabsHistory, spawnTodoList, spawnDocProcess, handleExternalFileChange } from './editor-manager.js';
+import { renameActiveFile, deleteActiveFile, openFile, saveFile } from './file-io.js';
+import { toggleQuickOpen, toggleGlobalSearch, handleGlobalKeyboard, setupOverlays, setupFileDrop } from './overlays.js';
+import { setupSettingsMenu, toggleWordWrap } from './settings-manager.js';
 import { setupMusicPlayer } from './music-manager.js';
+import { showStatus, updateCursorStatus, updateLanguageStatus } from './status-bar.js';
+import { invoke } from './tauri-bridge.js';
+import { loadFileHistory } from './history.js';
+import { setupWindowManager } from './window-manager.js';
+import { loadSession } from './session.js';
+import { updateScrollShadows } from './tabs-ui.js';
 
 /* ── Toggle helpers ─────────────────────────────────────────────── */
-
-
 
 /* ── Markdown preview ───────────────────────────────────────────── */
 
@@ -45,56 +43,110 @@ state.renderMarkdownPreview = renderMarkdownPreview;
 
 /* ── Keyboard shortcuts ─────────────────────────────────────────── */
 
-window.addEventListener('keydown', async (e) => {
-    // Core shortcuts remain here
+function shiftActiveTab(offset) {
+    if (state.tabs.length > 1) {
+        const ci = state.tabs.findIndex(t => t.id === state.activeTabId);
+        const ni = (Math.max(0, ci) + offset + state.tabs.length) % state.tabs.length;
+        switchTab(state.tabs[ni].id);
+    }
+}
+
+function handleTabNavigation(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Tab') {
         e.preventDefault();
-        if (state.tabs.length > 1) {
-            const ci = state.tabs.findIndex(t => t.id === state.activeTabId);
-            const ni = e.shiftKey
-                ? (Math.max(0, ci) - 1 + state.tabs.length) % state.tabs.length
-                : (Math.max(0, ci) + 1) % state.tabs.length;
-            switchTab(state.tabs[ni].id);
-        }
-        return;
+        shiftActiveTab(e.shiftKey ? -1 : 1);
+        return true;
     }
-    if (e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'ArrowRight') {
-        e.preventDefault();
-        if (state.tabs.length > 1) {
-            const ci = state.tabs.findIndex(t => t.id === state.activeTabId);
-            const ni = (Math.max(0, ci) + 1) % state.tabs.length;
-            switchTab(state.tabs[ni].id);
+    if (e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            shiftActiveTab(1);
+            return true;
         }
-        return;
-    }
-    if (e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'ArrowLeft') {
-        e.preventDefault();
-        if (state.tabs.length > 1) {
-            const ci = state.tabs.findIndex(t => t.id === state.activeTabId);
-            const ni = (Math.max(0, ci) - 1 + state.tabs.length) % state.tabs.length;
-            switchTab(state.tabs[ni].id);
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            shiftActiveTab(-1);
+            return true;
         }
-        return;
     }
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') { e.preventDefault(); await saveFile(); }
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'o') { e.preventDefault(); await openFile(); }
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') { e.preventDefault(); await closeMultipleTabs([...state.tabs]); return; }
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'w') { e.preventDefault(); if (state.activeTabId) await closeTab(state.activeTabId); return; }
+    return false;
+}
+
+function handleFileShortcuts(e) {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') { 
+        e.preventDefault(); 
+        saveFile(); 
+        return true; 
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'o') { 
+        e.preventDefault(); 
+        openFile(); 
+        return true; 
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') { 
+        e.preventDefault(); 
+        closeMultipleTabs([...state.tabs]); 
+        return true; 
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'w') { 
+        e.preventDefault(); 
+        if (state.activeTabId) {
+            closeTab(state.activeTabId); 
+        }
+        return true; 
+    }
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 't') {
         e.preventDefault();
-        if (closedTabsHistory.length > 0) document.getElementById('menu-undo-close')?.click();
-        else showStatus('No recently closed tabs');
-        return;
+        if (closedTabsHistory.length > 0) {
+            document.getElementById('menu-undo-close')?.click();
+        } else {
+            showStatus('No recently closed tabs');
+        }
+        return true;
     }
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'n') { e.preventDefault(); await createNewTab(); return; }
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 't') { e.preventDefault(); toggleQuickOpen(); return; }
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') { e.preventDefault(); toggleGlobalSearch(); }
-    if ((e.ctrlKey || e.metaKey) && e.key === '1') { e.preventDefault(); spawnTodoList(); }
-    if ((e.ctrlKey || e.metaKey) && e.key === '2') { e.preventDefault(); spawnDocProcess(); }
-    if (e.altKey && e.key.toLowerCase() === 'z') { e.preventDefault(); import('./settings-manager.js').then(m => m.toggleWordWrap()); }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'n') { 
+        e.preventDefault(); 
+        createNewTab(); 
+        return true; 
+    }
+    return false;
+}
+
+function handleToggleAndSpawnShortcuts(e) {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 't') { 
+        e.preventDefault(); 
+        toggleQuickOpen(); 
+        return true; 
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') { 
+        e.preventDefault(); 
+        toggleGlobalSearch(); 
+        return true; 
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === '1') { 
+        e.preventDefault(); 
+        spawnTodoList(); 
+        return true; 
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === '2') { 
+        e.preventDefault(); 
+        spawnDocProcess(); 
+        return true; 
+    }
+    if (e.altKey && e.key.toLowerCase() === 'z') { 
+        e.preventDefault(); 
+        toggleWordWrap(); 
+        return true; 
+    }
+    return false;
+}
+
+window.addEventListener('keydown', (e) => {
+    if (handleTabNavigation(e)) return;
+    if (handleFileShortcuts(e)) return;
+    if (handleToggleAndSpawnShortcuts(e)) return;
 
     // Delegate Modal/Menu navigation to overlays.js
-    const { handleGlobalKeyboard } = await import('./overlays.js');
     handleGlobalKeyboard(e);
 });
 
@@ -110,7 +162,6 @@ window.addEventListener('DOMContentLoaded', () => {
         // External file modification check on focus
         window.addEventListener('focus', async () => {
             if (!window.__TAURI__) return;
-            const { handleExternalFileChange } = await import('./editor-manager.js');
             for (let tab of state.tabs) {
                 if (tab.path && !tab.isUnsaved) {
                     try {
@@ -122,9 +173,14 @@ window.addEventListener('DOMContentLoaded', () => {
         });
 
         // Primary instance lock
-        navigator.locks.request('lightpad-primary-instance', { mode: 'exclusive', ifAvailable: true }, async (lock) => {
-            if (lock) { state.isPrimaryInstance = true; loadSession(); return new Promise(() => {}); }
-            else console.log("Secondary instance started, opening blank slate.");
+        navigator.locks.request('lightpad-primary-instance', { mode: 'exclusive', ifAvailable: true }, (lock) => {
+            if (lock) { 
+                state.isPrimaryInstance = true; 
+                loadSession(); 
+                return new Promise(() => {}); 
+            } else {
+                console.log("Secondary instance started, opening blank slate.");
+            }
         });
 
         // File drop
@@ -137,10 +193,16 @@ window.addEventListener('DOMContentLoaded', () => {
     loadFileHistory();
 
     // Toolbar buttons
-    document.getElementById('btn-open').addEventListener('click', openFile);
-    document.getElementById('btn-save').addEventListener('click', saveFile);
+    document.getElementById('btn-open').addEventListener('click', () => {
+        openFile();
+    });
+    document.getElementById('btn-save').addEventListener('click', () => {
+        saveFile();
+    });
     document.getElementById('btn-find').addEventListener('click', () => {
-        if (state.editorView) import('@codemirror/search').then(({ openSearchPanel }) => openSearchPanel(state.editorView));
+        if (state.editorView) {
+            import('@codemirror/search').then(({ openSearchPanel }) => openSearchPanel(state.editorView));
+        }
     });
     document.getElementById('btn-undo')?.addEventListener('click', () => {
         const activeTab = state.tabs.find(t => t.id === state.activeTabId);
@@ -160,12 +222,24 @@ window.addEventListener('DOMContentLoaded', () => {
             state.editorView.focus();
         }
     });
-    document.getElementById('btn-move')?.addEventListener('click', renameActiveFile);
-    document.getElementById('btn-delete')?.addEventListener('click', deleteActiveFile);
-    document.getElementById('btn-quick-open')?.addEventListener('click', toggleQuickOpen);
-    document.getElementById('btn-new-tab')?.addEventListener('click', async () => await createNewTab());
-    document.getElementById('btn-todo')?.addEventListener('click', spawnTodoList);
-    document.getElementById('btn-doc')?.addEventListener('click', spawnDocProcess);
+    document.getElementById('btn-move')?.addEventListener('click', () => {
+        renameActiveFile();
+    });
+    document.getElementById('btn-delete')?.addEventListener('click', () => {
+        deleteActiveFile();
+    });
+    document.getElementById('btn-quick-open')?.addEventListener('click', () => {
+        toggleQuickOpen();
+    });
+    document.getElementById('btn-new-tab')?.addEventListener('click', () => {
+        createNewTab();
+    });
+    document.getElementById('btn-todo')?.addEventListener('click', () => {
+        spawnTodoList();
+    });
+    document.getElementById('btn-doc')?.addEventListener('click', () => {
+        spawnDocProcess();
+    });
     document.getElementById('btn-open-url')?.addEventListener('click', () => {
         document.getElementById('open-url-modal').style.display = 'flex';
         document.getElementById('open-url-input').focus();
@@ -204,14 +278,14 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
-
     // Tab bar double-click to create new tab
     const tabBarContainer = document.querySelector('.tab-bar-container');
     if (tabBarContainer) {
         const tabBar = document.getElementById('tab-bar');
         tabBarContainer.addEventListener('dblclick', (e) => {
-            if (e.target === tabBarContainer || e.target === tabBar) createNewTab();
+            if (e.target === tabBarContainer || e.target === tabBar) {
+                createNewTab();
+            }
         });
     }
 
@@ -226,17 +300,21 @@ window.addEventListener('DOMContentLoaded', () => {
         const musicMenu = document.getElementById('music-context-menu');
         if (musicMenu) musicMenu.style.display = 'none';
     });
-    document.getElementById('menu-close-all')?.addEventListener('click', async () => await closeMultipleTabs([...state.tabs]));
-    document.getElementById('menu-close-others')?.addEventListener('click', async () => {
-        if (!state.contextMenuTargetId) return;
-        await closeMultipleTabs(state.tabs.filter(t => t.id !== state.contextMenuTargetId));
+    document.getElementById('menu-close-all')?.addEventListener('click', () => {
+        closeMultipleTabs([...state.tabs]);
     });
-    document.getElementById('menu-close-right')?.addEventListener('click', async () => {
+    document.getElementById('menu-close-others')?.addEventListener('click', () => {
+        if (!state.contextMenuTargetId) return;
+        closeMultipleTabs(state.tabs.filter(t => t.id !== state.contextMenuTargetId));
+    });
+    document.getElementById('menu-close-right')?.addEventListener('click', () => {
         if (!state.contextMenuTargetId) return;
         const ti = state.tabs.findIndex(t => t.id === state.contextMenuTargetId);
-        if (ti !== -1) await closeMultipleTabs(state.tabs.slice(ti + 1));
+        if (ti !== -1) closeMultipleTabs(state.tabs.slice(ti + 1));
     });
-    document.getElementById('menu-close-saved')?.addEventListener('click', async () => await closeMultipleTabs(state.tabs.filter(t => !t.isUnsaved)));
+    document.getElementById('menu-close-saved')?.addEventListener('click', () => {
+        closeMultipleTabs(state.tabs.filter(t => !t.isUnsaved));
+    });
     document.getElementById('menu-undo-close')?.addEventListener('click', async () => {
         if (closedTabsHistory.length > 0) {
             state.isRestoringTab = true;
@@ -252,7 +330,9 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             showStatus(batch.length > 1 ? `Restored ${batch.length} tabs` : 'Tab restored');
             state.isRestoringTab = false;
-        } else showStatus('No recently closed tabs');
+        } else {
+            showStatus('No recently closed tabs');
+        }
     });
 
     // Setup overlays (quick-open, language, global search event listeners)
@@ -260,6 +340,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Resize shadows
     window.addEventListener('resize', () => {
-        import('./tabs-ui.js').then(m => m.updateScrollShadows());
+        updateScrollShadows();
     });
 });
+

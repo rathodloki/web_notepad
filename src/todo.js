@@ -81,7 +81,7 @@ const checkedRowBackgroundDecoration = Decoration.line({
 });
 
 // A CodeMirror ViewPlugin that provides the visual widget replacements and row styling
-export const todoHighlighter = ViewPlugin.fromClass(class {
+const todoHighlighter = ViewPlugin.fromClass(class {
     decorations;
 
     constructor(view) {
@@ -217,7 +217,7 @@ export const todoKeymap = [
     }
 ];
 
-export const todoEnsureCheckbox = EditorState.transactionFilter.of(tr => {
+const todoEnsureCheckbox = EditorState.transactionFilter.of(tr => {
     // If the transaction results in a completely empty document, auto-inject the starting checkbox
     if (tr.docChanged && tr.newDoc.length === 0) {
         return [tr, {

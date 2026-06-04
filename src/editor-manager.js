@@ -1,15 +1,13 @@
 import { state } from './state.js';
 import { createEditorState, createEditorView, getLanguageExtension, setLanguageExtension, applyLanguageExtensionToState, detectLanguageFromContent, createUpdateListenerExtension } from './editor.js';
-import { renderTabs, updateActiveTabUI } from './tabs-ui.js';
 import { showStatus, updateCursorStatus, updateTitle, updateLanguageStatus } from './status-bar.js';
 import { saveSessionDebounced, saveSession, autoSaveDiskDebounced } from './session.js';
-import { askConfirmUI, askLinkUI } from './overlays.js';
 import { invoke, readTextFile, writeTextFile } from './tauri-bridge.js';
 import { getFilename } from './utils.js';
 
 export const syncChannel = new BroadcastChannel('lightpad_sync');
 
-export let currentCloseBatch = null;
+let currentCloseBatch = null;
 export let closedTabsHistory = [];
 
 syncChannel.onmessage = (event) => {
@@ -50,41 +48,48 @@ export function handleExternalFileChange(path, mtime, content = null) {
                 tab.externalModified = mtime;
                 tab.isUnsaved = true;
                 tab.needsRender = true;
-                renderTabs();
+                // fallow-ignore-next-line circular-dependency
+                import('./tabs-ui.js').then(m => m.renderTabs());
                 checkPendingReload(tab); 
             }
         }
     }
 }
 
-export async function checkPendingReload(tab) {
+function reloadTabContent(tab, newContent) {
+    tab.savedContent = newContent;
+    tab.lastModified = tab.externalModified;
+    tab.externalModified = null;
+    tab.isUnsaved = false;
+    tab.needsRender = true;
+    
+    if (state.activeTabId === tab.id) {
+        if (tab.isDoc && state.quillView) {
+            state.quillView.root.innerHTML = newContent;
+        } else if (state.editorView) {
+            state.editorView.dispatch({
+                changes: { from: 0, to: state.editorView.state.doc.length, insert: newContent }
+            });
+        }
+    } else if (!tab.isDoc && tab.state) {
+        tab.state = tab.state.update({
+            changes: { from: 0, to: tab.state.doc.length, insert: newContent }
+        }).state;
+    }
+}
+
+async function checkPendingReload(tab) {
     if (!tab) return;
     if (state.activeTabId === tab.id && tab.externalModified && !state.isPromptingReload && invoke) {
         state.isPromptingReload = true;
+        const { askConfirmUI } = await import('./overlays.js');
         let answer = await askConfirmUI(`New changes detected on disk for "${getFilename(tab.path)}". Reload to see?`, true);
         state.isPromptingReload = false;
         
         if (answer === 'yes') {
             try {
                 const newContent = await readTextFile(tab.path);
-                tab.savedContent = newContent;
-                tab.lastModified = tab.externalModified;
-                tab.externalModified = null;
-                tab.isUnsaved = false;
-                tab.needsRender = true;
-                
-                if (state.activeTabId === tab.id) {
-                     if (tab.isDoc && state.quillView) state.quillView.root.innerHTML = newContent;
-                     else if (state.editorView) {
-                         state.editorView.dispatch({
-                             changes: { from: 0, to: state.editorView.state.doc.length, insert: newContent }
-                         });
-                     }
-                } else if (!tab.isDoc && tab.state) {
-                     tab.state = tab.state.update({
-                         changes: { from: 0, to: tab.state.doc.length, insert: newContent }
-                     }).state;
-                }
+                reloadTabContent(tab, newContent);
                 showStatus(`Reloaded ${getFilename(tab.path)}`);
             } catch (e) {
                 console.error("Popup File Read error", e);
@@ -94,11 +99,12 @@ export async function checkPendingReload(tab) {
             tab.isUnsaved = true; 
             showStatus(`Ignored external changes for ${getFilename(tab.path)}`);
         }
+        const { renderTabs } = await import('./tabs-ui.js');
         renderTabs();
     }
 }
 
-export function createUpdateListener(id) {
+function createUpdateListener(id) {
     return createUpdateListenerExtension((update) => {
         if (update.docChanged) {
             const tab = state.tabs.find(t => t.id === id);
@@ -124,6 +130,7 @@ export function createUpdateListener(id) {
                         const newTitle = firstLine ? (firstLine.length > 20 ? firstLine.substring(0, 20) + '...' : firstLine) : 'Untitled';
                         if (tab.title !== newTitle) {
                             tab.title = newTitle;
+                            // fallow-ignore-next-line circular-dependency
                             import('./tabs-ui.js').then(m => m.renderTabs());
                         }
                     }
@@ -201,6 +208,7 @@ export async function createNewTab(path = null, content = '', isTodo = null, isD
     };
 
     state.tabs.push(newTab);
+    const { renderTabs } = await import('./tabs-ui.js');
     renderTabs();
     switchTab(id);
     saveSessionDebounced();
@@ -270,7 +278,10 @@ export async function closeTab(id, forceClose = false, multipleFiles = false) {
 
         if (askPrompt && !forceClose) {
             // Lazy import saveFile to break circular dependency
+            // fallow-ignore-next-line circular-dependency
             const { saveFile } = await import('./file-io.js');
+            // fallow-ignore-next-line circular-dependency
+            const { askConfirmUI } = await import('./overlays.js');
             let answer = await askConfirmUI(`Do you want to save changes to "${getFilename(tab.path) || tab.title}"?`, multipleFiles, true);
             if (answer === 'cancel') return false;
 
@@ -321,6 +332,8 @@ export async function closeTab(id, forceClose = false, multipleFiles = false) {
     }
 
     state.tabs.splice(newTabIndex, 1);
+    // fallow-ignore-next-line circular-dependency
+    const { renderTabs } = await import('./tabs-ui.js');
     if (state.tabs.length === 0) {
         renderTabs();
         switchTab(null);
@@ -336,6 +349,7 @@ export async function closeTab(id, forceClose = false, multipleFiles = false) {
 }
 
 export async function closeMultipleTabs(tabsToClose) {
+    // fallow-ignore-next-line circular-dependency
     const { saveFile } = await import('./file-io.js');
     const unsavedTabs = tabsToClose.filter(t => t.isUnsaved);
     let forceClose = false;
@@ -388,6 +402,7 @@ export async function spawnTodoList() {
     };
 
     state.tabs.push(newTab);
+    const { renderTabs } = await import('./tabs-ui.js');
     renderTabs();
     switchTab(id);
 
@@ -419,6 +434,7 @@ export async function spawnDocProcess() {
     };
 
     state.tabs.push(newTab);
+    const { renderTabs } = await import('./tabs-ui.js');
     renderTabs();
     switchTab(id);
     saveSessionDebounced();

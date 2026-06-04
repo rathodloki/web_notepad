@@ -23,7 +23,6 @@ const BOSS_VICTORY_TIME = 180;        // ~3s
 let boss = null;
 let bossState = 'NONE'; // NONE | WARNING | RECOVERY | ENTERING | ACTIVE | DEFEATED
 
-const bossImages = {};
 let currentBossLevel = 0;
 let bossesDefeated = [];
 let recoveryTimer = 0;
@@ -1700,6 +1699,152 @@ function drawBossShields(ctx, b) {
     ctx.restore();
 }
 
+function drawMagneticPulseBeam(ctx, b, beam) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 1.0 - (beam.radius / beam.maxRadius));
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 3.5 + Math.sin(Date.now() / 20) * 1.5;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#00f0ff';
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, beam.radius, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, beam.radius + 10, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawGravityWellBeam(ctx, beam) {
+    const time = Date.now();
+    ctx.save();
+    ctx.translate(beam.x, beam.y);
+    
+    const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, beam.radius + Math.sin(time / 100) * 10);
+    grad.addColorStop(0, '#000000');
+    grad.addColorStop(0.3, 'rgba(189, 147, 249, 0.8)');
+    grad.addColorStop(0.7, 'rgba(255, 121, 198, 0.25)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, beam.radius + 20, 0, Math.PI * 2);
+    ctx.fill();
+
+    for (let r = 0; r < 3; r++) {
+        ctx.save();
+        ctx.rotate(time / 200 * (r % 2 === 0 ? 1 : -1) + r * Math.PI / 3);
+        ctx.strokeStyle = r === 0 ? '#ff79c6' : '#bd93f9';
+        ctx.lineWidth = 1.5;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = r === 0 ? '#ff79c6' : '#bd93f9';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 30 + r * 15, 12 + r * 6, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    ctx.fillStyle = '#0a0a0f';
+    ctx.shadowBlur = 5;
+    ctx.shadowColor = '#000000';
+    ctx.beginPath();
+    ctx.arc(0, 0, 16, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
+}
+
+function drawShieldOverdriveBeam(ctx, b) {
+    const time = Date.now();
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+    ctx.lineWidth = 2 + Math.sin(time / 50) * 1;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#ffd700';
+    ctx.setLineDash([4, 4]);
+    
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.shieldRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    if (b.shields) {
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+        ctx.lineWidth = 1.0;
+        ctx.setLineDash([]);
+        for (const shield of b.shields) {
+            if (shield.health <= 0) continue;
+            const angle = shield.angle + b.rotAngle;
+            const sx = b.x + Math.cos(angle) * b.shieldRadius;
+            const sy = b.y + Math.sin(angle) * b.shieldRadius;
+            ctx.beginPath();
+            ctx.moveTo(b.x, b.y);
+            ctx.lineTo(sx, sy);
+            ctx.stroke();
+        }
+    }
+    ctx.restore();
+}
+
+function drawSweepLaserBeam(ctx, b, beam, canvas) {
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = beam.width + Math.sin(Date.now() / 20) * 4;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = b.color;
+    ctx.beginPath();
+    ctx.moveTo(beam.x, b.y + b.height / 2);
+    ctx.lineTo(beam.x, canvas.height - 12);
+    ctx.stroke();
+    // White core
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.moveTo(beam.x, b.y + b.height / 2);
+    ctx.lineTo(beam.x, canvas.height - 12);
+    ctx.stroke();
+}
+
+function drawRotatingLaserBeam(ctx, b, beam) {
+    const endX = b.x + Math.cos(beam.angle) * 600;
+    const endY = b.y + Math.sin(beam.angle) * 600;
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = beam.width + Math.sin(Date.now() / 20) * 3;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = b.color;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+}
+
+function drawVerticalLaserBeam(ctx, beam, canvas) {
+    ctx.strokeStyle = '#ff3333';
+    ctx.lineWidth = beam.width + Math.sin(Date.now() / 15) * 6;
+    ctx.shadowBlur = 25;
+    ctx.shadowColor = '#ff3333';
+    ctx.beginPath();
+    ctx.moveTo(beam.x, 0);
+    ctx.lineTo(beam.x, canvas.height - 12);
+    ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.moveTo(beam.x, 0);
+    ctx.lineTo(beam.x, canvas.height - 12);
+    ctx.stroke();
+}
+
 function drawBossBeams(ctx, b, canvas) {
     ctx.save();
     // Clip to prevent bottom border artifacts from shadowBlur
@@ -1708,146 +1853,20 @@ function drawBossBeams(ctx, b, canvas) {
     ctx.clip();
 
     for (const beam of b.activeBeams) {
-        const alpha = 0.7 + Math.sin(Date.now() / 25) * 0.3;
-        ctx.globalAlpha = alpha;
+        ctx.globalAlpha = 0.7 + Math.sin(Date.now() / 25) * 0.3;
 
         if (beam.type === 'magnetic_pulse') {
-            ctx.save();
-            ctx.globalAlpha = Math.max(0, 1.0 - (beam.radius / beam.maxRadius));
-            ctx.strokeStyle = '#00f0ff';
-            ctx.lineWidth = 3.5 + Math.sin(Date.now() / 20) * 1.5;
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#00f0ff';
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, beam.radius, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([6, 6]);
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, beam.radius + 10, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.restore();
+            drawMagneticPulseBeam(ctx, b, beam);
         } else if (beam.type === 'gravity_well') {
-            const time = Date.now();
-            ctx.save();
-            ctx.translate(beam.x, beam.y);
-            
-            const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, beam.radius + Math.sin(time / 100) * 10);
-            grad.addColorStop(0, '#000000');
-            grad.addColorStop(0.3, 'rgba(189, 147, 249, 0.8)');
-            grad.addColorStop(0.7, 'rgba(255, 121, 198, 0.25)');
-            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(0, 0, beam.radius + 20, 0, Math.PI * 2);
-            ctx.fill();
-
-            for (let r = 0; r < 3; r++) {
-                ctx.save();
-                ctx.rotate(time / 200 * (r % 2 === 0 ? 1 : -1) + r * Math.PI / 3);
-                ctx.strokeStyle = r === 0 ? '#ff79c6' : '#bd93f9';
-                ctx.lineWidth = 1.5;
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = r === 0 ? '#ff79c6' : '#bd93f9';
-                ctx.beginPath();
-                ctx.ellipse(0, 0, 30 + r * 15, 12 + r * 6, 0, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.restore();
-            }
-
-            ctx.fillStyle = '#0a0a0f';
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = '#000000';
-            ctx.beginPath();
-            ctx.arc(0, 0, 16, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.restore();
+            drawGravityWellBeam(ctx, beam);
         } else if (beam.type === 'shield_overdrive') {
-            const time = Date.now();
-            ctx.save();
-            ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
-            ctx.lineWidth = 2 + Math.sin(time / 50) * 1;
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = '#ffd700';
-            ctx.setLineDash([4, 4]);
-            
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, b.shieldRadius, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            if (b.shields) {
-                ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
-                ctx.lineWidth = 1.0;
-                ctx.setLineDash([]);
-                for (const shield of b.shields) {
-                    if (shield.health <= 0) continue;
-                    const angle = shield.angle + b.rotAngle;
-                    const sx = b.x + Math.cos(angle) * b.shieldRadius;
-                    const sy = b.y + Math.sin(angle) * b.shieldRadius;
-                    ctx.beginPath();
-                    ctx.moveTo(b.x, b.y);
-                    ctx.lineTo(sx, sy);
-                    ctx.stroke();
-                }
-            }
-            ctx.restore();
+            drawShieldOverdriveBeam(ctx, b);
         } else if (beam.sweepDir !== undefined) {
-            // Vertical beam at x position
-            ctx.strokeStyle = b.color;
-            ctx.lineWidth = beam.width + Math.sin(Date.now() / 20) * 4;
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = b.color;
-            ctx.beginPath();
-            ctx.moveTo(beam.x, b.y + b.height / 2);
-            ctx.lineTo(beam.x, canvas.height - 12);
-            ctx.stroke();
-            // White core
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 4;
-            ctx.shadowBlur = 0;
-            ctx.beginPath();
-            ctx.moveTo(beam.x, b.y + b.height / 2);
-            ctx.lineTo(beam.x, canvas.height - 12);
-            ctx.stroke();
+            drawSweepLaserBeam(ctx, b, beam, canvas);
         } else if (beam.angle !== undefined) {
-            // Rotating beam from boss center
-            const endX = b.x + Math.cos(beam.angle) * 600;
-            const endY = b.y + Math.sin(beam.angle) * 600;
-            ctx.strokeStyle = b.color;
-            ctx.lineWidth = beam.width + Math.sin(Date.now() / 20) * 3;
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = b.color;
-            ctx.beginPath();
-            ctx.moveTo(b.x, b.y);
-            ctx.lineTo(endX, endY);
-            ctx.stroke();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 3;
-            ctx.shadowBlur = 0;
-            ctx.beginPath();
-            ctx.moveTo(b.x, b.y);
-            ctx.lineTo(endX, endY);
-            ctx.stroke();
+            drawRotatingLaserBeam(ctx, b, beam);
         } else if (beam.isVertical) {
-            // Full-screen vertical laser
-            ctx.strokeStyle = '#ff3333';
-            ctx.lineWidth = beam.width + Math.sin(Date.now() / 15) * 6;
-            ctx.shadowBlur = 25;
-            ctx.shadowColor = '#ff3333';
-            ctx.beginPath();
-            ctx.moveTo(beam.x, 0);
-            ctx.lineTo(beam.x, canvas.height - 12);
-            ctx.stroke();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 4;
-            ctx.shadowBlur = 0;
-            ctx.beginPath();
-            ctx.moveTo(beam.x, 0);
-            ctx.lineTo(beam.x, canvas.height - 12);
-            ctx.stroke();
+            drawVerticalLaserBeam(ctx, beam, canvas);
         }
     }
     ctx.restore();
@@ -2121,7 +2140,7 @@ export function getCheckpoint() {
     } catch { return null; }
 }
 
-export function saveCheckpoint(score, bossLevel) {
+function saveCheckpoint(score, bossLevel) {
     const cp = {
         score,
         bossLevel,
@@ -2484,7 +2503,7 @@ export function getScoreAtLastBossDefeat() {
     return scoreAtLastBossDefeat;
 }
 
-export function getSurvivalTimeLimit(level) {
+function getSurvivalTimeLimit(level) {
     if (level === 1) return 150;
     if (level === 2) return 200;
     if (level === 3) return 250;

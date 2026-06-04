@@ -2,7 +2,7 @@
 import { state } from './state.js';
 import { getFilename } from './utils.js';
 import { appWindow } from './tauri-bridge.js';
-import { supportedLanguages } from './overlays.js';
+import { supportedLanguages } from './languages.js';
 
 export function showStatus(msg, timeout = 3000) {
     const statusText = document.getElementById('status-text');

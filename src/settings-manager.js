@@ -93,7 +93,7 @@ export function updateCheckmarks() {
     }
 }
 
-export function toggleAutoSave() {
+function toggleAutoSave() {
     state.isAutoSaveEnabled = !state.isAutoSaveEnabled;
     localStorage.setItem('lightpad-autosave', state.isAutoSaveEnabled.toString());
     showStatus(state.isAutoSaveEnabled ? 'Auto-Save Enabled' : 'Auto-Save Disabled');
@@ -121,7 +121,7 @@ export function toggleWordWrap() {
     updateCheckmarks();
 }
 
-export function toggleMarkdownPreview() {
+function toggleMarkdownPreview() {
     state.isMarkdownPreviewEnabled = !state.isMarkdownPreviewEnabled;
     const preview = document.getElementById('markdown-preview');
     if (!preview) return;
@@ -134,7 +134,7 @@ export function toggleMarkdownPreview() {
     updateCheckmarks();
 }
 
-export function toggleArcadeMode() {
+function toggleArcadeMode() {
     state.isArcadeModeEnabled = !state.isArcadeModeEnabled;
     localStorage.setItem('lightpad-arcademode', state.isArcadeModeEnabled.toString());
     showStatus(state.isArcadeModeEnabled ? 'Idle Arcade Mode Enabled' : 'Idle Arcade Mode Disabled');
@@ -315,28 +315,22 @@ export function setupSettingsMenu() {
     bindFormat('menu-format-trim', t => t.split('\n').map(l => l.trim()).join('\n'));
     bindFormat('menu-format-duplicate', t => t + '\n' + t);
 
-    // JSON Formatting
-    document.getElementById('menu-format-json-format')?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        settingsMenu.style.display = 'none';
-        const { invoke } = await import('./tauri-bridge.js');
-        if (window.__TAURI__) {
-            await modifyEditorSelectionAsync(async t => { try { return await invoke('format_json', { text: t }); } catch(err) { showStatus('Invalid JSON'); return t; } });
-        } else {
-            modifyEditorSelection(t => { try { return JSON.stringify(JSON.parse(t), null, 2); } catch(err){ showStatus('Invalid JSON'); return t; } });
-        }
-    });
+    // JSON Formatting & Minifying
+    const handleJsonAction = (id, command, browserFallbackFn) => {
+        document.getElementById(id)?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            settingsMenu.style.display = 'none';
+            const { invoke } = await import('./tauri-bridge.js');
+            if (window.__TAURI__) {
+                await modifyEditorSelectionAsync(async t => { try { return await invoke(command, { text: t }); } catch(err) { showStatus('Invalid JSON'); return t; } });
+            } else {
+                modifyEditorSelection(t => { try { return browserFallbackFn(t); } catch(err){ showStatus('Invalid JSON'); return t; } });
+            }
+        });
+    };
 
-    document.getElementById('menu-format-json-minify')?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        settingsMenu.style.display = 'none';
-        const { invoke } = await import('./tauri-bridge.js');
-        if (window.__TAURI__) {
-            await modifyEditorSelectionAsync(async t => { try { return await invoke('minify_json', { text: t }); } catch(err) { showStatus('Invalid JSON'); return t; } });
-        } else {
-            modifyEditorSelection(t => { try { return JSON.stringify(JSON.parse(t)); } catch(err){ showStatus('Invalid JSON'); return t; } });
-        }
-    });
+    handleJsonAction('menu-format-json-format', 'format_json', t => JSON.stringify(JSON.parse(t), null, 2));
+    handleJsonAction('menu-format-json-minify', 'minify_json', t => JSON.stringify(JSON.parse(t)));
 
     // Base64 and URL
     bindFormat('menu-format-base64-enc', t => { try { return btoa(t); } catch(err){ showStatus('Failed to encode'); return t; } });

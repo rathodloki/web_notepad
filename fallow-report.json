@@ -1,0 +1,3959 @@
+﻿{
+  "kind": "combined",
+  "schema_version": 7,
+  "version": "2.88.2",
+  "elapsed_ms": 250,
+  "check": {
+    "schema_version": 7,
+    "version": "2.88.2",
+    "elapsed_ms": 114,
+    "total_issues": 4,
+    "entry_points": {
+      "total": 7,
+      "sources": {
+        "manual_entry": 5,
+        "plugin": 2
+      }
+    },
+    "summary": {
+      "total_issues": 4,
+      "unused_files": 0,
+      "unused_exports": 0,
+      "unused_types": 0,
+      "private_type_leaks": 0,
+      "unused_dependencies": 3,
+      "unused_enum_members": 0,
+      "unused_class_members": 0,
+      "unresolved_imports": 1,
+      "unlisted_dependencies": 0,
+      "duplicate_exports": 0,
+      "type_only_dependencies": 0,
+      "test_only_dependencies": 0,
+      "circular_dependencies": 0,
+      "re_export_cycles": 0,
+      "boundary_violations": 0,
+      "stale_suppressions": 0,
+      "unused_catalog_entries": 0,
+      "empty_catalog_groups": 0,
+      "unresolved_catalog_references": 0,
+      "unused_dependency_overrides": 0,
+      "misconfigured_dependency_overrides": 0
+    },
+    "unused_files": [],
+    "unused_exports": [],
+    "unused_types": [],
+    "private_type_leaks": [],
+    "unused_dependencies": [
+      {
+        "package_name": "quill",
+        "location": "dependencies",
+        "path": "package.json",
+        "line": 36,
+        "actions": [
+          {
+            "type": "remove-dependency",
+            "auto_fixable": true,
+            "description": "Remove from dependencies in package.json"
+          },
+          {
+            "type": "add-to-config",
+            "auto_fixable": false,
+            "description": "Add \"quill\" to ignoreDependencies in fallow config",
+            "config_key": "ignoreDependencies",
+            "value": "quill",
+            "value_schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json#/properties/ignoreDependencies/items"
+          }
+        ]
+      },
+      {
+        "package_name": "quill-blot-formatter",
+        "location": "dependencies",
+        "path": "package.json",
+        "line": 37,
+        "actions": [
+          {
+            "type": "remove-dependency",
+            "auto_fixable": true,
+            "description": "Remove from dependencies in package.json"
+          },
+          {
+            "type": "add-to-config",
+            "auto_fixable": false,
+            "description": "Add \"quill-blot-formatter\" to ignoreDependencies in fallow config",
+            "config_key": "ignoreDependencies",
+            "value": "quill-blot-formatter",
+            "value_schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json#/properties/ignoreDependencies/items"
+          }
+        ]
+      },
+      {
+        "package_name": "quill-image-drop-and-paste",
+        "location": "dependencies",
+        "path": "package.json",
+        "line": 38,
+        "actions": [
+          {
+            "type": "remove-dependency",
+            "auto_fixable": true,
+            "description": "Remove from dependencies in package.json"
+          },
+          {
+            "type": "add-to-config",
+            "auto_fixable": false,
+            "description": "Add \"quill-image-drop-and-paste\" to ignoreDependencies in fallow config",
+            "config_key": "ignoreDependencies",
+            "value": "quill-image-drop-and-paste",
+            "value_schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json#/properties/ignoreDependencies/items"
+          }
+        ]
+      }
+    ],
+    "unused_dev_dependencies": [],
+    "unused_optional_dependencies": [],
+    "unused_enum_members": [],
+    "unused_class_members": [],
+    "unresolved_imports": [
+      {
+        "path": "src/index.html",
+        "specifier": "/tauri-mock.js",
+        "line": 1,
+        "col": 0,
+        "specifier_col": 0,
+        "actions": [
+          {
+            "type": "resolve-import",
+            "auto_fixable": false,
+            "description": "Fix the import specifier or install the missing module",
+            "note": "Verify the module path and check tsconfig paths configuration"
+          },
+          {
+            "type": "add-to-config",
+            "auto_fixable": false,
+            "description": "Add \"/tauri-mock.js\" to ignoreUnresolvedImports in fallow config",
+            "config_key": "ignoreUnresolvedImports",
+            "value": "/tauri-mock.js",
+            "value_schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json#/properties/ignoreUnresolvedImports/items"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the line",
+            "comment": "// fallow-ignore-next-line unresolved-import"
+          }
+        ]
+      }
+    ],
+    "unlisted_dependencies": [],
+    "duplicate_exports": [],
+    "type_only_dependencies": [],
+    "test_only_dependencies": [],
+    "circular_dependencies": [],
+    "re_export_cycles": [],
+    "boundary_violations": [],
+    "stale_suppressions": [],
+    "unused_catalog_entries": [],
+    "empty_catalog_groups": [],
+    "unresolved_catalog_references": [],
+    "unused_dependency_overrides": [],
+    "misconfigured_dependency_overrides": []
+  },
+  "dupes": {
+    "clone_groups": [
+      {
+        "instances": [
+          {
+            "file": "src/boss.js",
+            "start_line": 857,
+            "end_line": 864,
+            "start_col": 12,
+            "end_col": 9,
+            "fragment": "if (crossProduct < beam.width / 2 + 10 && Math.hypot(dx, dy) < beamLen) {\n                if (gCtx.player.shieldTime <= 0) {\n                    gCtx.player.energy -= beam.damage * dt;\n                    gCtx.player.damageFlash = 3;\n                    if (gCtx.player.energy <= 0) gCtx.player.energy = 0;\n                }\n            }\n        }"
+          },
+          {
+            "file": "src/boss.js",
+            "start_line": 866,
+            "end_line": 873,
+            "start_col": 12,
+            "end_col": 9,
+            "fragment": "if (Math.abs(gCtx.player.x - beam.x) < beam.width / 2 + 10) {\n                if (gCtx.player.shieldTime <= 0) {\n                    gCtx.player.energy -= beam.damage * dt;\n                    gCtx.player.damageFlash = 3;\n                    if (gCtx.player.energy <= 0) gCtx.player.energy = 0;\n                }\n            }\n        }"
+          }
+        ],
+        "token_count": 54,
+        "line_count": 8,
+        "fingerprint": "dup:c476cc04",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/boss.js",
+            "start_line": 1343,
+            "end_line": 1352,
+            "start_col": 19,
+            "end_col": 8,
+            "fragment": "h * 0.45 * Math.sin(angle);\n        if (i === 0) ctx.moveTo(rx, ry);\n        else ctx.lineTo(rx, ry);\n    }\n    ctx.closePath();\n    ctx.fill();\n    ctx.stroke();\n\n    // Hull mechanical crossbars\n    ctx."
+          },
+          {
+            "file": "src/boss.js",
+            "start_line": 1532,
+            "end_line": 1539,
+            "start_col": 19,
+            "end_col": 8,
+            "fragment": "h * 0.22 * Math.sin(angle);\n        if (i === 0) ctx.moveTo(rx, ry);\n        else ctx.lineTo(rx, ry);\n    }\n    ctx.closePath();\n    ctx.fill();\n    ctx.stroke();\n    ctx."
+          }
+        ],
+        "token_count": 58,
+        "line_count": 10,
+        "fingerprint": "dup:f134bd81",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (10 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/boss.js",
+            "start_line": 1676,
+            "end_line": 1683,
+            "start_col": 13,
+            "end_col": 12,
+            "fragment": ");\n    for (const shield of b.shields) {\n        if (shield.health <= 0) continue;\n        const angle = shield.angle + b.rotAngle;\n        const sx = b.x + Math.cos(angle) * b.shieldRadius;\n        const sy = b.y + Math.sin(angle) * b.shieldRadius;\n\n        ctx."
+          },
+          {
+            "file": "src/boss.js",
+            "start_line": 1776,
+            "end_line": 1782,
+            "start_col": 26,
+            "end_col": 16,
+            "fragment": ");\n        for (const shield of b.shields) {\n            if (shield.health <= 0) continue;\n            const angle = shield.angle + b.rotAngle;\n            const sx = b.x + Math.cos(angle) * b.shieldRadius;\n            const sy = b.y + Math.sin(angle) * b.shieldRadius;\n            ctx."
+          }
+        ],
+        "token_count": 73,
+        "line_count": 8,
+        "fingerprint": "dup:4a516206",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/boss.js",
+            "start_line": 1797,
+            "end_line": 1805,
+            "start_col": 41,
+            "end_col": 22,
+            "fragment": ");\n    ctx.lineTo(beam.x, canvas.height - 12);\n    ctx.stroke();\n    // White core\n    ctx.strokeStyle = '#ffffff';\n    ctx.lineWidth = 4;\n    ctx.shadowBlur = 0;\n    ctx.beginPath();\n    ctx.moveTo(beam.x,"
+          },
+          {
+            "file": "src/boss.js",
+            "start_line": 1836,
+            "end_line": 1843,
+            "start_col": 24,
+            "end_col": 22,
+            "fragment": ");\n    ctx.lineTo(beam.x, canvas.height - 12);\n    ctx.stroke();\n    ctx.strokeStyle = '#ffffff';\n    ctx.lineWidth = 4;\n    ctx.shadowBlur = 0;\n    ctx.beginPath();\n    ctx.moveTo(beam.x,"
+          }
+        ],
+        "token_count": 57,
+        "line_count": 9,
+        "fingerprint": "dup:751b2e30",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (9 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/game.js",
+            "start_line": 129,
+            "end_line": 136,
+            "start_col": 6,
+            "end_col": 23,
+            "fragment": "BUG_SPRITE = [\n    [0,0,1,0,0,0,1,0,0],\n    [0,1,0,1,0,1,0,1,0],\n    [0,1,1,1,1,1,1,1,0],\n    [1,0,1,0,0,0,1,0,1],\n    [1,1,1,1,1,1,1,1,1],\n    [0,0,1,1,1,1,1,0,0],\n    [0,1,0,0,0,0,0,1,0]"
+          },
+          {
+            "file": "src/game.js",
+            "start_line": 140,
+            "end_line": 147,
+            "start_col": 6,
+            "end_col": 23,
+            "fragment": "BUG_SPRITE_FLAP = [\n    [0,0,1,0,0,0,1,0,0],\n    [0,1,0,1,0,1,0,1,0],\n    [0,1,1,1,1,1,1,1,0],\n    [1,0,1,0,0,0,1,0,1],\n    [1,1,1,1,1,1,1,1,1],\n    [0,0,1,1,1,1,1,0,0],\n    [1,0,0,0,0,0,0,0,1]"
+          }
+        ],
+        "token_count": 69,
+        "line_count": 8,
+        "fingerprint": "dup:c2e4c684",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/game.js",
+            "start_line": 711,
+            "end_line": 726,
+            "start_col": 4,
+            "end_col": 9,
+            "fragment": "const rows = sprite.length;\n    const cols = sprite[0].length;\n    const offsetX = - (cols * pixelSize) / 2;\n    const offsetY = - (rows * pixelSize) / 2;\n\n    for (let r = 0; r < rows; r++) {\n        for (let c = 0; c < cols; c++) {\n            if (sprite[r][c] > 0) {\n                ctx.fillRect(\n                    sx + offsetX + c * pixelSize,\n                    sy + offsetY + r * pixelSize,\n                    pixelSize,\n                    pixelSize\n                );\n            }\n        }"
+          },
+          {
+            "file": "src/game.js",
+            "start_line": 737,
+            "end_line": 754,
+            "start_col": 4,
+            "end_col": 9,
+            "fragment": "const rows = sprite.length;\n    const cols = sprite[0].length;\n    const offsetX = - (cols * pixelSize) / 2;\n    const offsetY = - (rows * pixelSize) / 2;\n\n    for (let r = 0; r < rows; r++) {\n        for (let c = 0; c < cols; c++) {\n            const val = sprite[r][c];\n            if (val > 0 && colorMap[val]) {\n                ctx.fillStyle = colorMap[val];\n                ctx.fillRect(\n                    sx + offsetX + c * pixelSize,\n                    sy + offsetY + r * pixelSize,\n                    pixelSize,\n                    pixelSize\n                );\n            }\n        }"
+          }
+        ],
+        "token_count": 63,
+        "line_count": 18,
+        "fingerprint": "dup:2352647f",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (18 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/game.js",
+            "start_line": 738,
+            "end_line": 745,
+            "start_col": 10,
+            "end_col": 23,
+            "fragment": "cols = sprite[0].length;\n    const offsetX = - (cols * pixelSize) / 2;\n    const offsetY = - (rows * pixelSize) / 2;\n\n    for (let r = 0; r < rows; r++) {\n        for (let c = 0; c < cols; c++) {\n            const val = sprite[r][c];\n            if (val > 0"
+          },
+          {
+            "file": "src/game.js",
+            "start_line": 774,
+            "end_line": 781,
+            "start_col": 10,
+            "end_col": 23,
+            "fragment": "centerY = height / 2;\n    const offsetX = - (cols * pixelSize) / 2;\n    const offsetY = - (rows * pixelSize) / 2;\n\n    for (let r = 0; r < rows; r++) {\n        for (let c = 0; c < cols; c++) {\n            const val = sprite[r][c];\n            if (val > 0"
+          }
+        ],
+        "token_count": 63,
+        "line_count": 8,
+        "fingerprint": "dup:8791119b",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/game.js",
+            "start_line": 2449,
+            "end_line": 2456,
+            "start_col": 12,
+            "end_col": 49,
+            "fragment": "player.drones.forEach((drone, idx) => {\n                let xOffset = 0;\n                let yOffset = -35;\n                if (idx === 1) { xOffset = -22; yOffset = -28; }\n                else if (idx === 2) { xOffset = 22; yOffset = -28; }\n\n                const droneX = player.x + xOffset;\n                const droneY = player.y + yOffset"
+          },
+          {
+            "file": "src/game.js",
+            "start_line": 3652,
+            "end_line": 3659,
+            "start_col": 8,
+            "end_col": 45,
+            "fragment": "player.drones.forEach((drone, idx) => {\n            let xOffset = 0;\n            let yOffset = -35;\n            if (idx === 1) { xOffset = -22; yOffset = -28; }\n            else if (idx === 2) { xOffset = 22; yOffset = -28; }\n\n            const droneX = player.x + xOffset;\n            const droneY = player.y + yOffset"
+          }
+        ],
+        "token_count": 80,
+        "line_count": 8,
+        "fingerprint": "dup:1346b727",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/game.js",
+            "start_line": 2944,
+            "end_line": 2952,
+            "start_col": 8,
+            "end_col": 30,
+            "fragment": "if (bug.type === 'drone') {\n            if (!bug.hovering && bug.y >= bug.targetY) {\n                bug.hovering = true;\n                bug.vy = 0;\n            }\n\n            if (bug.hovering) {\n                bug.x += bug.vx * enemyDt;\n                if (bug.x < 30"
+          },
+          {
+            "file": "src/game.js",
+            "start_line": 3107,
+            "end_line": 3116,
+            "start_col": 15,
+            "end_col": 30,
+            "fragment": "if (bug.type === 'carrier') {\n            // Carrier spawner moves horizontally at top\n            if (!bug.hovering && bug.y >= bug.targetY) {\n                bug.hovering = true;\n                bug.vy = 0;\n            }\n\n            if (bug.hovering) {\n                bug.x += bug.vx * enemyDt;\n                if (bug.x < 50"
+          }
+        ],
+        "token_count": 54,
+        "line_count": 10,
+        "fingerprint": "dup:ae4220fb",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (10 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/game.js",
+            "start_line": 3172,
+            "end_line": 3181,
+            "start_col": 16,
+            "end_col": 38,
+            "fragment": ".splice(i, 1);\n            continue;\n        }\n\n        // Support Drone firewall collision check\n        let droneCollided = false;\n        for (let idx = 0; idx < player.drones.length; idx++) {\n            const drone = player.drones[idx];\n            const droneRect = getDroneRect(idx);\n            if (isColliding(droneRect,"
+          },
+          {
+            "file": "src/game.js",
+            "start_line": 3252,
+            "end_line": 3261,
+            "start_col": 28,
+            "end_col": 38,
+            "fragment": ".splice(i, 1);\n            continue;\n        }\n\n        // Support Drone firewall projectile check\n        let droneCollided = false;\n        for (let idx = 0; idx < player.drones.length; idx++) {\n            const drone = player.drones[idx];\n            const droneRect = getDroneRect(idx);\n            if (isColliding(droneRect,"
+          }
+        ],
+        "token_count": 58,
+        "line_count": 10,
+        "fingerprint": "dup:c626b898",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (10 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "instances": [
+          {
+            "file": "src/game.js",
+            "start_line": 3441,
+            "end_line": 3452,
+            "start_col": 23,
+            "end_col": 8,
+            "fragment": "13.5 * pup.pulseScale;\n        const hx = Math.cos(angle) * radius;\n        const hy = Math.sin(angle) * radius;\n        if (s === 0) ctx.moveTo(hx, hy);\n        else ctx.lineTo(hx, hy);\n    }\n    ctx.closePath();\n    ctx.stroke();\n    ctx.restore();\n\n    // 2. Secondary outer ring spinning in opposite direction (double-ring effect)\n    ctx."
+          },
+          {
+            "file": "src/game.js",
+            "start_line": 3461,
+            "end_line": 3472,
+            "start_col": 23,
+            "end_col": 8,
+            "fragment": "17.5 * pup.pulseScale;\n        const hx = Math.cos(angle) * radius;\n        const hy = Math.sin(angle) * radius;\n        if (s === 0) ctx.moveTo(hx, hy);\n        else ctx.lineTo(hx, hy);\n    }\n    ctx.closePath();\n    ctx.stroke();\n    ctx.restore();\n\n    // 3. Fill background circle\n    ctx."
+          }
+        ],
+        "token_count": 80,
+        "line_count": 12,
+        "fingerprint": "dup:853b3215",
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract duplicated code (12 lines, 2 instances) into a shared function"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      }
+    ],
+    "clone_families": [
+      {
+        "files": [
+          "src/boss.js"
+        ],
+        "groups": [
+          {
+            "instances": [
+              {
+                "file": "src/boss.js",
+                "start_line": 857,
+                "end_line": 864,
+                "start_col": 12,
+                "end_col": 9,
+                "fragment": "if (crossProduct < beam.width / 2 + 10 && Math.hypot(dx, dy) < beamLen) {\n                if (gCtx.player.shieldTime <= 0) {\n                    gCtx.player.energy -= beam.damage * dt;\n                    gCtx.player.damageFlash = 3;\n                    if (gCtx.player.energy <= 0) gCtx.player.energy = 0;\n                }\n            }\n        }"
+              },
+              {
+                "file": "src/boss.js",
+                "start_line": 866,
+                "end_line": 873,
+                "start_col": 12,
+                "end_col": 9,
+                "fragment": "if (Math.abs(gCtx.player.x - beam.x) < beam.width / 2 + 10) {\n                if (gCtx.player.shieldTime <= 0) {\n                    gCtx.player.energy -= beam.damage * dt;\n                    gCtx.player.damageFlash = 3;\n                    if (gCtx.player.energy <= 0) gCtx.player.energy = 0;\n                }\n            }\n        }"
+              }
+            ],
+            "token_count": 54,
+            "line_count": 8,
+            "fingerprint": "dup:c476cc04",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          },
+          {
+            "instances": [
+              {
+                "file": "src/boss.js",
+                "start_line": 1343,
+                "end_line": 1352,
+                "start_col": 19,
+                "end_col": 8,
+                "fragment": "h * 0.45 * Math.sin(angle);\n        if (i === 0) ctx.moveTo(rx, ry);\n        else ctx.lineTo(rx, ry);\n    }\n    ctx.closePath();\n    ctx.fill();\n    ctx.stroke();\n\n    // Hull mechanical crossbars\n    ctx."
+              },
+              {
+                "file": "src/boss.js",
+                "start_line": 1532,
+                "end_line": 1539,
+                "start_col": 19,
+                "end_col": 8,
+                "fragment": "h * 0.22 * Math.sin(angle);\n        if (i === 0) ctx.moveTo(rx, ry);\n        else ctx.lineTo(rx, ry);\n    }\n    ctx.closePath();\n    ctx.fill();\n    ctx.stroke();\n    ctx."
+              }
+            ],
+            "token_count": 58,
+            "line_count": 10,
+            "fingerprint": "dup:f134bd81",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (10 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          },
+          {
+            "instances": [
+              {
+                "file": "src/boss.js",
+                "start_line": 1676,
+                "end_line": 1683,
+                "start_col": 13,
+                "end_col": 12,
+                "fragment": ");\n    for (const shield of b.shields) {\n        if (shield.health <= 0) continue;\n        const angle = shield.angle + b.rotAngle;\n        const sx = b.x + Math.cos(angle) * b.shieldRadius;\n        const sy = b.y + Math.sin(angle) * b.shieldRadius;\n\n        ctx."
+              },
+              {
+                "file": "src/boss.js",
+                "start_line": 1776,
+                "end_line": 1782,
+                "start_col": 26,
+                "end_col": 16,
+                "fragment": ");\n        for (const shield of b.shields) {\n            if (shield.health <= 0) continue;\n            const angle = shield.angle + b.rotAngle;\n            const sx = b.x + Math.cos(angle) * b.shieldRadius;\n            const sy = b.y + Math.sin(angle) * b.shieldRadius;\n            ctx."
+              }
+            ],
+            "token_count": 73,
+            "line_count": 8,
+            "fingerprint": "dup:4a516206",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          },
+          {
+            "instances": [
+              {
+                "file": "src/boss.js",
+                "start_line": 1797,
+                "end_line": 1805,
+                "start_col": 41,
+                "end_col": 22,
+                "fragment": ");\n    ctx.lineTo(beam.x, canvas.height - 12);\n    ctx.stroke();\n    // White core\n    ctx.strokeStyle = '#ffffff';\n    ctx.lineWidth = 4;\n    ctx.shadowBlur = 0;\n    ctx.beginPath();\n    ctx.moveTo(beam.x,"
+              },
+              {
+                "file": "src/boss.js",
+                "start_line": 1836,
+                "end_line": 1843,
+                "start_col": 24,
+                "end_col": 22,
+                "fragment": ");\n    ctx.lineTo(beam.x, canvas.height - 12);\n    ctx.stroke();\n    ctx.strokeStyle = '#ffffff';\n    ctx.lineWidth = 4;\n    ctx.shadowBlur = 0;\n    ctx.beginPath();\n    ctx.moveTo(beam.x,"
+              }
+            ],
+            "token_count": 57,
+            "line_count": 9,
+            "fingerprint": "dup:751b2e30",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (9 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          }
+        ],
+        "total_duplicated_lines": 35,
+        "total_duplicated_tokens": 242,
+        "suggestions": [
+          {
+            "kind": "ExtractFunction",
+            "description": "Extract shared function (8 lines) from boss.js, boss.js",
+            "estimated_savings": 8
+          },
+          {
+            "kind": "ExtractFunction",
+            "description": "Extract shared function (10 lines) from boss.js, boss.js",
+            "estimated_savings": 10
+          },
+          {
+            "kind": "ExtractFunction",
+            "description": "Extract shared function (9 lines) from boss.js, boss.js",
+            "estimated_savings": 9
+          },
+          {
+            "kind": "ExtractFunction",
+            "description": "Extract shared function (8 lines) from boss.js, boss.js",
+            "estimated_savings": 8
+          }
+        ],
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract 4 duplicated code blocks (35 lines) into a shared module",
+            "note": "These clone groups share the same files, indicating a structural relationship; refactor together"
+          },
+          {
+            "type": "apply-suggestion",
+            "auto_fixable": false,
+            "description": "Extract shared function (8 lines) from boss.js, boss.js"
+          },
+          {
+            "type": "apply-suggestion",
+            "auto_fixable": false,
+            "description": "Extract shared function (10 lines) from boss.js, boss.js"
+          },
+          {
+            "type": "apply-suggestion",
+            "auto_fixable": false,
+            "description": "Extract shared function (9 lines) from boss.js, boss.js"
+          },
+          {
+            "type": "apply-suggestion",
+            "auto_fixable": false,
+            "description": "Extract shared function (8 lines) from boss.js, boss.js"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      },
+      {
+        "files": [
+          "src/game.js"
+        ],
+        "groups": [
+          {
+            "instances": [
+              {
+                "file": "src/game.js",
+                "start_line": 129,
+                "end_line": 136,
+                "start_col": 6,
+                "end_col": 23,
+                "fragment": "BUG_SPRITE = [\n    [0,0,1,0,0,0,1,0,0],\n    [0,1,0,1,0,1,0,1,0],\n    [0,1,1,1,1,1,1,1,0],\n    [1,0,1,0,0,0,1,0,1],\n    [1,1,1,1,1,1,1,1,1],\n    [0,0,1,1,1,1,1,0,0],\n    [0,1,0,0,0,0,0,1,0]"
+              },
+              {
+                "file": "src/game.js",
+                "start_line": 140,
+                "end_line": 147,
+                "start_col": 6,
+                "end_col": 23,
+                "fragment": "BUG_SPRITE_FLAP = [\n    [0,0,1,0,0,0,1,0,0],\n    [0,1,0,1,0,1,0,1,0],\n    [0,1,1,1,1,1,1,1,0],\n    [1,0,1,0,0,0,1,0,1],\n    [1,1,1,1,1,1,1,1,1],\n    [0,0,1,1,1,1,1,0,0],\n    [1,0,0,0,0,0,0,0,1]"
+              }
+            ],
+            "token_count": 69,
+            "line_count": 8,
+            "fingerprint": "dup:c2e4c684",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          },
+          {
+            "instances": [
+              {
+                "file": "src/game.js",
+                "start_line": 711,
+                "end_line": 726,
+                "start_col": 4,
+                "end_col": 9,
+                "fragment": "const rows = sprite.length;\n    const cols = sprite[0].length;\n    const offsetX = - (cols * pixelSize) / 2;\n    const offsetY = - (rows * pixelSize) / 2;\n\n    for (let r = 0; r < rows; r++) {\n        for (let c = 0; c < cols; c++) {\n            if (sprite[r][c] > 0) {\n                ctx.fillRect(\n                    sx + offsetX + c * pixelSize,\n                    sy + offsetY + r * pixelSize,\n                    pixelSize,\n                    pixelSize\n                );\n            }\n        }"
+              },
+              {
+                "file": "src/game.js",
+                "start_line": 737,
+                "end_line": 754,
+                "start_col": 4,
+                "end_col": 9,
+                "fragment": "const rows = sprite.length;\n    const cols = sprite[0].length;\n    const offsetX = - (cols * pixelSize) / 2;\n    const offsetY = - (rows * pixelSize) / 2;\n\n    for (let r = 0; r < rows; r++) {\n        for (let c = 0; c < cols; c++) {\n            const val = sprite[r][c];\n            if (val > 0 && colorMap[val]) {\n                ctx.fillStyle = colorMap[val];\n                ctx.fillRect(\n                    sx + offsetX + c * pixelSize,\n                    sy + offsetY + r * pixelSize,\n                    pixelSize,\n                    pixelSize\n                );\n            }\n        }"
+              }
+            ],
+            "token_count": 63,
+            "line_count": 18,
+            "fingerprint": "dup:2352647f",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (18 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          },
+          {
+            "instances": [
+              {
+                "file": "src/game.js",
+                "start_line": 738,
+                "end_line": 745,
+                "start_col": 10,
+                "end_col": 23,
+                "fragment": "cols = sprite[0].length;\n    const offsetX = - (cols * pixelSize) / 2;\n    const offsetY = - (rows * pixelSize) / 2;\n\n    for (let r = 0; r < rows; r++) {\n        for (let c = 0; c < cols; c++) {\n            const val = sprite[r][c];\n            if (val > 0"
+              },
+              {
+                "file": "src/game.js",
+                "start_line": 774,
+                "end_line": 781,
+                "start_col": 10,
+                "end_col": 23,
+                "fragment": "centerY = height / 2;\n    const offsetX = - (cols * pixelSize) / 2;\n    const offsetY = - (rows * pixelSize) / 2;\n\n    for (let r = 0; r < rows; r++) {\n        for (let c = 0; c < cols; c++) {\n            const val = sprite[r][c];\n            if (val > 0"
+              }
+            ],
+            "token_count": 63,
+            "line_count": 8,
+            "fingerprint": "dup:8791119b",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          },
+          {
+            "instances": [
+              {
+                "file": "src/game.js",
+                "start_line": 2449,
+                "end_line": 2456,
+                "start_col": 12,
+                "end_col": 49,
+                "fragment": "player.drones.forEach((drone, idx) => {\n                let xOffset = 0;\n                let yOffset = -35;\n                if (idx === 1) { xOffset = -22; yOffset = -28; }\n                else if (idx === 2) { xOffset = 22; yOffset = -28; }\n\n                const droneX = player.x + xOffset;\n                const droneY = player.y + yOffset"
+              },
+              {
+                "file": "src/game.js",
+                "start_line": 3652,
+                "end_line": 3659,
+                "start_col": 8,
+                "end_col": 45,
+                "fragment": "player.drones.forEach((drone, idx) => {\n            let xOffset = 0;\n            let yOffset = -35;\n            if (idx === 1) { xOffset = -22; yOffset = -28; }\n            else if (idx === 2) { xOffset = 22; yOffset = -28; }\n\n            const droneX = player.x + xOffset;\n            const droneY = player.y + yOffset"
+              }
+            ],
+            "token_count": 80,
+            "line_count": 8,
+            "fingerprint": "dup:1346b727",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (8 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          },
+          {
+            "instances": [
+              {
+                "file": "src/game.js",
+                "start_line": 2944,
+                "end_line": 2952,
+                "start_col": 8,
+                "end_col": 30,
+                "fragment": "if (bug.type === 'drone') {\n            if (!bug.hovering && bug.y >= bug.targetY) {\n                bug.hovering = true;\n                bug.vy = 0;\n            }\n\n            if (bug.hovering) {\n                bug.x += bug.vx * enemyDt;\n                if (bug.x < 30"
+              },
+              {
+                "file": "src/game.js",
+                "start_line": 3107,
+                "end_line": 3116,
+                "start_col": 15,
+                "end_col": 30,
+                "fragment": "if (bug.type === 'carrier') {\n            // Carrier spawner moves horizontally at top\n            if (!bug.hovering && bug.y >= bug.targetY) {\n                bug.hovering = true;\n                bug.vy = 0;\n            }\n\n            if (bug.hovering) {\n                bug.x += bug.vx * enemyDt;\n                if (bug.x < 50"
+              }
+            ],
+            "token_count": 54,
+            "line_count": 10,
+            "fingerprint": "dup:ae4220fb",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (10 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          },
+          {
+            "instances": [
+              {
+                "file": "src/game.js",
+                "start_line": 3172,
+                "end_line": 3181,
+                "start_col": 16,
+                "end_col": 38,
+                "fragment": ".splice(i, 1);\n            continue;\n        }\n\n        // Support Drone firewall collision check\n        let droneCollided = false;\n        for (let idx = 0; idx < player.drones.length; idx++) {\n            const drone = player.drones[idx];\n            const droneRect = getDroneRect(idx);\n            if (isColliding(droneRect,"
+              },
+              {
+                "file": "src/game.js",
+                "start_line": 3252,
+                "end_line": 3261,
+                "start_col": 28,
+                "end_col": 38,
+                "fragment": ".splice(i, 1);\n            continue;\n        }\n\n        // Support Drone firewall projectile check\n        let droneCollided = false;\n        for (let idx = 0; idx < player.drones.length; idx++) {\n            const drone = player.drones[idx];\n            const droneRect = getDroneRect(idx);\n            if (isColliding(droneRect,"
+              }
+            ],
+            "token_count": 58,
+            "line_count": 10,
+            "fingerprint": "dup:c626b898",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (10 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          },
+          {
+            "instances": [
+              {
+                "file": "src/game.js",
+                "start_line": 3441,
+                "end_line": 3452,
+                "start_col": 23,
+                "end_col": 8,
+                "fragment": "13.5 * pup.pulseScale;\n        const hx = Math.cos(angle) * radius;\n        const hy = Math.sin(angle) * radius;\n        if (s === 0) ctx.moveTo(hx, hy);\n        else ctx.lineTo(hx, hy);\n    }\n    ctx.closePath();\n    ctx.stroke();\n    ctx.restore();\n\n    // 2. Secondary outer ring spinning in opposite direction (double-ring effect)\n    ctx."
+              },
+              {
+                "file": "src/game.js",
+                "start_line": 3461,
+                "end_line": 3472,
+                "start_col": 23,
+                "end_col": 8,
+                "fragment": "17.5 * pup.pulseScale;\n        const hx = Math.cos(angle) * radius;\n        const hy = Math.sin(angle) * radius;\n        if (s === 0) ctx.moveTo(hx, hy);\n        else ctx.lineTo(hx, hy);\n    }\n    ctx.closePath();\n    ctx.stroke();\n    ctx.restore();\n\n    // 3. Fill background circle\n    ctx."
+              }
+            ],
+            "token_count": 80,
+            "line_count": 12,
+            "fingerprint": "dup:853b3215",
+            "actions": [
+              {
+                "type": "extract-shared",
+                "auto_fixable": false,
+                "description": "Extract duplicated code (12 lines, 2 instances) into a shared function"
+              },
+              {
+                "type": "suppress-line",
+                "auto_fixable": false,
+                "description": "Suppress with an inline comment above the duplicated code",
+                "comment": "// fallow-ignore-next-line code-duplication"
+              }
+            ]
+          }
+        ],
+        "total_duplicated_lines": 74,
+        "total_duplicated_tokens": 467,
+        "suggestions": [
+          {
+            "kind": "ExtractModule",
+            "description": "Extract 7 shared clone groups (74 lines) from game.js into src",
+            "estimated_savings": 74
+          }
+        ],
+        "actions": [
+          {
+            "type": "extract-shared",
+            "auto_fixable": false,
+            "description": "Extract 7 duplicated code blocks (74 lines) into a shared module",
+            "note": "These clone groups share the same files, indicating a structural relationship; refactor together"
+          },
+          {
+            "type": "apply-suggestion",
+            "auto_fixable": false,
+            "description": "Extract 7 shared clone groups (74 lines) from game.js into src"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the duplicated code",
+            "comment": "// fallow-ignore-next-line code-duplication"
+          }
+        ]
+      }
+    ],
+    "stats": {
+      "total_files": 8,
+      "files_with_clones": 2,
+      "total_lines": 8190,
+      "duplicated_lines": 203,
+      "total_tokens": 55276,
+      "duplicated_tokens": 709,
+      "clone_groups": 11,
+      "clone_instances": 22,
+      "duplication_percentage": 2.4786324786324787
+    }
+  },
+  "health": {
+    "findings": [
+      {
+        "path": "src/game.js",
+        "name": "updateGame",
+        "line": 2205,
+        "col": 0,
+        "cyclomatic": 253,
+        "cognitive": 573,
+        "line_count": 1208,
+        "param_count": 1,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 64262.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `updateGame` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/editor.js",
+        "name": "getLanguageExtension",
+        "line": 261,
+        "col": 7,
+        "cyclomatic": 43,
+        "cognitive": 6,
+        "line_count": 106,
+        "param_count": 3,
+        "exceeded": "cyclomatic_crap",
+        "severity": "critical",
+        "crap": 1892.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `getLanguageExtension` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "<arrow>",
+        "line": 3776,
+        "col": 17,
+        "cyclomatic": 30,
+        "cognitive": 57,
+        "line_count": 184,
+        "param_count": 1,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 930.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `<arrow>` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "executeAttack",
+        "line": 666,
+        "col": 0,
+        "cyclomatic": 29,
+        "cognitive": 13,
+        "line_count": 103,
+        "param_count": 3,
+        "exceeded": "cyclomatic_crap",
+        "severity": "critical",
+        "crap": 870.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `executeAttack` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `executeAttack` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "getMusicReactionData",
+        "line": 595,
+        "col": 7,
+        "cyclomatic": 29,
+        "cognitive": 54,
+        "line_count": 147,
+        "param_count": 0,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 870.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `getMusicReactionData` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `getMusicReactionData` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "updateActiveAttack",
+        "line": 770,
+        "col": 0,
+        "cyclomatic": 27,
+        "cognitive": 68,
+        "line_count": 110,
+        "param_count": 4,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 756.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `updateActiveAttack` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `updateActiveAttack` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "updateRecovery",
+        "line": 894,
+        "col": 0,
+        "cyclomatic": 26,
+        "cognitive": 41,
+        "line_count": 96,
+        "param_count": 2,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 702.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `updateRecovery` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `updateRecovery` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "initGame",
+        "line": 1177,
+        "col": 7,
+        "cyclomatic": 25,
+        "cognitive": 31,
+        "line_count": 192,
+        "param_count": 0,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 650.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `initGame` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `initGame` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "renderEntities",
+        "line": 3498,
+        "col": 0,
+        "cyclomatic": 25,
+        "cognitive": 36,
+        "line_count": 563,
+        "param_count": 0,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 650.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `renderEntities` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `renderEntities` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "updateBossSystem",
+        "line": 2260,
+        "col": 7,
+        "cyclomatic": 24,
+        "cognitive": 42,
+        "line_count": 84,
+        "param_count": 2,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 600.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `updateBossSystem` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `updateBossSystem` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "gameLoop",
+        "line": 2003,
+        "col": 0,
+        "cyclomatic": 23,
+        "cognitive": 32,
+        "line_count": 201,
+        "param_count": 0,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 552.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `gameLoop` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `gameLoop` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "updateBossAttacks",
+        "line": 593,
+        "col": 0,
+        "cyclomatic": 21,
+        "cognitive": 41,
+        "line_count": 72,
+        "param_count": 3,
+        "exceeded": "all",
+        "severity": "critical",
+        "crap": 462.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `updateBossAttacks` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `updateBossAttacks` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/editor.js",
+        "name": "detectLanguageFromContent",
+        "line": 219,
+        "col": 7,
+        "cyclomatic": 20,
+        "cognitive": 23,
+        "line_count": 41,
+        "param_count": 1,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 420.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `detectLanguageFromContent` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `detectLanguageFromContent` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "setPlayingState",
+        "line": 260,
+        "col": 0,
+        "cyclomatic": 20,
+        "cognitive": 47,
+        "line_count": 81,
+        "param_count": 1,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 420.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `setPlayingState` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `setPlayingState` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "setupMusicPlayer",
+        "line": 789,
+        "col": 7,
+        "cyclomatic": 20,
+        "cognitive": 20,
+        "line_count": 109,
+        "param_count": 0,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 420.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `setupMusicPlayer` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `setupMusicPlayer` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "renderBossSystem",
+        "line": 2436,
+        "col": 7,
+        "cyclomatic": 16,
+        "cognitive": 26,
+        "line_count": 53,
+        "param_count": 1,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 272.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `renderBossSystem` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `renderBossSystem` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "handleKeyDown",
+        "line": 420,
+        "col": 0,
+        "cyclomatic": 16,
+        "cognitive": 20,
+        "line_count": 34,
+        "param_count": 1,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 272.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `handleKeyDown` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `handleKeyDown` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "applyPowerUp",
+        "line": 1884,
+        "col": 0,
+        "cyclomatic": 15,
+        "cognitive": 17,
+        "line_count": 79,
+        "param_count": 1,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 240.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `applyPowerUp` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `applyPowerUp` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "spawnPowerUp",
+        "line": 1803,
+        "col": 0,
+        "cyclomatic": 15,
+        "cognitive": 15,
+        "line_count": 80,
+        "param_count": 3,
+        "exceeded": "crap",
+        "severity": "critical",
+        "crap": 240.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `spawnPowerUp` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `spawnPowerUp` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBoss1Vector",
+        "line": 1008,
+        "col": 0,
+        "cyclomatic": 14,
+        "cognitive": 16,
+        "line_count": 156,
+        "param_count": 6,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 210.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawBoss1Vector` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `drawBoss1Vector` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBoss3Vector",
+        "line": 1318,
+        "col": 0,
+        "cyclomatic": 14,
+        "cognitive": 17,
+        "line_count": 129,
+        "param_count": 6,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 210.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawBoss3Vector` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `drawBoss3Vector` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawProceduralBossVector",
+        "line": 1448,
+        "col": 0,
+        "cyclomatic": 14,
+        "cognitive": 18,
+        "line_count": 105,
+        "param_count": 6,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 210.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawProceduralBossVector` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `drawProceduralBossVector` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "updateBossMovement",
+        "line": 557,
+        "col": 0,
+        "cyclomatic": 13,
+        "cognitive": 18,
+        "line_count": 35,
+        "param_count": 3,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 182.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `updateBossMovement` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `updateBossMovement` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBossModel",
+        "line": 1554,
+        "col": 0,
+        "cyclomatic": 13,
+        "cognitive": 18,
+        "line_count": 38,
+        "param_count": 5,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 182.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawBossModel` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `drawBossModel` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "fetchCodeRadioMetadata",
+        "line": 210,
+        "col": 0,
+        "cyclomatic": 13,
+        "cognitive": 13,
+        "line_count": 26,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "critical",
+        "crap": 182.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `fetchCodeRadioMetadata` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "handleBossBulletHit",
+        "line": 2389,
+        "col": 7,
+        "cyclomatic": 12,
+        "cognitive": 23,
+        "line_count": 46,
+        "param_count": 2,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 156.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `handleBossBulletHit` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `handleBossBulletHit` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "playSound",
+        "line": 552,
+        "col": 0,
+        "cyclomatic": 12,
+        "cognitive": 11,
+        "line_count": 130,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "critical",
+        "crap": 156.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `playSound` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "updateScoreUI",
+        "line": 1437,
+        "col": 0,
+        "cyclomatic": 12,
+        "cognitive": 13,
+        "line_count": 65,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "critical",
+        "crap": 156.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `updateScoreUI` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "drawPowerUp",
+        "line": 3414,
+        "col": 0,
+        "cyclomatic": 12,
+        "cognitive": 15,
+        "line_count": 83,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "critical",
+        "crap": 156.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawPowerUp` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawRecoveryStation",
+        "line": 1963,
+        "col": 0,
+        "cyclomatic": 11,
+        "cognitive": 20,
+        "line_count": 74,
+        "param_count": 3,
+        "exceeded": "cognitive_crap",
+        "severity": "critical",
+        "crap": 132.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawRecoveryStation` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `drawRecoveryStation` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "getBossProgress",
+        "line": 2513,
+        "col": 7,
+        "cyclomatic": 11,
+        "cognitive": 11,
+        "line_count": 57,
+        "param_count": 4,
+        "exceeded": "crap",
+        "severity": "critical",
+        "crap": 132.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `getBossProgress` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "drawFragment",
+        "line": 1078,
+        "col": 0,
+        "cyclomatic": 11,
+        "cognitive": 11,
+        "line_count": 56,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "critical",
+        "crap": 132.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawFragment` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "drawSpaceship",
+        "line": 942,
+        "col": 0,
+        "cyclomatic": 10,
+        "cognitive": 10,
+        "line_count": 93,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "critical",
+        "crap": 110.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawSpaceship` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBoss2Vector",
+        "line": 1165,
+        "col": 0,
+        "cyclomatic": 9,
+        "cognitive": 10,
+        "line_count": 152,
+        "param_count": 6,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 90.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawBoss2Vector` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBossSprite",
+        "line": 1593,
+        "col": 0,
+        "cyclomatic": 9,
+        "cognitive": 10,
+        "line_count": 80,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 90.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawBossSprite` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "renderGameOverScreen",
+        "line": 1503,
+        "col": 0,
+        "cyclomatic": 9,
+        "cognitive": 12,
+        "line_count": 28,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 90.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `renderGameOverScreen` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/csv.js",
+        "name": "countDelimiters",
+        "line": 22,
+        "col": 0,
+        "cyclomatic": 8,
+        "cognitive": 17,
+        "line_count": 17,
+        "param_count": 2,
+        "exceeded": "cognitive_crap",
+        "severity": "high",
+        "crap": 72.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `countDelimiters` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `countDelimiters` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/csv.js",
+        "name": "parseLineSpans",
+        "line": 66,
+        "col": 0,
+        "cyclomatic": 8,
+        "cognitive": 19,
+        "line_count": 26,
+        "param_count": 2,
+        "exceeded": "cognitive_crap",
+        "severity": "high",
+        "crap": 72.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `parseLineSpans` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "refactor-function",
+            "auto_fixable": false,
+            "description": "Refactor `parseLineSpans` to reduce complexity (extract helper functions, simplify branching)",
+            "note": "Consider splitting into smaller functions with single responsibilities"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "updateVolumeUI",
+        "line": 743,
+        "col": 0,
+        "cyclomatic": 8,
+        "cognitive": 9,
+        "line_count": 24,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 72.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `updateVolumeUI` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "createScriptedBoss",
+        "line": 181,
+        "col": 0,
+        "cyclomatic": 8,
+        "cognitive": 7,
+        "line_count": 131,
+        "param_count": 3,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 72.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `createScriptedBoss` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBossBeams",
+        "line": 1848,
+        "col": 0,
+        "cyclomatic": 8,
+        "cognitive": 8,
+        "line_count": 26,
+        "param_count": 3,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 72.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawBossBeams` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/csv.js",
+        "name": "detectDelimiter",
+        "line": 41,
+        "col": 0,
+        "cyclomatic": 8,
+        "cognitive": 10,
+        "line_count": 23,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 72.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `detectDelimiter` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "renderToOffscreenCanvas",
+        "line": 759,
+        "col": 0,
+        "cyclomatic": 7,
+        "cognitive": 13,
+        "line_count": 40,
+        "param_count": 7,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 56.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `renderToOffscreenCanvas` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "showScreen",
+        "line": 1532,
+        "col": 0,
+        "cyclomatic": 7,
+        "cognitive": 6,
+        "line_count": 17,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 56.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `showScreen` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "<arrow>",
+        "line": 2449,
+        "col": 34,
+        "cyclomatic": 7,
+        "cognitive": 7,
+        "line_count": 37,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 56.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `<arrow>` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "tickVisualizer",
+        "line": 4066,
+        "col": 0,
+        "cyclomatic": 7,
+        "cognitive": 7,
+        "line_count": 30,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "high",
+        "crap": 56.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `tickVisualizer` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "showMusicContextMenu",
+        "line": 443,
+        "col": 0,
+        "cyclomatic": 6,
+        "cognitive": 5,
+        "line_count": 33,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 42.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `showMusicContextMenu` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "buildProceduralAttacks",
+        "line": 384,
+        "col": 0,
+        "cyclomatic": 6,
+        "cognitive": 6,
+        "line_count": 32,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 42.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `buildProceduralAttacks` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "checkBossThreshold",
+        "line": 2242,
+        "col": 7,
+        "cyclomatic": 6,
+        "cognitive": 5,
+        "line_count": 17,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 42.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `checkBossThreshold` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "drawMultiPixelSprite",
+        "line": 731,
+        "col": 0,
+        "cyclomatic": 6,
+        "cognitive": 8,
+        "line_count": 27,
+        "param_count": 6,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 42.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawMultiPixelSprite` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "spawnParticle",
+        "line": 1665,
+        "col": 0,
+        "cyclomatic": 6,
+        "cognitive": 5,
+        "line_count": 43,
+        "param_count": 5,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 42.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `spawnParticle` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "triggerEMPEffect",
+        "line": 1964,
+        "col": 0,
+        "cyclomatic": 6,
+        "cognitive": 8,
+        "line_count": 34,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 42.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `triggerEMPEffect` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "<arrow>",
+        "line": 2341,
+        "col": 17,
+        "cyclomatic": 6,
+        "cognitive": 5,
+        "line_count": 9,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 42.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `<arrow>` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "<arrow>",
+        "line": 3593,
+        "col": 29,
+        "cyclomatic": 6,
+        "cognitive": 8,
+        "line_count": 46,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 42.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `<arrow>` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "getItemKey",
+        "line": 131,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 3,
+        "line_count": 4,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `getItemKey` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "setupAnalyser",
+        "line": 191,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 4,
+        "line_count": 18,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `setupAnalyser` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "startMetadataPolling",
+        "line": 237,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 5,
+        "line_count": 15,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `startMetadataPolling` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "updateFavoriteIconUI",
+        "line": 359,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 5,
+        "line_count": 24,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `updateFavoriteIconUI` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "togglePlay",
+        "line": 521,
+        "col": 7,
+        "cyclomatic": 5,
+        "cognitive": 6,
+        "line_count": 28,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `togglePlay` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "playRandomStation",
+        "line": 550,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 6,
+        "line_count": 36,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `playRandomStation` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "createProceduralBoss",
+        "line": 313,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 4,
+        "line_count": 70,
+        "param_count": 3,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `createProceduralBoss` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawGravityWellBeam",
+        "line": 1722,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 7,
+        "line_count": 37,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawGravityWellBeam` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawChargeWarning",
+        "line": 2102,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 4,
+        "line_count": 29,
+        "param_count": 3,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawChargeWarning` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "applyCheckpointToPlayer",
+        "line": 2157,
+        "col": 7,
+        "cyclomatic": 5,
+        "cognitive": 5,
+        "line_count": 18,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `applyCheckpointToPlayer` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "name": "initBossSystemFromCheckpoint",
+        "line": 2196,
+        "col": 7,
+        "cyclomatic": 5,
+        "cognitive": 5,
+        "line_count": 19,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `initBossSystemFromCheckpoint` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "drawPixelSprite",
+        "line": 703,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 7,
+        "line_count": 27,
+        "param_count": 6,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `drawPixelSprite` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "resizeCanvas",
+        "line": 1397,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 4,
+        "line_count": 8,
+        "param_count": 0,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `resizeCanvas` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "spawnEnergyFragment",
+        "line": 1765,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 4,
+        "line_count": 37,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `spawnEnergyFragment` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "<arrow>",
+        "line": 3652,
+        "col": 30,
+        "cyclomatic": 5,
+        "cognitive": 5,
+        "line_count": 34,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `<arrow>` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "<arrow>",
+        "line": 4011,
+        "col": 31,
+        "cyclomatic": 5,
+        "cognitive": 7,
+        "line_count": 44,
+        "param_count": 1,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `<arrow>` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "name": "<arrow>",
+        "line": 4075,
+        "col": 27,
+        "cyclomatic": 5,
+        "cognitive": 5,
+        "line_count": 20,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `<arrow>` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      },
+      {
+        "path": "src/csv.js",
+        "name": "buildDecorations",
+        "line": 94,
+        "col": 0,
+        "cyclomatic": 5,
+        "cognitive": 9,
+        "line_count": 25,
+        "param_count": 2,
+        "exceeded": "crap",
+        "severity": "moderate",
+        "crap": 30.0,
+        "coverage_tier": "none",
+        "coverage_source": "estimated",
+        "actions": [
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `buildDecorations` to lower its CRAP score (coverage reduces risk even without refactoring)",
+            "note": "CRAP = CC^2 * (1 - cov/100)^3 + CC; higher coverage is the fastest way to bring CRAP under threshold"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress with an inline comment above the function declaration",
+            "comment": "// fallow-ignore-next-line complexity",
+            "placement": "above-function-declaration"
+          }
+        ]
+      }
+    ],
+    "summary": {
+      "files_analyzed": 10,
+      "functions_analyzed": 245,
+      "functions_above_threshold": 72,
+      "max_cyclomatic_threshold": 20,
+      "max_cognitive_threshold": 15,
+      "max_crap_threshold": 30.0,
+      "files_scored": 5,
+      "average_maintainability": 92.3,
+      "coverage_model": "static_estimated",
+      "coverage_source_consistency": "uniform",
+      "severity_critical_count": 33,
+      "severity_high_count": 13,
+      "severity_moderate_count": 26
+    },
+    "vital_signs": {
+      "dead_file_pct": 0.0,
+      "dead_export_pct": 0.0,
+      "avg_cyclomatic": 5.7,
+      "critical_complexity_pct": 0.4,
+      "p90_cyclomatic": 13,
+      "hotspot_count": 1,
+      "hotspot_top_pct_count": 1,
+      "maintainability_avg": 92.3,
+      "maintainability_low_pct": 0.0,
+      "unused_dep_count": 3,
+      "unused_deps_per_k_files": 300.0,
+      "circular_dep_count": 0,
+      "circular_deps_per_k_files": 0.0,
+      "counts": {
+        "total_files": 10,
+        "total_exports": 38,
+        "dead_files": 0,
+        "dead_exports": 0,
+        "total_lines": 11355,
+        "files_scored": 5,
+        "total_deps": 0
+      },
+      "unit_size_profile": {
+        "low_risk": 55.5,
+        "medium_risk": 18.8,
+        "high_risk": 13.5,
+        "very_high_risk": 12.2
+      },
+      "functions_over_60_loc_per_k": 122.4,
+      "unit_interfacing_profile": {
+        "low_risk": 84.5,
+        "medium_risk": 10.2,
+        "high_risk": 4.5,
+        "very_high_risk": 0.8
+      },
+      "p95_fan_in": 1,
+      "coupling_high_pct": 0.0,
+      "total_loc": 11355
+    },
+    "file_scores": [
+      {
+        "path": "src/game.js",
+        "fan_in": 0,
+        "fan_out": 3,
+        "dead_code_ratio": 0.0,
+        "complexity_density": 0.17,
+        "maintainability_index": 89.4,
+        "total_cyclomatic": 686,
+        "total_cognitive": 1012,
+        "function_count": 105,
+        "lines": 4096,
+        "crap_max": 64262.0,
+        "crap_above_threshold": 29
+      },
+      {
+        "path": "src/editor.js",
+        "fan_in": 0,
+        "fan_out": 1,
+        "dead_code_ratio": 0.0,
+        "complexity_density": 0.18,
+        "maintainability_index": 91.8,
+        "total_cyclomatic": 73,
+        "total_cognitive": 32,
+        "function_count": 9,
+        "lines": 399,
+        "crap_max": 1892.0,
+        "crap_above_threshold": 2
+      },
+      {
+        "path": "src/music-manager.js",
+        "fan_in": 1,
+        "fan_out": 0,
+        "dead_code_ratio": 0.0,
+        "complexity_density": 0.22,
+        "maintainability_index": 93.4,
+        "total_cyclomatic": 195,
+        "total_cognitive": 219,
+        "function_count": 50,
+        "lines": 898,
+        "crap_max": 870.0,
+        "crap_above_threshold": 12
+      },
+      {
+        "path": "src/boss.js",
+        "fan_in": 1,
+        "fan_out": 0,
+        "dead_code_ratio": 0.0,
+        "complexity_density": 0.16,
+        "maintainability_index": 95.2,
+        "total_cyclomatic": 408,
+        "total_cognitive": 500,
+        "function_count": 70,
+        "lines": 2570,
+        "crap_max": 870.0,
+        "crap_above_threshold": 25
+      },
+      {
+        "path": "src/csv.js",
+        "fan_in": 1,
+        "fan_out": 0,
+        "dead_code_ratio": 0.0,
+        "complexity_density": 0.27,
+        "maintainability_index": 91.9,
+        "total_cyclomatic": 41,
+        "total_cognitive": 61,
+        "function_count": 11,
+        "lines": 150,
+        "crap_max": 72.0,
+        "crap_above_threshold": 4
+      }
+    ],
+    "hotspots": [
+      {
+        "path": "src/editor.js",
+        "score": 81.8,
+        "commits": 13,
+        "weighted_commits": 7.73,
+        "lines_added": 493,
+        "lines_deleted": 95,
+        "complexity_density": 0.18,
+        "fan_in": 0,
+        "trend": "cooling",
+        "actions": [
+          {
+            "type": "refactor-file",
+            "auto_fixable": false,
+            "description": "Refactor `src/editor.js`, high complexity combined with frequent changes makes this a maintenance risk",
+            "note": "Prioritize extracting complex functions, adding tests, or splitting the module"
+          },
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `src/editor.js` to reduce change risk",
+            "note": "Frequently changed complex files benefit most from comprehensive test coverage"
+          }
+        ]
+      },
+      {
+        "path": "src/game.js",
+        "score": 47.2,
+        "commits": 5,
+        "weighted_commits": 4.72,
+        "lines_added": 4743,
+        "lines_deleted": 603,
+        "complexity_density": 0.17,
+        "fan_in": 0,
+        "trend": "cooling",
+        "actions": [
+          {
+            "type": "refactor-file",
+            "auto_fixable": false,
+            "description": "Refactor `src/game.js`, high complexity combined with frequent changes makes this a maintenance risk",
+            "note": "Prioritize extracting complex functions, adding tests, or splitting the module"
+          },
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `src/game.js` to reduce change risk",
+            "note": "Frequently changed complex files benefit most from comprehensive test coverage"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "score": 36.7,
+        "commits": 3,
+        "weighted_commits": 2.84,
+        "lines_added": 1067,
+        "lines_deleted": 170,
+        "complexity_density": 0.22,
+        "fan_in": 1,
+        "trend": "cooling",
+        "actions": [
+          {
+            "type": "refactor-file",
+            "auto_fixable": false,
+            "description": "Refactor `src/music-manager.js`, high complexity combined with frequent changes makes this a maintenance risk",
+            "note": "Prioritize extracting complex functions, adding tests, or splitting the module"
+          },
+          {
+            "type": "add-tests",
+            "auto_fixable": false,
+            "description": "Add test coverage for `src/music-manager.js` to reduce change risk",
+            "note": "Frequently changed complex files benefit most from comprehensive test coverage"
+          }
+        ]
+      }
+    ],
+    "hotspot_summary": {
+      "since": "6 months",
+      "min_commits": 3,
+      "files_analyzed": 3,
+      "files_excluded": 2,
+      "shallow_clone": false
+    },
+    "large_functions": [
+      {
+        "path": "src/game.js",
+        "name": "updateGame",
+        "line": 2205,
+        "line_count": 1208
+      },
+      {
+        "path": "src/game.js",
+        "name": "renderEntities",
+        "line": 3498,
+        "line_count": 563
+      },
+      {
+        "path": "src/game.js",
+        "name": "gameLoop",
+        "line": 2003,
+        "line_count": 201
+      },
+      {
+        "path": "src/game.js",
+        "name": "initGame",
+        "line": 1177,
+        "line_count": 192
+      },
+      {
+        "path": "src/game.js",
+        "name": "<arrow>",
+        "line": 3776,
+        "line_count": 184
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBoss1Vector",
+        "line": 1008,
+        "line_count": 156
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBoss2Vector",
+        "line": 1165,
+        "line_count": 152
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "getMusicReactionData",
+        "line": 595,
+        "line_count": 147
+      },
+      {
+        "path": "src/boss.js",
+        "name": "createScriptedBoss",
+        "line": 181,
+        "line_count": 131
+      },
+      {
+        "path": "src/game.js",
+        "name": "playSound",
+        "line": 552,
+        "line_count": 130
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBoss3Vector",
+        "line": 1318,
+        "line_count": 129
+      },
+      {
+        "path": "src/boss.js",
+        "name": "updateActiveAttack",
+        "line": 770,
+        "line_count": 110
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "setupMusicPlayer",
+        "line": 789,
+        "line_count": 109
+      },
+      {
+        "path": "src/editor.js",
+        "name": "getLanguageExtension",
+        "line": 261,
+        "line_count": 106
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawProceduralBossVector",
+        "line": 1448,
+        "line_count": 105
+      },
+      {
+        "path": "src/boss.js",
+        "name": "executeAttack",
+        "line": 666,
+        "line_count": 103
+      },
+      {
+        "path": "src/game.js",
+        "name": "initSpriteCache",
+        "line": 800,
+        "line_count": 101
+      },
+      {
+        "path": "src/boss.js",
+        "name": "updateRecovery",
+        "line": 894,
+        "line_count": 96
+      },
+      {
+        "path": "src/game.js",
+        "name": "drawSpaceship",
+        "line": 942,
+        "line_count": 93
+      },
+      {
+        "path": "src/boss.js",
+        "name": "updateBossSystem",
+        "line": 2260,
+        "line_count": 84
+      },
+      {
+        "path": "src/game.js",
+        "name": "drawPowerUp",
+        "line": 3414,
+        "line_count": 83
+      },
+      {
+        "path": "src/music-manager.js",
+        "name": "setPlayingState",
+        "line": 260,
+        "line_count": 81
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBossSprite",
+        "line": 1593,
+        "line_count": 80
+      },
+      {
+        "path": "src/game.js",
+        "name": "spawnPowerUp",
+        "line": 1803,
+        "line_count": 80
+      },
+      {
+        "path": "src/game.js",
+        "name": "applyPowerUp",
+        "line": 1884,
+        "line_count": 79
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawRecoveryStation",
+        "line": 1963,
+        "line_count": 74
+      },
+      {
+        "path": "src/boss.js",
+        "name": "updateBossAttacks",
+        "line": 593,
+        "line_count": 72
+      },
+      {
+        "path": "src/boss.js",
+        "name": "createProceduralBoss",
+        "line": 313,
+        "line_count": 70
+      },
+      {
+        "path": "src/game.js",
+        "name": "updateScoreUI",
+        "line": 1437,
+        "line_count": 65
+      },
+      {
+        "path": "src/boss.js",
+        "name": "drawBossHealthBar",
+        "line": 1875,
+        "line_count": 63
+      }
+    ],
+    "targets": [
+      {
+        "path": "src/game.js",
+        "priority": 20.7,
+        "efficiency": 6.9,
+        "recommendation": "Extract updateGame (cognitive: 573) and <arrow> (cognitive: 57) in 4096-LOC file into smaller functions",
+        "category": "extract_complex_functions",
+        "effort": "high",
+        "confidence": "high",
+        "factors": [
+          {
+            "metric": "hotspot_score",
+            "value": 47.2,
+            "threshold": 30.0,
+            "detail": "hotspot score 47 (5 commits, cooling trend)"
+          },
+          {
+            "metric": "cognitive_complexity",
+            "value": 573.0,
+            "threshold": 30.0,
+            "detail": "updateGame has cognitive complexity 573"
+          },
+          {
+            "metric": "crap_max",
+            "value": 64262.0,
+            "threshold": 30.0,
+            "detail": "29 functions with untested complexity risk"
+          }
+        ],
+        "evidence": {
+          "complex_functions": [
+            {
+              "name": "updateGame",
+              "line": 2205,
+              "cognitive": 573
+            },
+            {
+              "name": "<arrow>",
+              "line": 3776,
+              "cognitive": 57
+            },
+            {
+              "name": "renderEntities",
+              "line": 3498,
+              "cognitive": 36
+            }
+          ]
+        },
+        "actions": [
+          {
+            "type": "apply-refactoring",
+            "auto_fixable": false,
+            "description": "Extract updateGame (cognitive: 573) and <arrow> (cognitive: 57) in 4096-LOC file into smaller functions",
+            "category": "extract_complex_functions"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress the underlying complexity finding",
+            "comment": "// fallow-ignore-next-line complexity"
+          }
+        ]
+      },
+      {
+        "path": "src/music-manager.js",
+        "priority": 18.8,
+        "efficiency": 6.3,
+        "recommendation": "Extract getMusicReactionData (cognitive: 54) and setPlayingState (cognitive: 47) in 898-LOC file into smaller functions",
+        "category": "extract_complex_functions",
+        "effort": "high",
+        "confidence": "high",
+        "factors": [
+          {
+            "metric": "hotspot_score",
+            "value": 36.7,
+            "threshold": 30.0,
+            "detail": "hotspot score 37 (3 commits, cooling trend)"
+          },
+          {
+            "metric": "cognitive_complexity",
+            "value": 54.0,
+            "threshold": 30.0,
+            "detail": "getMusicReactionData has cognitive complexity 54"
+          },
+          {
+            "metric": "crap_max",
+            "value": 870.0,
+            "threshold": 30.0,
+            "detail": "12 functions with untested complexity risk"
+          }
+        ],
+        "evidence": {
+          "complex_functions": [
+            {
+              "name": "getMusicReactionData",
+              "line": 595,
+              "cognitive": 54
+            },
+            {
+              "name": "setPlayingState",
+              "line": 260,
+              "cognitive": 47
+            }
+          ]
+        },
+        "actions": [
+          {
+            "type": "apply-refactoring",
+            "auto_fixable": false,
+            "description": "Extract getMusicReactionData (cognitive: 54) and setPlayingState (cognitive: 47) in 898-LOC file into smaller functions",
+            "category": "extract_complex_functions"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress the underlying complexity finding",
+            "comment": "// fallow-ignore-next-line complexity"
+          }
+        ]
+      },
+      {
+        "path": "src/boss.js",
+        "priority": 7.8,
+        "efficiency": 2.6,
+        "recommendation": "Extract updateActiveAttack (cognitive: 68) and updateBossSystem (cognitive: 42) in 2570-LOC file into smaller functions",
+        "category": "extract_complex_functions",
+        "effort": "high",
+        "confidence": "high",
+        "factors": [
+          {
+            "metric": "cognitive_complexity",
+            "value": 68.0,
+            "threshold": 30.0,
+            "detail": "updateActiveAttack has cognitive complexity 68"
+          },
+          {
+            "metric": "crap_max",
+            "value": 870.0,
+            "threshold": 30.0,
+            "detail": "25 functions with untested complexity risk"
+          }
+        ],
+        "evidence": {
+          "complex_functions": [
+            {
+              "name": "updateActiveAttack",
+              "line": 770,
+              "cognitive": 68
+            },
+            {
+              "name": "updateBossSystem",
+              "line": 2260,
+              "cognitive": 42
+            },
+            {
+              "name": "updateBossAttacks",
+              "line": 593,
+              "cognitive": 41
+            }
+          ]
+        },
+        "actions": [
+          {
+            "type": "apply-refactoring",
+            "auto_fixable": false,
+            "description": "Extract updateActiveAttack (cognitive: 68) and updateBossSystem (cognitive: 42) in 2570-LOC file into smaller functions",
+            "category": "extract_complex_functions"
+          },
+          {
+            "type": "suppress-line",
+            "auto_fixable": false,
+            "description": "Suppress the underlying complexity finding",
+            "comment": "// fallow-ignore-next-line complexity"
+          }
+        ]
+      }
+    ],
+    "target_thresholds": {
+      "fan_in_p95": 5.0,
+      "fan_in_p75": 3.0,
+      "fan_out_p95": 8.0,
+      "fan_out_p90": 5
+    }
+  }
+}

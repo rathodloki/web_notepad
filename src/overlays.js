@@ -1,12 +1,40 @@
 import { state } from './state.js';
 import { getFilename, escapeHtml } from './utils.js';
-import { switchTab, createNewTab } from './editor-manager.js';
 import { renderTabs } from './tabs-ui.js';
 import { showStatus, updateCursorStatus, updateLanguageStatus } from './status-bar.js';
 import { saveSessionDebounced } from './session.js';
 import { getLanguageExtension, applyLanguageExtensionToState, setLanguageExtension } from './editor.js';
-import { openFileFromHistory, openDroppedPaths } from './file-io.js';
 import { EditorView } from "@codemirror/view";
+import { supportedLanguages } from './languages.js';
+
+function getTabContentText(tab) {
+    if (tab.id === state.activeTabId) {
+        if (state.editorView && !tab.isDoc) {
+            return state.editorView.state.doc.toString();
+        }
+        if (state.quillView && tab.isDoc) {
+            return state.quillView.getText();
+        }
+    }
+    if (tab.state) {
+        return tab.state.doc.toString();
+    }
+    return tab.savedContent || '';
+}
+
+function isFormattingEnabled(tab) {
+    if (!tab) return false;
+    if (tab.isDoc) return true;
+    const path = (tab.path || '').toLowerCase();
+    const title = (tab.title || '').toLowerCase();
+    const manual = (tab.manualLanguage || '').toLowerCase();
+    const auto = (tab.autoLanguage || '').toLowerCase();
+    
+    return path.endsWith('.md') || path.endsWith('.markdown') ||
+           title.endsWith('.md') || title.endsWith('.markdown') ||
+           manual === 'md' || manual === 'markdown' ||
+           auto === 'md' || auto === 'markdown';
+}
 
 export function askConfirmUI(message, multiple = false, showCancel = false) {
     return new Promise((resolve) => {
@@ -121,7 +149,7 @@ export function toggleQuickOpen() {
     }
 }
 
-export function closeQuickOpen() {
+function closeQuickOpen() {
     const modal = document.getElementById('quick-open-modal');
     if (modal) modal.style.display = 'none';
     if (state.editorView) state.editorView.focus();
@@ -142,6 +170,71 @@ function updateQuickOpenSelection() {
     });
 }
 
+function queryFuzzySearch(items, query, getPrimary, getSecondary, mapItem) {
+    if (!query) {
+        return items.map(item => ({ ...mapItem(item), score: 0 }));
+    }
+    return items
+        .map(item => {
+            const mapped = mapItem(item);
+            const primary = getPrimary(item).toLowerCase();
+            const secondary = getSecondary(item).toLowerCase();
+            let score = -1;
+            if (primary.includes(query)) score = 10;
+            else if (secondary.includes(query)) score = 5;
+            return { ...mapped, score };
+        })
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score);
+}
+
+function renderFuzzyList(resultsContainer, matches, query, getName, getSecondaryInfo, emptyText, onClick, onHover) {
+    resultsContainer.innerHTML = '';
+    if (matches.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'quick-open-empty';
+        emptyState.textContent = emptyText;
+        resultsContainer.appendChild(emptyState);
+        return;
+    }
+
+    matches.forEach((match, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = `quick-open-item ${index === 0 ? 'selected' : ''}`;
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'quick-open-filename';
+
+        const nameText = getName(match);
+        if (query && nameText.toLowerCase().includes(query)) {
+            const startIdx = nameText.toLowerCase().indexOf(query);
+            const before = nameText.substring(0, startIdx);
+            const hl = nameText.substring(startIdx, startIdx + query.length);
+            const after = nameText.substring(startIdx + query.length);
+            nameEl.innerHTML = `${escapeHtml(before)}<span class="q-match">${escapeHtml(hl)}</span>${escapeHtml(after)}`;
+        } else {
+            nameEl.textContent = nameText;
+        }
+
+        itemEl.appendChild(nameEl);
+
+        if (getSecondaryInfo) {
+            const secondaryText = getSecondaryInfo(match);
+            if (secondaryText) {
+                const pathEl = document.createElement('div');
+                pathEl.className = 'quick-open-path';
+                pathEl.textContent = secondaryText;
+                itemEl.appendChild(pathEl);
+            }
+        }
+
+        itemEl.addEventListener('click', () => onClick(match));
+        itemEl.addEventListener('mouseenter', () => onHover(index));
+
+        resultsContainer.appendChild(itemEl);
+    });
+}
+
 function renderQuickOpenResults() {
     const input = document.getElementById('quick-open-input');
     const results = document.getElementById('quick-open-results');
@@ -149,69 +242,32 @@ function renderQuickOpenResults() {
 
     const query = input.value.toLowerCase();
 
-    // Fuzzy search: filter history based on substrings
-    if (!query) {
-        currentQuickOpenMatches = state.fileHistory.map(path => ({ path, score: 0 }));
-    } else {
-        currentQuickOpenMatches = state.fileHistory
-            .map(path => {
-                const filename = getFilename(path).toLowerCase();
-                const lowerPath = path.toLowerCase();
-                let score = -1;
-                if (filename.includes(query)) score = 10;
-                else if (lowerPath.includes(query)) score = 5;
-                return { path, score, originalName: getFilename(path) };
-            })
-            .filter(item => item.score > 0)
-            .sort((a, b) => b.score - a.score);
-    }
+    currentQuickOpenMatches = queryFuzzySearch(
+        state.fileHistory,
+        query,
+        path => getFilename(path),
+        path => path,
+        path => ({ path, originalName: getFilename(path) })
+    );
 
-    results.innerHTML = '';
     quickOpenSelectedIndex = currentQuickOpenMatches.length > 0 ? 0 : -1;
 
-    if (currentQuickOpenMatches.length === 0) {
-        const emptyState = document.createElement('div');
-        emptyState.className = 'quick-open-empty';
-        emptyState.textContent = 'No matching files found.';
-        results.appendChild(emptyState);
-        return;
-    }
-
-    currentQuickOpenMatches.forEach((match, index) => {
-        const itemEl = document.createElement('div');
-        itemEl.className = `quick-open-item ${index === 0 ? 'selected' : ''}`;
-
-        const nameEl = document.createElement('div');
-        nameEl.className = 'quick-open-filename';
-
-        if (query && match.originalName.toLowerCase().includes(query)) {
-            const startIdx = match.originalName.toLowerCase().indexOf(query);
-            const before = match.originalName.substring(0, startIdx);
-            const hl = match.originalName.substring(startIdx, startIdx + query.length);
-            const after = match.originalName.substring(startIdx + query.length);
-            nameEl.innerHTML = `${escapeHtml(before)}<span class="q-match">${escapeHtml(hl)}</span>${escapeHtml(after)}`;
-        } else {
-            nameEl.textContent = match.originalName || getFilename(match.path);
-        }
-
-        const pathEl = document.createElement('div');
-        pathEl.className = 'quick-open-path';
-        pathEl.textContent = match.path;
-
-        itemEl.appendChild(nameEl);
-        itemEl.appendChild(pathEl);
-
-        itemEl.addEventListener('click', async () => {
+    renderFuzzyList(
+        results,
+        currentQuickOpenMatches,
+        query,
+        match => match.originalName || getFilename(match.path),
+        match => match.path,
+        'No matching files found.',
+        async (match) => {
+            const { openFileFromHistory } = await import('./file-io.js');
             await openFileFromHistory(match.path);
-        });
-
-        itemEl.addEventListener('mouseenter', () => {
+        },
+        (index) => {
             quickOpenSelectedIndex = index;
             updateQuickOpenSelection();
-        });
-
-        results.appendChild(itemEl);
-    });
+        }
+    );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -220,28 +276,8 @@ function renderQuickOpenResults() {
 
 let languageSelectedIndex = -1;
 let currentLanguageMatches = [];
-export const supportedLanguages = [
-    { name: 'Plain Text', ext: '' },
-    { name: 'JavaScript', ext: 'js' },
-    { name: 'TypeScript', ext: 'ts' },
-    { name: 'Python', ext: 'py' },
-    { name: 'HTML', ext: 'html' },
-    { name: 'CSS', ext: 'css' },
-    { name: 'C / C++', ext: 'cpp' },
-    { name: 'Java', ext: 'java' },
-    { name: 'JSON', ext: 'json' },
-    { name: 'Markdown', ext: 'md' },
-    { name: 'YAML', ext: 'yaml' },
-    { name: 'Properties/INI', ext: 'ini' },
-    { name: 'Shell/Bash', ext: 'sh' },
-    { name: 'PowerShell', ext: 'ps1' },
-    { name: 'Ruby', ext: 'rb' },
-    { name: 'Go', ext: 'go' },
-    { name: 'Rust', ext: 'rs' },
-    { name: 'Todo List', ext: 'todo' }
-];
 
-export function toggleLanguageOpen() {
+function toggleLanguageOpen() {
     const modal = document.getElementById('language-modal');
     const input = document.getElementById('language-input');
     if (!modal || !input) return;
@@ -256,7 +292,7 @@ export function toggleLanguageOpen() {
     }
 }
 
-export function closeLanguageOpen() {
+function closeLanguageOpen() {
     const modal = document.getElementById('language-modal');
     if (modal) modal.style.display = 'none';
     if (state.editorView) state.editorView.focus();
@@ -311,62 +347,31 @@ function renderLanguageResults() {
 
     const query = input.value.toLowerCase();
 
-    if (!query) {
-        currentLanguageMatches = supportedLanguages.map(l => ({ ...l, score: 0 }));
-    } else {
-        currentLanguageMatches = supportedLanguages
-            .map(lang => {
-                const name = lang.name.toLowerCase();
-                let score = -1;
-                if (name.includes(query)) score = 10;
-                else if (lang.ext.includes(query)) score = 5;
-                return { ...lang, score };
-            })
-            .filter(item => item.score > 0)
-            .sort((a, b) => b.score - a.score);
-    }
+    currentLanguageMatches = queryFuzzySearch(
+        supportedLanguages,
+        query,
+        lang => lang.name,
+        lang => lang.ext,
+        lang => lang
+    );
 
-    results.innerHTML = '';
     languageSelectedIndex = currentLanguageMatches.length > 0 ? 0 : -1;
 
-    if (currentLanguageMatches.length === 0) {
-        const emptyState = document.createElement('div');
-        emptyState.className = 'quick-open-empty';
-        emptyState.textContent = 'No matching languages found.';
-        results.appendChild(emptyState);
-        return;
-    }
-
-    currentLanguageMatches.forEach((match, index) => {
-        const itemEl = document.createElement('div');
-        itemEl.className = `quick-open-item ${index === 0 ? 'selected' : ''}`;
-
-        const nameEl = document.createElement('div');
-        nameEl.className = 'quick-open-filename';
-
-        if (query && match.name.toLowerCase().includes(query)) {
-            const startIdx = match.name.toLowerCase().indexOf(query);
-            const before = match.name.substring(0, startIdx);
-            const hl = match.name.substring(startIdx, startIdx + query.length);
-            const after = match.name.substring(startIdx + query.length);
-            nameEl.innerHTML = `${escapeHtml(before)}<span class="q-match">${escapeHtml(hl)}</span>${escapeHtml(after)}`;
-        } else {
-            nameEl.textContent = match.name;
-        }
-
-        itemEl.appendChild(nameEl);
-
-        itemEl.addEventListener('click', async () => {
+    renderFuzzyList(
+        results,
+        currentLanguageMatches,
+        query,
+        match => match.name,
+        null,
+        'No matching languages found.',
+        async (match) => {
             await setManualLanguage(match.ext);
-        });
-
-        itemEl.addEventListener('mouseenter', () => {
+        },
+        (index) => {
             languageSelectedIndex = index;
             updateLanguageSelection();
-        });
-
-        results.appendChild(itemEl);
-    });
+        }
+    );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -392,7 +397,7 @@ export function toggleGlobalSearch() {
     }
 }
 
-export function closeGlobalSearch() {
+function closeGlobalSearch() {
     const modal = document.getElementById('global-search-modal');
     if (modal) modal.style.display = 'none';
     if (state.editorView) state.editorView.focus();
@@ -413,21 +418,10 @@ async function performGlobalSearch() {
             const { invoke } = window.__TAURI__.tauri;
             
             const tabsData = state.tabs.map(tab => {
-                let content = '';
-                if (tab.id === state.activeTabId && state.editorView && !tab.isDoc) {
-                    content = state.editorView.state.doc.toString();
-                } else if (tab.id === state.activeTabId && state.quillView && tab.isDoc) {
-                    content = state.quillView.getText();
-                } else if (tab.state) {
-                    content = tab.state.doc.toString();
-                } else {
-                    content = tab.savedContent || '';
-                }
-                
                 return {
                     id: String(tab.id),
                     filename: getFilename(tab.path) || tab.title || 'Untitled',
-                    content
+                    content: getTabContentText(tab)
                 };
             });
             
@@ -440,16 +434,7 @@ async function performGlobalSearch() {
     }
 
     state.tabs.forEach(tab => {
-        let content = '';
-        if (tab.id === state.activeTabId && state.editorView && !tab.isDoc) {
-            content = state.editorView.state.doc.toString();
-        } else if (tab.id === state.activeTabId && state.quillView && tab.isDoc) {
-            content = state.quillView.getText();
-        } else if (tab.state) {
-            content = tab.state.doc.toString();
-        } else {
-            content = tab.savedContent || '';
-        }
+        const content = getTabContentText(tab);
 
         const lines = content.split('\n');
         for (let i = 0; i < lines.length; i++) {
@@ -571,8 +556,9 @@ function renderNextChunk() {
             item.appendChild(lineNum);
             item.appendChild(snippet);
 
-            item.addEventListener('click', () => {
+            item.addEventListener('click', async () => {
                 const searchLen = query.length;
+                const { switchTab } = await import('./editor-manager.js');
                 switchTab(match.tabId);
                 closeGlobalSearch();
 
@@ -626,16 +612,7 @@ function performGlobalReplaceAll() {
     let totalReplaced = 0;
 
     state.tabs.forEach(tab => {
-        let content = '';
-        if (tab.id === state.activeTabId && state.editorView && !tab.isDoc) {
-            content = state.editorView.state.doc.toString();
-        } else if (tab.id === state.activeTabId && state.quillView && tab.isDoc) {
-            content = state.quillView.getText();
-        } else if (tab.state) {
-            content = tab.state.doc.toString();
-        } else {
-            content = tab.savedContent || '';
-        }
+        const content = getTabContentText(tab);
 
         if (!content) return;
 
@@ -716,20 +693,7 @@ function setupSelectionToolbar() {
 
     function positionToolbar() {
         const activeTab = state.tabs.find(t => t.id === state.activeTabId);
-        if (!activeTab) { hideToolbar(); return; }
-
-        const isDoc = !!activeTab.isDoc;
-        const isMarkdown = (activeTab.path && (activeTab.path.toLowerCase().endsWith('.md') || activeTab.path.toLowerCase().endsWith('.markdown'))) ||
-                           (activeTab.title && (activeTab.title.toLowerCase().endsWith('.md') || activeTab.title.toLowerCase().endsWith('.markdown'))) ||
-                           activeTab.manualLanguage === 'md' ||
-                           activeTab.manualLanguage === 'markdown' ||
-                           activeTab.autoLanguage === 'md' ||
-                           activeTab.autoLanguage === 'markdown';
-
-        if (!isDoc && !isMarkdown) {
-            hideToolbar();
-            return;
-        }
+        if (!isFormattingEnabled(activeTab)) { hideToolbar(); return; }
 
         const rect = getSelectionRect();
         if (!rect) { hideToolbar(); return; }
@@ -766,19 +730,7 @@ function setupSelectionToolbar() {
         }
 
         const activeTab = state.tabs.find(t => t.id === state.activeTabId);
-        if (!activeTab) {
-            hideToolbar();
-            return;
-        }
-        const isDoc = !!activeTab.isDoc;
-        const isMarkdown = (activeTab.path && (activeTab.path.toLowerCase().endsWith('.md') || activeTab.path.toLowerCase().endsWith('.markdown'))) ||
-                           (activeTab.title && (activeTab.title.toLowerCase().endsWith('.md') || activeTab.title.toLowerCase().endsWith('.markdown'))) ||
-                           activeTab.manualLanguage === 'md' ||
-                           activeTab.manualLanguage === 'markdown' ||
-                           activeTab.autoLanguage === 'md' ||
-                           activeTab.autoLanguage === 'markdown';
-
-        if (!isDoc && !isMarkdown) {
+        if (!isFormattingEnabled(activeTab)) {
             hideToolbar();
             return;
         }
@@ -851,6 +803,9 @@ function setupSelectionToolbar() {
 /* -------------------------------------------------------------------------- */
 
 export function setupOverlays() {
+    window.closeQuickOpen = closeQuickOpen;
+    window.closeGlobalSearch = closeGlobalSearch;
+    window.closeLanguageOpen = closeLanguageOpen;
     // Background clicks for all modals
     const modalIds = [
         'discard-modal',
@@ -1012,6 +967,7 @@ export async function setupFileDrop() {
             document.body.classList.remove('is-dragging-file');
             const paths = event.payload;
             if (paths && paths.length > 0) {
+                const { openDroppedPaths } = await import('./file-io.js');
                 await openDroppedPaths(paths);
             }
         });
@@ -1047,6 +1003,7 @@ export async function setupFileDrop() {
             document.body.classList.remove('is-dragging-file');
 
             const files = Array.from(e.dataTransfer.files || []);
+            const { createNewTab } = await import('./editor-manager.js');
             for (const file of files) {
                 try {
                     const content = await file.text();

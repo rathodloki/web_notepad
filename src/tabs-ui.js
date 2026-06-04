@@ -1,8 +1,5 @@
 import { state } from './state.js';
 import { getFilename } from './utils.js';
-import { switchTab, closeTab } from './editor-manager.js';
-import { saveSessionDebounced } from './session.js';
-import { initGame, stopGame } from './game.js';
 
 const tabBar = document.getElementById('tab-bar');
 let draggedTabId = null;
@@ -55,21 +52,24 @@ export function renderTabs() {
 
         let isDraggingTab = false;
 
-        tabEl.addEventListener('click', (e) => {
+        tabEl.addEventListener('click', async (e) => {
             if (e.target.closest('.tab-close') || isDraggingTab) return;
+            const { switchTab } = await import('./editor-manager.js');
             switchTab(tab.id);
         });
 
-        tabEl.addEventListener('auxclick', (e) => {
+        tabEl.addEventListener('auxclick', async (e) => {
             if (e.button === 1) {
                 e.preventDefault();
                 e.stopPropagation();
+                const { closeTab } = await import('./editor-manager.js');
                 closeTab(tab.id);
             }
         });
 
-        closeBtn.addEventListener('click', (e) => {
+        closeBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
+            const { closeTab } = await import('./editor-manager.js');
             closeTab(tab.id);
         });
 
@@ -171,7 +171,7 @@ export function renderTabs() {
             draggedTabId = null;
             draggedTabEl = null;
             setTimeout(() => { isDraggingTab = false; }, 50);
-            saveSessionDebounced();
+            import('./session.js').then(m => m.saveSessionDebounced());
         });
 
         tabEl.addEventListener('pointercancel', (e) => {
@@ -211,7 +211,7 @@ export function renderTabs() {
     requestAnimationFrame(updateScrollShadows);
 }
 
-export function updateActiveTabUI() {
+function updateActiveTabUI() {
     const activeTab = state.tabs.find(t => t.id === state.activeTabId);
     if (activeTab) {
         document.body.classList.remove('theme-doc', 'theme-todo', 'theme-text');
@@ -248,7 +248,7 @@ export function activateTabUI(tab) {
     const emptyState = document.getElementById('empty-state');
     const editorWrapper = document.getElementById('editor-wrapper');
 
-    stopGame();
+    import('./game.js').then(m => m.stopGame());
     if (emptyState) emptyState.style.display = 'none';
     if (editorWrapper) editorWrapper.style.display = 'flex';
 
@@ -308,7 +308,7 @@ export function deactivateTabUI() {
     if (editorWrapper) editorWrapper.style.display = 'none';
     if (emptyState) {
         emptyState.style.display = 'flex';
-        initGame();
+        import('./game.js').then(m => m.initGame());
     }
 
     const mdPreview = document.getElementById('markdown-preview');

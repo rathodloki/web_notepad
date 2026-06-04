@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-file
 // tauri-mock.js — Test and Evaluation Mock Bridge for LightPad
 
 (function () {

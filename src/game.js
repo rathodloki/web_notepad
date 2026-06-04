@@ -419,44 +419,36 @@ const HEART_SPRITE = [
 
 function handleKeyDown(e) {
     if (!state.isArcadeModeEnabled) return;
+    const isMovementKey = ['w', 'a', 's', 'd', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', ' '].includes(e.key);
+    
     if (gameState === STATE_RUNNING) {
         if (e.key === 'p' || e.key === 'P') {
             e.preventDefault();
             e.stopPropagation();
             togglePause();
-            return;
-        }
-        if (['w', 'a', 's', 'd', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', ' '].includes(e.key)) {
+        } else if (isMovementKey) {
             keys[e.key] = true;
             e.preventDefault();
             e.stopPropagation();
         }
-    } else if (gameState === STATE_IDLE) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            startGameFresh();
-        }
+    } else if (gameState === STATE_IDLE && e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        startGameFresh();
     } else if (gameState === STATE_GAMEOVER) {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' || e.key === 'Escape') {
             e.preventDefault();
             e.stopPropagation();
-            if (getCheckpoint()) {
+            if (e.key === 'Enter' && getCheckpoint()) {
                 startGameFromCheckpoint();
             } else {
                 startGameFresh();
             }
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            e.stopPropagation();
-            startGameFresh();
         }
-    } else if (gameState === STATE_PAUSED) {
-        if (e.key === 'p' || e.key === 'P') {
-            e.preventDefault();
-            e.stopPropagation();
-            togglePause();
-        }
+    } else if (gameState === STATE_PAUSED && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePause();
     }
 }
 
@@ -479,6 +471,67 @@ function handleMouseMove(e) {
 
 function handleMouseLeave() {
     mouseGlowActive = false;
+}
+
+function resetPlayer() {
+    player.x = canvas.width / 2;
+    player.y = canvas.height * 0.75;
+    player.vx = 0;
+    player.vy = 0;
+    player.energy = player.maxEnergy;
+    player.damageFlash = 0;
+    player.shootCooldown = 0;
+    player.shieldTime = 0;
+    player.weaponUpgradeTime = 0;
+    player.slowMotionTime = 0;
+    player.magnetTime = 0;
+    player.overchargeTime = 0;
+    player.controlScrambleTime = 0;
+    player.drones = [];
+    player.permaWeaponType = null;
+}
+
+function getDroneRect(idx) {
+    let xOffset = 0;
+    let yOffset = -35;
+    if (idx === 1) { xOffset = -22; yOffset = -28; }
+    else if (idx === 2) { xOffset = 22; yOffset = -28; }
+    return { x: player.x + xOffset, y: player.y + yOffset, width: 22, height: 20 };
+}
+
+function handleDroneHit(drone, idx, droneRect, hitSound, particleCount, shakePower, shakeTime, x, y, color) {
+    playSound(hitSound);
+    createParticleBurst(x, y, color, particleCount);
+    shakeScreen(shakePower, shakeTime);
+
+    drone.health--;
+    if (drone.health <= 0) {
+        player.drones.splice(idx, 1);
+        playSound('gameover');
+        particles.push({
+            type: 'text',
+            x: droneRect.x,
+            y: droneRect.y,
+            text: '-DRONE DESTROYED-',
+            color: '#ff5555',
+            vx: 0,
+            vy: -0.85,
+            alpha: 1.0,
+            decay: 0.015
+        });
+    } else {
+        particles.push({
+            type: 'text',
+            x: droneRect.x,
+            y: droneRect.y - 12,
+            text: `DRONE SHIELD: ${drone.health}`,
+            color: '#50fa7b',
+            vx: 0,
+            vy: -0.85,
+            alpha: 1.0,
+            decay: 0.02
+        });
+    }
 }
 
 // -------------------------------------------------------------
@@ -1083,7 +1136,7 @@ function drawFragment(frag) {
 // GAME INITIALIZATION & RESET
 // -------------------------------------------------------------
 
-export function populateConsoleRecents() {
+function populateConsoleRecents() {
     const listContainer = document.getElementById('console-recents-list');
     if (!listContainer) return;
     listContainer.innerHTML = '';
@@ -1259,21 +1312,7 @@ export function initGame() {
     if (tagline) tagline.textContent = 'No files open — start coding or play while idle';
 
     // Initial positioning
-    player.x = canvas.width / 2;
-    player.y = canvas.height * 0.75;
-    player.vx = 0;
-    player.vy = 0;
-    player.energy = player.maxEnergy;
-    player.damageFlash = 0;
-    player.shootCooldown = 0;
-    player.shieldTime = 0;
-    player.weaponUpgradeTime = 0;
-    player.slowMotionTime = 0;
-    player.magnetTime = 0;
-    player.overchargeTime = 0;
-    player.controlScrambleTime = 0;
-    player.drones = [];
-    player.permaWeaponType = null;
+    resetPlayer();
 
     // Load stats
     score = 0;
@@ -1461,6 +1500,35 @@ function updateScoreUI() {
     }
 }
 
+function renderGameOverScreen(checkpoint) {
+    const finalScoreVal = document.getElementById('game-final-score');
+    if (finalScoreVal) finalScoreVal.textContent = String(score).padStart(6, '0');
+
+    const instructions = document.getElementById('game-over-instructions');
+    const cpInfo = document.getElementById('game-checkpoint-info');
+
+    if (!checkpoint) {
+        if (instructions) {
+            instructions.textContent = 'PRESS ENTER TO REBOOT';
+        }
+        if (cpInfo) {
+            cpInfo.style.display = 'none';
+        }
+        return;
+    }
+
+    if (instructions) {
+        instructions.innerHTML = `PRESS <span style="color:#00f0ff">ENTER</span> TO REBOOT FROM CHECKPOINT<br>PRESS <span style="color:#ff5555">ESC</span> TO REBOOT SYSTEM (NEW GAME)`;
+    }
+    if (cpInfo) {
+        cpInfo.style.display = 'block';
+        const cpLevel = document.getElementById('game-checkpoint-level');
+        const cpScore = document.getElementById('game-checkpoint-score');
+        if (cpLevel) cpLevel.textContent = String(checkpoint.bossLevel);
+        if (cpScore) cpScore.textContent = String(checkpoint.score).padStart(6, '0');
+    }
+}
+
 function showScreen(state) {
     const overlay = document.getElementById('game-screen-overlay');
     const idleScreen = document.getElementById('game-screen-idle');
@@ -1475,32 +1543,7 @@ function showScreen(state) {
     overScreen.style.display = (state === STATE_GAMEOVER) ? 'block' : 'none';
 
     if (state === STATE_GAMEOVER) {
-        const finalScoreVal = document.getElementById('game-final-score');
-        if (finalScoreVal) finalScoreVal.textContent = String(score).padStart(6, '0');
-
-        const checkpoint = getCheckpoint();
-        const instructions = document.getElementById('game-over-instructions');
-        const cpInfo = document.getElementById('game-checkpoint-info');
-
-        if (checkpoint) {
-            if (instructions) {
-                instructions.innerHTML = `PRESS <span style="color:#00f0ff">ENTER</span> TO REBOOT FROM CHECKPOINT<br>PRESS <span style="color:#ff5555">ESC</span> TO REBOOT SYSTEM (NEW GAME)`;
-            }
-            if (cpInfo) {
-                cpInfo.style.display = 'block';
-                const cpLevel = document.getElementById('game-checkpoint-level');
-                const cpScore = document.getElementById('game-checkpoint-score');
-                if (cpLevel) cpLevel.textContent = String(checkpoint.bossLevel);
-                if (cpScore) cpScore.textContent = String(checkpoint.score).padStart(6, '0');
-            }
-        } else {
-            if (instructions) {
-                instructions.textContent = 'PRESS ENTER TO REBOOT';
-            }
-            if (cpInfo) {
-                cpInfo.style.display = 'none';
-            }
-        }
+        renderGameOverScreen(getCheckpoint());
     }
 }
 
@@ -1547,21 +1590,7 @@ function startGame() {
     gameState = STATE_RUNNING;
     showScreen(STATE_RUNNING);
 
-    player.x = canvas.width / 2;
-    player.y = canvas.height * 0.75;
-    player.vx = 0;
-    player.vy = 0;
-    player.energy = player.maxEnergy;
-    player.damageFlash = 0;
-    player.shootCooldown = 0;
-    player.shieldTime = 0;
-    player.weaponUpgradeTime = 0;
-    player.slowMotionTime = 0;
-    player.magnetTime = 0;
-    player.overchargeTime = 0;
-    player.controlScrambleTime = 0;
-    player.drones = [];
-    player.permaWeaponType = null;
+    resetPlayer();
 
     score = 0;
     combo = 1.0;
@@ -3148,49 +3177,12 @@ function updateGame(dt) {
         let droneCollided = false;
         for (let idx = 0; idx < player.drones.length; idx++) {
             const drone = player.drones[idx];
-            let xOffset = 0;
-            let yOffset = -35;
-            if (idx === 1) { xOffset = -22; yOffset = -28; }
-            else if (idx === 2) { xOffset = 22; yOffset = -28; }
-
-            const droneRect = { x: player.x + xOffset, y: player.y + yOffset, width: 22, height: 20 };
+            const droneRect = getDroneRect(idx);
             if (isColliding(droneRect, bug)) {
-                playSound('explosion');
-                createParticleBurst(bug.x, bug.y, bug.color, 16);
-                shakeScreen(4, 150);
-
-                drone.health--;
+                handleDroneHit(drone, idx, droneRect, 'explosion', 16, 4, 150, bug.x, bug.y, bug.color);
                 const points = Math.round(bug.scoreValue * combo);
                 score += points;
                 updateScoreUI();
-
-                if (drone.health <= 0) {
-                    player.drones.splice(idx, 1);
-                    playSound('gameover');
-                    particles.push({
-                        type: 'text',
-                        x: droneRect.x,
-                        y: droneRect.y,
-                        text: '-DRONE DESTROYED-',
-                        color: '#ff5555',
-                        vx: 0,
-                        vy: -0.85,
-                        alpha: 1.0,
-                        decay: 0.015
-                    });
-                } else {
-                    particles.push({
-                        type: 'text',
-                        x: droneRect.x,
-                        y: droneRect.y - 12,
-                        text: `DRONE SHIELD: ${drone.health}`,
-                        color: '#50fa7b',
-                        vx: 0,
-                        vy: -0.85,
-                        alpha: 1.0,
-                        decay: 0.02
-                    });
-                }
 
                 bugs.splice(i, 1);
                 droneCollided = true;
@@ -3265,46 +3257,9 @@ function updateGame(dt) {
         let droneCollided = false;
         for (let idx = 0; idx < player.drones.length; idx++) {
             const drone = player.drones[idx];
-            let xOffset = 0;
-            let yOffset = -35;
-            if (idx === 1) { xOffset = -22; yOffset = -28; }
-            else if (idx === 2) { xOffset = 22; yOffset = -28; }
-
-            const droneRect = { x: player.x + xOffset, y: player.y + yOffset, width: 22, height: 20 };
+            const droneRect = getDroneRect(idx);
             if (isColliding(droneRect, { x: ep.x, y: ep.y, width: 8, height: 8 })) {
-                playSound('hit');
-                createParticleBurst(ep.x, ep.y, ep.color, 8);
-                shakeScreen(3, 100);
-
-                drone.health--;
-                if (drone.health <= 0) {
-                    player.drones.splice(idx, 1);
-                    playSound('gameover');
-                    particles.push({
-                        type: 'text',
-                        x: droneRect.x,
-                        y: droneRect.y,
-                        text: '-DRONE DESTROYED-',
-                        color: '#ff5555',
-                        vx: 0,
-                        vy: -0.85,
-                        alpha: 1.0,
-                        decay: 0.015
-                    });
-                } else {
-                    particles.push({
-                        type: 'text',
-                        x: droneRect.x,
-                        y: droneRect.y - 12,
-                        text: `DRONE SHIELD: ${drone.health}`,
-                        color: '#50fa7b',
-                        vx: 0,
-                        vy: -0.85,
-                        alpha: 1.0,
-                        decay: 0.02
-                    });
-                }
-
+                handleDroneHit(drone, idx, droneRect, 'hit', 8, 3, 100, ep.x, ep.y, ep.color);
                 enemyProjectiles.splice(i, 1);
                 droneCollided = true;
                 break;

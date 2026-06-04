@@ -38,25 +38,35 @@ function countDelimiters(line, delimiter) {
 }
 
 // ─── Detect delimiter from document ──────────────────────────────────────────
-function detectDelimiter(doc) {
+function getSampleLines(doc) {
     const lines = [];
     for (let i = 1; i <= doc.lines && lines.length < SAMPLE_LINES; i++) {
         const text = doc.line(i).text.trim();
         if (text.length > 0) lines.push(text);
     }
+    return lines;
+}
 
+function isConsistentDelimiter(lines, delimiter) {
+    const counts = lines.map(l => countDelimiters(l, delimiter));
+
+    // Every sampled line must have at least one delimiter
+    if (counts.some(c => c === 0)) return false;
+
+    // Column counts must be consistent (max deviation ≤ 1)
+    const min = Math.min(...counts);
+    const max = Math.max(...counts);
+    return max - min <= 1;
+}
+
+function detectDelimiter(doc) {
+    const lines = getSampleLines(doc);
     if (lines.length < MIN_LINES) return null;
 
     for (const delimiter of [',', '\t']) {
-        const counts = lines.map(l => countDelimiters(l, delimiter));
-
-        // Every sampled line must have at least one delimiter
-        if (counts.some(c => c === 0)) continue;
-
-        // Column counts must be consistent (max deviation ≤ 1)
-        const min = Math.min(...counts);
-        const max = Math.max(...counts);
-        if (max - min <= 1) return delimiter;
+        if (isConsistentDelimiter(lines, delimiter)) {
+            return delimiter;
+        }
     }
 
     return null;
@@ -91,6 +101,19 @@ function parseLineSpans(line, delimiter) {
 }
 
 // ─── Build decorations for all visible ranges ─────────────────────────────────
+function decorateLine(builder, line, delimiter) {
+    if (line.text.trim().length === 0) return;
+    const spans = parseLineSpans(line.text, delimiter);
+    spans.forEach((span, colIndex) => {
+        const spanFrom = line.from + span.start;
+        const spanTo = line.from + span.end;
+        if (spanFrom < spanTo) {
+            builder.add(spanFrom, spanTo,
+                Decoration.mark({ class: `csv-col-${colIndex % NUM_COLORS}` }));
+        }
+    });
+}
+
 function buildDecorations(view, delimiter) {
     const builder = new RangeSetBuilder();
     const { doc } = view.state;
@@ -99,17 +122,7 @@ function buildDecorations(view, delimiter) {
         let lineStart = doc.lineAt(from).from;
         while (lineStart <= to) {
             const line = doc.lineAt(lineStart);
-            if (line.text.trim().length > 0) {
-                const spans = parseLineSpans(line.text, delimiter);
-                spans.forEach((span, colIndex) => {
-                    const spanFrom = line.from + span.start;
-                    const spanTo = line.from + span.end;
-                    if (spanFrom < spanTo) {
-                        builder.add(spanFrom, spanTo,
-                            Decoration.mark({ class: `csv-col-${colIndex % NUM_COLORS}` }));
-                    }
-                });
-            }
+            decorateLine(builder, line, delimiter);
             if (line.to >= doc.length) break;
             lineStart = line.to + 1;
         }

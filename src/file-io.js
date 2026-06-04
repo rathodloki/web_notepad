@@ -1,12 +1,23 @@
 import { state } from './state.js';
 import { getFilename } from './utils.js';
-import { renderTabs, updateActiveTabUI } from './tabs-ui.js';
+import { renderTabs } from './tabs-ui.js';
 import { updateTitle, showStatus } from './status-bar.js';
 import { saveSessionDebounced } from './session.js';
-import { switchTab, createNewTab, syncChannel } from './editor-manager.js';
 import { askConfirmUI } from './overlays.js';
 import { addToFileHistory, removeFromFileHistory } from './history.js';
 import { invoke, readTextFile, writeTextFile, openDialog, saveDialog } from './tauri-bridge.js';
+
+function getActiveEditorContent(tab) {
+    if (tab.isDoc) {
+        if (state.quillView) {
+            return state.quillView.root.innerHTML;
+        } else {
+            return tab.savedContent || '';
+        }
+    } else {
+        return state.editorView ? state.editorView.state.doc.toString() : '';
+    }
+}
 
 export async function openFile() {
     if (!window.__TAURI__) return alert('Opening files is only supported in the app.');
@@ -17,6 +28,7 @@ export async function openFile() {
 
         if (selected) {
             const existingTab = state.tabs.find(t => t.path === selected);
+            const { switchTab, createNewTab } = await import('./editor-manager.js');
             if (existingTab) {
                 switchTab(existingTab.id);
                 return;
@@ -63,22 +75,13 @@ export async function saveFile(returnResult = false) {
         }
 
         if (pathToSave) {
-            let content = '';
-            if (tab.isDoc) {
-                if (state.quillView) {
-                    content = state.quillView.root.innerHTML;
-                } else {
-                    content = tab.savedContent || '';
-                }
-            } else {
-                content = state.editorView.state.doc.toString();
-            }
-
+            const content = getActiveEditorContent(tab);
             await writeTextFile(pathToSave, content);
 
             try {
                 let mtime = await invoke('get_file_modified', { path: pathToSave });
                 tab.lastModified = mtime;
+                const { syncChannel } = await import('./editor-manager.js');
                 syncChannel.postMessage({ type: 'file_saved', path: pathToSave, content, mtime });
             } catch(e) {}
 
@@ -135,6 +138,7 @@ export async function openFileFromHistory(path) {
     // Check if already open open in a tab
     const existingTab = state.tabs.find(t => t.path === path);
     if (existingTab) {
+        const { switchTab } = await import('./editor-manager.js');
         switchTab(existingTab.id);
         return;
     }
@@ -149,6 +153,7 @@ export async function openFileFromHistory(path) {
         }
 
         const contents = await readTextFile(path);
+        const { createNewTab } = await import('./editor-manager.js');
         await createNewTab(path, contents);
         try {
             const newT = state.tabs[state.tabs.length - 1];
@@ -166,6 +171,7 @@ export async function openFileFromHistory(path) {
 }
 
 export async function openDroppedPaths(paths) {
+    const { switchTab, createNewTab } = await import('./editor-manager.js');
     for (const filePath of paths) {
         try {
             const existing = state.tabs.find(t => t.path === filePath);
@@ -209,17 +215,7 @@ export async function renameActiveFile() {
     
     if (newPath && newPath !== oldPath) {
         try {
-            let content = '';
-            if (tab.isDoc) {
-                if (state.quillView) {
-                    content = state.quillView.root.innerHTML;
-                } else {
-                    content = tab.savedContent || '';
-                }
-            } else {
-                content = state.editorView.state.doc.toString();
-            }
-            
+            const content = getActiveEditorContent(tab);
             await writeTextFile(newPath, content);
             await window.__TAURI__.fs.removeFile(oldPath);
             

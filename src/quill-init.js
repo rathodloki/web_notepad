@@ -1,6 +1,5 @@
 import { state } from './state.js';
 import { saveSessionDebounced, autoSaveDiskDebounced } from './session.js';
-import { askLinkUI } from './overlays.js';
 import Quill from 'quill';
 import BlotFormatter from 'quill-blot-formatter';
 import QuillImageDropAndPaste from 'quill-image-drop-and-paste';
@@ -78,6 +77,7 @@ export function initializeQuill() {
                         if (!defaultUrl && /^(https?:\/\/|www\.|[/])/i.test(selectedText.trim())) {
                             defaultUrl = selectedText.trim();
                         }
+                        const { askLinkUI } = await import('./overlays.js');
                         const result = await askLinkUI(selectedText, defaultUrl);
                         if (result !== null) {
                             if (result.url) {

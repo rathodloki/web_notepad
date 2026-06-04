@@ -31,6 +31,33 @@ export async function saveExplicitSession() {
     } catch (e) { console.error(e); showStatus('Error saving Workspace'); }
 }
 
+async function restoreSingleTab(t) {
+    let content = t.content;
+    if (content === null && t.path) { 
+        try { content = await readTextFile(t.path); } catch (e) { content = ''; } 
+    } else if (content === undefined || content === null) {
+        content = '';
+    }
+    await createNewTab(t.path || null, content, t.isTodo, t.isDoc);
+    const newT = state.tabs[state.tabs.length - 1];
+    if (newT) {
+        if (t.isTodo) newT.isTodo = true;
+        if (t.isDoc) newT.isDoc = true;
+        if (t.title) newT.title = t.title;
+        if (t.manualLanguage) newT.manualLanguage = t.manualLanguage;
+        if (t.path) {
+            try { newT.lastModified = await invoke('get_file_modified', { path: t.path }); } catch (err) {}
+            addToFileHistory(t.path);
+        }
+    }
+}
+
+async function restoreSessionTabs(tabs) {
+    for (const t of tabs) {
+        await restoreSingleTab(t);
+    }
+}
+
 export async function loadExplicitSession() {
     if (!window.__TAURI__) return alert('Loading sessions is only supported in the app.');
     try {
@@ -46,21 +73,7 @@ export async function loadExplicitSession() {
                 else if (answer === 'cancel') return;
             }
             state.activeSessionPath = selected;
-            for (const t of sessionParams.tabs) {
-                let content = t.content;
-                if (content === null && t.path) { try { content = await readTextFile(t.path); } catch (e) { content = ''; } }
-                else if (content === undefined || content === null) content = '';
-                await createNewTab(t.path || null, content, t.isTodo, t.isDoc);
-                const newT = state.tabs[state.tabs.length - 1];
-                if (t.isTodo) newT.isTodo = true;
-                if (t.isDoc) newT.isDoc = true;
-                if (t.title) newT.title = t.title;
-                if (t.manualLanguage) newT.manualLanguage = t.manualLanguage;
-                if (t.path) {
-                    try { newT.lastModified = await invoke('get_file_modified', { path: t.path }); } catch (err) {}
-                    addToFileHistory(t.path);
-                }
-            }
+            await restoreSessionTabs(sessionParams.tabs);
             updateTitle();
             showStatus('Workspace loaded successfully');
         }
