@@ -8,7 +8,7 @@ import { undo, redo } from "@codemirror/commands";
 import './quill-init.js';
 
 // Static imports to keep UI interactions synchronous and responsive
-import { createNewTab, switchTab, closeTab, closeMultipleTabs, closedTabsHistory, spawnTodoList, spawnDocProcess, handleExternalFileChange } from './editor-manager.js';
+import { createNewTab, switchTab, closeTab, closeMultipleTabs, closedTabsHistory, spawnTodoList, spawnDocProcess, handleExternalFileChange, toggleGameView } from './editor-manager.js';
 import { renameActiveFile, deleteActiveFile, openFile, saveFile } from './file-io.js';
 import { toggleQuickOpen, toggleGlobalSearch, handleGlobalKeyboard, setupOverlays, setupFileDrop } from './overlays.js';
 import { setupSettingsMenu, toggleWordWrap } from './settings-manager.js';
@@ -133,6 +133,11 @@ function handleToggleAndSpawnShortcuts(e) {
         spawnDocProcess(); 
         return true; 
     }
+    if ((e.ctrlKey || e.metaKey) && e.key === '3') { 
+        e.preventDefault(); 
+        toggleGameView(); 
+        return true; 
+    }
     if (e.altKey && e.key.toLowerCase() === 'z') { 
         e.preventDefault(); 
         toggleWordWrap(); 
@@ -239,6 +244,9 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('btn-doc')?.addEventListener('click', () => {
         spawnDocProcess();
+    });
+    document.getElementById('btn-game')?.addEventListener('click', () => {
+        toggleGameView();
     });
     document.getElementById('btn-open-url')?.addEventListener('click', () => {
         document.getElementById('open-url-modal').style.display = 'flex';

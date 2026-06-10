@@ -2,6 +2,7 @@
 export const state = {
     tabs: [],
     activeTabId: null,
+    lastActiveTabId: null,
     editorView: null,
     quillView: null,
     tabCounter: 0,
@@ -17,5 +18,7 @@ export const state = {
     isMarkdownPreviewEnabled: false,
     isRestoringTab: false,
     renderMarkdownPreview: null,
-    defaultNewFileType: localStorage.getItem('lightpad-default-new-file-type') || 'txt'
+    defaultNewFileType: localStorage.getItem('lightpad-default-new-file-type') || 'txt',
+    musicStartedByGame: false,
+    musicPausedByGameTab: false
 };

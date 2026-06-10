@@ -1294,7 +1294,11 @@ export function initGame() {
         if (crt) crt.style.display = 'none';
         hudPanels.forEach(p => p.style.display = 'none');
         if (arcadeStarter) arcadeStarter.style.display = 'none';
-        if (tagline) tagline.textContent = 'No files open — start coding to begin';
+        if (tagline) {
+            tagline.textContent = state.tabs.length > 0
+                ? 'Arcade Mode is disabled — enable in Settings to play'
+                : 'No files open — start coding to begin';
+        }
 
         // Clear any animation frame and stop loop
         if (animationFrameId) {
@@ -1309,30 +1313,40 @@ export function initGame() {
     if (crt) crt.style.display = 'block';
     hudPanels.forEach(p => p.style.display = 'block');
     if (arcadeStarter) arcadeStarter.style.display = 'block';
-    if (tagline) tagline.textContent = 'No files open — start coding or play while idle';
+    if (tagline) {
+        tagline.textContent = state.tabs.length > 0
+            ? 'Coding in progress — take a break or click a tab to resume'
+            : 'No files open — start coding or play while idle';
+    }
 
-    // Initial positioning
-    resetPlayer();
+    const wasPausedOnLeave = (gameState === STATE_PAUSED);
 
-    // Load stats
-    score = 0;
-    combo = 1.0;
-    highscore = parseInt(localStorage.getItem('lightpad_game_highscore') || '0', 10);
-    updateScoreUI();
+    // Initial positioning if not returning from pause
+    if (!wasPausedOnLeave) {
+        resetPlayer();
 
-    gameState = STATE_IDLE;
-    showScreen(STATE_IDLE);
-    initBossSystem();
+        // Load stats
+        score = 0;
+        combo = 1.0;
+        highscore = parseInt(localStorage.getItem('lightpad_game_highscore') || '0', 10);
+        updateScoreUI();
 
-    // Reset game entities
-    bugs = [];
-    fragments = [];
-    particles = [];
-    bullets = [];
-    enemyProjectiles = [];
-    powerups = [];
-    generateStars();
-    generateBgSymbols();
+        gameState = STATE_IDLE;
+        showScreen(STATE_IDLE);
+        initBossSystem();
+
+        // Reset game entities
+        bugs = [];
+        fragments = [];
+        particles = [];
+        bullets = [];
+        enemyProjectiles = [];
+        powerups = [];
+        generateStars();
+        generateBgSymbols();
+    } else {
+        updateScoreUI();
+    }
 
     // Setup visualizer panel
     const musicPanel = document.getElementById('game-music-panel');
@@ -1361,6 +1375,10 @@ export function initGame() {
 
     window.removeEventListener('resize', resizeCanvas);
     window.addEventListener('resize', resizeCanvas);
+
+    if (wasPausedOnLeave) {
+        showScreen(STATE_PAUSED);
+    }
 
     // Start render loop
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -1392,6 +1410,35 @@ export function stopGame() {
     powerups = [];
     stars = [];
     bgSymbols = [];
+}
+
+export function pauseGameOnTabLeave() {
+    if (gameState === STATE_RUNNING) {
+        gameState = STATE_PAUSED;
+        showScreen(STATE_PAUSED);
+    }
+    stopProceduralMusic();
+
+    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('keyup', handleKeyUp);
+    if (canvas) {
+        canvas.removeEventListener('mousemove', handleMouseMove);
+        canvas.removeEventListener('mouseleave', handleMouseLeave);
+    }
+    window.removeEventListener('resize', resizeCanvas);
+
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
+    // Check if music was auto-started by game
+    import('./music-manager.js').then(m => {
+        if (state.musicStartedByGame && m.isPlaying) {
+            m.togglePlay(true); // Pause it
+            state.musicPausedByGameTab = true;
+        }
+    });
 }
 
 function resizeCanvas() {
@@ -1620,7 +1667,8 @@ function startGame() {
     // Auto-play streaming music player when game starts
     import('./music-manager.js').then(m => {
         if (!m.isPlaying) {
-            m.togglePlay();
+            state.musicStartedByGame = true;
+            m.togglePlay(true);
         }
     });
 }
@@ -1635,6 +1683,15 @@ function togglePause() {
         showScreen(STATE_RUNNING);
         lastPhysicsTime = performance.now();
         if (musicEnabled) startProceduralMusic();
+
+        if (state.musicPausedByGameTab) {
+            import('./music-manager.js').then(m => {
+                if (!m.isPlaying) {
+                    m.togglePlay(true);
+                }
+            });
+            state.musicPausedByGameTab = false;
+        }
     }
 }
 

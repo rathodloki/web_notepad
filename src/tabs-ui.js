@@ -30,6 +30,7 @@ export function renderTabs() {
         if (tab.id === state.activeTabId) classes.push('active');
         if (tab.isTodo) classes.push('is-todo');
         if (tab.isDoc) classes.push('is-doc');
+        if (tab.isGame) classes.push('is-game');
 
         const tabEl = document.createElement('div');
         tabEl.className = classes.join(' ');
@@ -214,9 +215,10 @@ export function renderTabs() {
 function updateActiveTabUI() {
     const activeTab = state.tabs.find(t => t.id === state.activeTabId);
     if (activeTab) {
-        document.body.classList.remove('theme-doc', 'theme-todo', 'theme-text');
+        document.body.classList.remove('theme-doc', 'theme-todo', 'theme-text', 'theme-game');
         if (activeTab.isDoc) document.body.classList.add('theme-doc');
         else if (activeTab.isTodo) document.body.classList.add('theme-todo');
+        else if (activeTab.isGame) document.body.classList.add('theme-game');
         else document.body.classList.add('theme-text');
     }
 
@@ -248,7 +250,29 @@ export function activateTabUI(tab) {
     const emptyState = document.getElementById('empty-state');
     const editorWrapper = document.getElementById('editor-wrapper');
 
-    import('./game.js').then(m => m.stopGame());
+    if (tab.isGame) {
+        if (editorWrapper) editorWrapper.style.display = 'none';
+        if (emptyState) {
+            emptyState.style.display = 'flex';
+            import('./game.js').then(m => m.initGame());
+        }
+
+        const mdPreview = document.getElementById('markdown-preview');
+        if (mdPreview) mdPreview.style.display = 'none';
+        state.isMarkdownPreviewEnabled = false;
+
+        updateActiveTabUI();
+
+        // Status updates
+        import('./status-bar.js').then(m => {
+            m.updateTitle();
+            m.updateLanguageStatus();
+            const statusCursor = document.getElementById('status-cursor');
+            if (statusCursor) statusCursor.textContent = '';
+        });
+        return;
+    }
+
     if (emptyState) emptyState.style.display = 'none';
     if (editorWrapper) editorWrapper.style.display = 'flex';
 

@@ -64,7 +64,7 @@ export async function saveSession() {
         }
     }
 
-    const sessionTabs = state.tabs.map(tab => {
+    const sessionTabs = state.tabs.filter(tab => !tab.isGame).map(tab => {
         let content = null;
         const needsContent = tab.isUnsaved || !tab.path;
         

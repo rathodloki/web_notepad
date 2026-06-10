@@ -1,6 +1,7 @@
 // music-impl.js — Manage streaming audio from FreeCodeCamp Code Radio and Synthwave stations
 import { showStatus } from './status-bar.js';
 import { notifyStateChange } from './music-manager.js';
+import { state } from './state.js';
 
 export const STATIONS = [
     {
@@ -294,6 +295,7 @@ function switchStation(stationIndex, statusPrefix, onSuccess) {
 }
 
 export function playItem(item) {
+    state.musicStartedByGame = false;
     ensureAudioReady();
 
     const stationIndex = STATIONS.findIndex(s => s.url === item.url);
@@ -311,7 +313,10 @@ export function playItem(item) {
     });
 }
 
-export function togglePlay() {
+export function togglePlay(isGameAction = false) {
+    if (!isGameAction) {
+        state.musicStartedByGame = false;
+    }
     ensureAudioReady();
 
     if (isPlaying) {
@@ -346,6 +351,7 @@ function pickRandomIndex() {
 }
 
 export function playRandomStation() {
+    state.musicStartedByGame = false;
     ensureAudioReady();
     switchStation(pickRandomIndex(), "Failed to play random station");
 }

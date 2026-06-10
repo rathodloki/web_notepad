@@ -200,6 +200,44 @@ body::before {
   opacity: 0.85;
 }
 
+/* Special Arcade Game Tab styles */
+.tab.is-game {
+  color: #50fa7b;
+}
+
+.tab.is-game.active {
+  background: rgba(80, 250, 123, 0.06);
+  color: #50fa7b;
+  border-top: 2px solid #50fa7b;
+  box-shadow: inset 0 1px 0 rgba(80, 250, 123, 0.1);
+  animation: game-tab-border-glow 2.5s infinite ease-in-out;
+  opacity: 1;
+}
+
+.tab.is-game:hover:not(.active) {
+  background: rgba(80, 250, 123, 0.03);
+  color: #50fa7b;
+  opacity: 0.85;
+}
+
+.tab.is-game .tab-dot {
+  background-color: #50fa7b !important;
+  box-shadow: 0 0 6px #50fa7b;
+  opacity: 0.8;
+}
+
+@keyframes game-tab-border-glow {
+  0%, 100% {
+    border-top-color: rgba(80, 250, 123, 0.3);
+    box-shadow: 0 4px 12px rgba(80, 250, 123, 0.05);
+  }
+  50% {
+    border-top-color: rgba(80, 250, 123, 1);
+    box-shadow: 0 4px 20px rgba(80, 250, 123, 0.25), inset 0 1px 0 rgba(80, 250, 123, 0.2);
+  }
+}
+
+
 .tab-title {
   white-space: nowrap;
   overflow: hidden;

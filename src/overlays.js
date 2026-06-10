@@ -823,7 +823,7 @@ export function setupOverlays() {
                     if (id === 'discard-modal') document.getElementById('modal-btn-cancel')?.click();
                     else if (id === 'link-modal') document.getElementById('link-modal-cancel')?.click();
                     else if (id === 'quick-open-modal') closeQuickOpen();
-                    else if (id === 'language-modal') closeLanguageModal();
+                    else if (id === 'language-modal') closeLanguageOpen();
                     else if (id === 'global-search-modal') closeGlobalSearch();
                     else if (id === 'open-url-modal') document.getElementById('btn-cancel-url')?.click();
                 }
@@ -1077,7 +1077,7 @@ export function handleGlobalKeyboard(e) {
             if (activeModal.id === 'discard-modal') document.getElementById('modal-btn-cancel')?.click();
             else if (activeModal.id === 'link-modal') document.getElementById('link-modal-cancel')?.click();
             else if (activeModal.id === 'quick-open-modal') closeQuickOpen();
-            else if (activeModal.id === 'language-modal') closeLanguageModal();
+            else if (activeModal.id === 'language-modal') closeLanguageOpen();
             else if (activeModal.id === 'global-search-modal') closeGlobalSearch();
             else if (activeModal.id === 'open-url-modal') document.getElementById('btn-cancel-url')?.click();
             return;
