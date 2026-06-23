@@ -287,7 +287,10 @@ export function activateTabUI(tab) {
         if (state.quillView) {
             const fallback = tab.savedContent !== undefined && tab.savedContent !== null ? tab.savedContent : '';
             state.quillView.root.innerHTML = fallback;
-            setTimeout(() => state.quillView.focus(), 50);
+            setTimeout(() => {
+                state.quillView.focus();
+                import('./quill-init.js').then(m => m.applyDocZoom());
+            }, 50);
         }
     } else {
         editorContainer.style.display = 'flex';

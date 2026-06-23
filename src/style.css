@@ -53,10 +53,10 @@ html {
 
 /* Ambient Selection Highlights */
 ::selection {
-  background: rgba(59, 130, 246, 0.18) !important;
+  background: rgba(59, 130, 246, 0.4) !important;
 }
 .ql-editor ::selection {
-  background: rgba(59, 130, 246, 0.18) !important;
+  background: rgba(59, 130, 246, 0.4) !important;
 }
 
 /* Subtle noise texture overlay */
@@ -1459,6 +1459,29 @@ body::before {
   color: var(--accent) !important;
 }
 
+/* Custom Zoom Toolbar Controls */
+.ql-zoom-formats {
+  margin-left: 12px;
+  border-left: 1px solid var(--toolbar-border);
+  padding-left: 12px;
+}
+
+.ql-zoom-formats button {
+  color: var(--text-main) !important;
+  opacity: 0.65;
+  transition: var(--trans-smooth);
+}
+
+.ql-zoom-formats button:hover {
+  color: var(--accent) !important;
+  opacity: 1;
+}
+
+.ql-zoom-indicator {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px !important;
+}
+
 /* Editable Area Constraints (Sheet of Paper) */
 .ql-editor {
   position: relative !important;
@@ -1473,7 +1496,7 @@ body::before {
   box-shadow: 
     0 0 0 1px rgba(255, 255, 255, 0.02),
     0 20px 60px rgba(0, 0, 0, 0.45) !important;
-  line-height: 1.8;
+  line-height: 1.3;
 }
 
 .ql-editor.ql-blank::before {
@@ -1493,7 +1516,7 @@ body::before {
 }
 
 .ql-editor p {
-  margin-bottom: 0.5em;
+  margin-bottom: 0;
 }
 
 .ql-tooltip {
@@ -2484,7 +2507,7 @@ body::before {
 }
 
 @keyframes marquee-scroll {
-  0 {
+  0% {
     transform: translate3d(0, 0, 0);
   }
   100% {

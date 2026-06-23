@@ -147,6 +147,24 @@ function handleToggleAndSpawnShortcuts(e) {
 }
 
 window.addEventListener('keydown', (e) => {
+    // Prevent default browser page zoom globally
+    if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+' || e.key === '-' || e.key === '0')) {
+        e.preventDefault();
+        const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+        if (activeTab && activeTab.isDoc) {
+            import('./quill-init.js').then(m => {
+                if (e.key === '=' || e.key === '+') m.zoomIn();
+                else if (e.key === '-') m.zoomOut();
+                else if (e.key === '0') {
+                    state.docZoomLevel = 100;
+                    localStorage.setItem('lightpad-doc-zoom', '100');
+                    m.updateZoomIndicatorAndApply();
+                }
+            });
+        }
+        return;
+    }
+
     if (handleTabNavigation(e)) return;
     if (handleFileShortcuts(e)) return;
     if (handleToggleAndSpawnShortcuts(e)) return;

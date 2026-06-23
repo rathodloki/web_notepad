@@ -39,7 +39,7 @@ export const customTheme = EditorView.theme({
         animation: "cm-blink-smooth 1s ease-in-out infinite"
     },
     "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
-        backgroundColor: "rgba(59, 130, 246, 0.18) !important"
+        backgroundColor: "rgba(59, 130, 246, 0.4) !important"
     },
     ".cm-activeLine": {
         backgroundColor: "rgba(255, 255, 255, 0.03)"
