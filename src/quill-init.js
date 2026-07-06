@@ -131,14 +131,42 @@ export function initializeQuill() {
         }
     });
 
-    state.quillView.on('text-change', () => {
+    state.quillView.on('text-change', (delta, oldDelta, source) => {
         const currentTab = state.tabs.find(t => t.id === state.activeTabId);
         if (!currentTab || !currentTab.isDoc) return;
-        currentTab.isUnsaved = true;
+
+        // Skip tracking changes as unsaved if the edit was programmatic (e.g. during tab switches)
+        const currentContent = state.quillView.root.innerHTML;
+        const savedContent = currentTab.savedContent !== undefined && currentTab.savedContent !== null ? currentTab.savedContent : '';
+
+        let isNowUnsaved = true;
+        if (currentContent === savedContent) {
+            isNowUnsaved = false;
+        }
+
+        if (!currentTab.path) {
+            const textContent = state.quillView.getText().trim();
+            if (textContent === '') {
+                isNowUnsaved = false;
+            }
+        }
+
+        // Only update dirty state if it changed, or if it was a user action
+        if (source === 'user' || isNowUnsaved !== currentTab.isUnsaved) {
+            if (currentTab.isUnsaved !== isNowUnsaved) {
+                currentTab.isUnsaved = isNowUnsaved;
+                const tabEl = document.querySelector(`.tab[data-id="${currentTab.id}"] .tab-dot`);
+                if (tabEl) {
+                    if (isNowUnsaved) tabEl.classList.add('unsaved');
+                    else tabEl.classList.remove('unsaved');
+                }
+            }
+        }
+
         currentTab.needsRender = true;
         if (!currentTab.path) {
-            const currentContent = state.quillView.getText().trim();
-            const firstLine = currentContent.split('\n')[0].trim();
+            const currentText = state.quillView.getText().trim();
+            const firstLine = currentText.split('\n')[0].trim();
             const newTitle = firstLine ? (firstLine.length > 20 ? firstLine.substring(0, 20) + '...' : firstLine) : 'Untitled';
             if (currentTab.title !== newTitle) {
                 currentTab.title = newTitle;
@@ -146,10 +174,8 @@ export function initializeQuill() {
             }
         }
         
-        const tabEl = document.querySelector(`.tab[data-id="${currentTab.id}"] .tab-dot`);
-        if (tabEl) tabEl.classList.add('unsaved');
         saveSessionDebounced();
-        if (state.isAutoSaveEnabled) autoSaveDiskDebounced(currentTab);
+        if (state.isAutoSaveEnabled && currentTab.isUnsaved) autoSaveDiskDebounced(currentTab);
     });
 
     state.quillView.root.addEventListener('click', (e) => {

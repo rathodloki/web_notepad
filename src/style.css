@@ -82,6 +82,7 @@ body::before {
   user-select: none;
   -webkit-app-region: drag;
   position: relative;
+  flex-shrink: 0;
 }
 
 /* Permanent drag strip at the very top edge — always draggable */
@@ -498,6 +499,7 @@ body::before {
   border-bottom: 1px solid var(--border);
   gap: 8px;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .icon-btn,
@@ -937,6 +939,7 @@ body::before {
 
 #quill-editor {
   flex-grow: 1;
+  min-height: 0;
   overflow-y: auto;
   font-family: 'Inter', system-ui, sans-serif !important;
   font-size: 15px;

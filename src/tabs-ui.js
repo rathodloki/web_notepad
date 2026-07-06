@@ -282,7 +282,7 @@ function populateConsoleRecents() {
  * Handles all UI activation for a tab: container visibility, editor/quill swap, status bar.
  * Extracted from editor-manager.js to reduce God Node coupling.
  */
-export function activateTabUI(tab) {
+export async function activateTabUI(tab) {
     const editorContainer = document.getElementById('editor-container');
     const quillWrapper = document.getElementById('quill-wrapper');
     const emptyState = document.getElementById('empty-state');
@@ -307,10 +307,9 @@ export function activateTabUI(tab) {
         };
 
         if (!state.quillView) {
-            import('./quill-init.js').then(m => {
-                m.initializeQuill();
-                setupQuillContent();
-            });
+            const m = await import('./quill-init.js');
+            m.initializeQuill();
+            setupQuillContent();
         } else {
             setupQuillContent();
         }
@@ -321,10 +320,9 @@ export function activateTabUI(tab) {
         if (state.editorView) {
             state.editorView.setState(tab.state);
         } else {
-            import('./editor.js').then(m => {
-                state.editorView = m.createEditorView(tab.state, editorContainer);
-                state.editorView.focus();
-            });
+            const m = await import('./editor.js');
+            state.editorView = m.createEditorView(tab.state, editorContainer);
+            state.editorView.focus();
         }
         if (state.editorView) state.editorView.focus();
     }
@@ -332,17 +330,16 @@ export function activateTabUI(tab) {
     updateActiveTabUI();
     
     // Status updates
-    import('./status-bar.js').then(m => {
-        m.updateTitle();
-        m.updateCursorStatus();
-        m.updateLanguageStatus();
-    });
+    const m = await import('./status-bar.js');
+    m.updateTitle();
+    m.updateCursorStatus();
+    m.updateLanguageStatus();
 }
 
 /**
  * Deactivates the UI when no tab is active: hides editors, shows empty state.
  */
-export function deactivateTabUI() {
+export async function deactivateTabUI() {
     const quillWrapper = document.getElementById('quill-wrapper');
     const emptyState = document.getElementById('empty-state');
     const editorWrapper = document.getElementById('editor-wrapper');
@@ -366,10 +363,9 @@ export function deactivateTabUI() {
 
     updateActiveTabUI();
     
-    import('./status-bar.js').then(m => {
-        m.updateTitle();
-        m.updateLanguageStatus();
-        const statusCursor = document.getElementById('status-cursor');
-        if (statusCursor) statusCursor.textContent = '';
-    });
+    const m = await import('./status-bar.js');
+    m.updateTitle();
+    m.updateLanguageStatus();
+    const statusCursor = document.getElementById('status-cursor');
+    if (statusCursor) statusCursor.textContent = '';
 }

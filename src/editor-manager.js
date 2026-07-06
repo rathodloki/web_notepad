@@ -217,29 +217,41 @@ export async function createNewTab(path = null, content = '', isTodo = null, isD
 export async function switchTab(id) {
     const prevTabId = state.activeTabId;
 
+    // Set switching flag to prevent race conditions during async dynamic imports
+    state.isSwitchingTab = true;
 
-    // Save previous tab's editor state before switching
-    if (state.editorView && state.activeTabId) {
+    // Save previous tab's editor state before switching (synchronously!)
+    if (state.activeTabId) {
         const prevTab = state.tabs.find(t => t.id === state.activeTabId);
-        if (prevTab && !prevTab.isDoc) {
-            prevTab.state = state.editorView.state;
+        if (prevTab) {
+            if (prevTab.isDoc && state.quillView) {
+                prevTab.savedContent = state.quillView.root.innerHTML;
+            } else if (state.editorView && !prevTab.isDoc) {
+                prevTab.state = state.editorView.state;
+            }
         }
     }
 
     if (id === null) {
         state.activeTabId = null;
         const { deactivateTabUI } = await import('./tabs-ui.js');
-        deactivateTabUI();
+        await deactivateTabUI();
+        state.isSwitchingTab = false;
         saveSessionDebounced();
         return;
     }
 
     state.activeTabId = id;
     const tab = state.tabs.find(t => t.id === id);
-    if (!tab) return;
+    if (!tab) {
+        state.isSwitchingTab = false;
+        return;
+    }
 
     const { activateTabUI } = await import('./tabs-ui.js');
-    activateTabUI(tab);
+    await activateTabUI(tab);
+    
+    state.isSwitchingTab = false;
     saveSessionDebounced();
     checkPendingReload(tab);
 }
@@ -265,7 +277,7 @@ export async function closeTab(id, forceClose = false, multipleFiles = false) {
 
         if (!tab.path) {
             const cleanContent = content.trim();
-            if (cleanContent === '' || cleanContent === '- [ ]') {
+            if (cleanContent === '' || cleanContent === '- [ ]' || cleanContent === '<p><br></p>' || cleanContent === '<p></p>') {
                 askPrompt = false;
             }
         }

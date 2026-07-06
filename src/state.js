@@ -16,6 +16,7 @@ export const state = {
     isAutoSaveEnabled: localStorage.getItem('lightpad-autosave') === 'true',
     isMarkdownPreviewEnabled: false,
     isRestoringTab: false,
+    isSwitchingTab: false,
     renderMarkdownPreview: null,
     defaultNewFileType: localStorage.getItem('lightpad-default-new-file-type') || 'txt'
 };

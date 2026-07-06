@@ -53,6 +53,7 @@ export function autoSaveDiskDebounced(tab, delay = 2000) {
 }
 
 export async function saveSession() {
+    if (state.isSwitchingTab) return;
     let activeDocContent = null;
     const activeTab = state.tabs.find(t => t.id === state.activeTabId);
     if (activeTab && activeTab.isDoc && state.quillView) {
