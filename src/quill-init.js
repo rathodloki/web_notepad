@@ -3,6 +3,7 @@ import { saveSessionDebounced, autoSaveDiskDebounced } from './session.js';
 import Quill from 'quill';
 import BlotFormatter from 'quill-blot-formatter';
 import QuillImageDropAndPaste from 'quill-image-drop-and-paste';
+import 'quill/dist/quill.snow.css';
 
 Quill.register('modules/blotFormatter', BlotFormatter);
 Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);

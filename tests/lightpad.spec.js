@@ -175,34 +175,5 @@ test.describe('LightPad Test Harness Suite', () => {
         expect(currentTitle).not.toBe('Music Off');
     });
 
-    test('should toggle game mode with tabs open using button and shortcut', async ({ page }) => {
-        // Create a tab and enter some content
-        await page.click('#btn-new-tab');
-        await page.waitForSelector('.cm-content');
-        await page.locator('.cm-content').fill('Code content');
 
-        // Confirm active tab is set
-        const activeTabIdBefore = await page.evaluate(() => window.__lightpadHarness.state.activeTabId);
-        expect(activeTabIdBefore).not.toBeNull();
-
-        // Click the play game button
-        await page.click('#btn-game');
-
-        // Wait for the active tab to switch to tab-arcade
-        await page.waitForFunction(() => window.__lightpadHarness.state.activeTabId === 'tab-arcade', { timeout: 5000 });
-
-        // Click the tab in the tab bar to return to editor
-        await page.locator('.tab:not(.is-game)').first().click();
-        await page.waitForSelector('.cm-content');
-
-        // Verify tab is active again and content preserved
-        const activeTabIdReturned = await page.evaluate(() => window.__lightpadHarness.state.activeTabId);
-        expect(activeTabIdReturned).toBe(activeTabIdBefore);
-        const content = await page.evaluate(() => window.__lightpadHarness.getEditorContent());
-        expect(content).toBe('Code content');
-
-        // Verify shortcut Ctrl+3 toggles game mode
-        await page.evaluate(() => window.__lightpadHarness.triggerShortcut('3', { ctrl: true }));
-        await page.waitForFunction(() => window.__lightpadHarness.state.activeTabId === 'tab-arcade', { timeout: 5000 });
-    });
 });

@@ -10,10 +10,8 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js" defer></script>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@400;500&family=Inter:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@400;500&family=Inter:wght@400;500&display=swap"></noscript>
 </head>
 
 <body>
@@ -147,19 +145,7 @@
                 <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
         </button>
-        <button id="btn-game" class="icon-btn" title="Play Arcade Game (Ctrl+3)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17.5 17.5c2.5 3.5 6.449.915 5.5-2.5c-1.425-5.129-2.2-7.984-2.603-9.492A2.03 2.03 0 0 0 18.438 4H5.562c-.918 0-1.718.625-1.941 1.515C2.78 8.863 2.033 11.802 1.144 15c-.948 3.415 3 6 5.5 2.5" />
-                <path d="M16 4v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V4" />
-                <circle cx="8" cy="14" r="2" />
-                <circle cx="16" cy="14" r="2" />
-                <path d="M6.5 8v3M5 9.5h3" />
-                <circle cx="17.5" cy="8.5" r="0.75" fill="currentColor" />
-                <circle cx="17.5" cy="10.5" r="0.75" fill="currentColor" />
-                <circle cx="16.5" cy="9.5" r="0.75" fill="currentColor" />
-                <circle cx="18.5" cy="9.5" r="0.75" fill="currentColor" />
-            </svg>
-        </button>
+
         <div class="toolbar-divider"></div>
         <div style="position: relative;">
             <button id="btn-settings" class="icon-btn" title="Settings & Tools">
@@ -187,10 +173,7 @@
                     <span>Markdown Preview</span>
                     <span class="check-icon" style="color: var(--accent); font-weight: bold;">✓</span>
                 </div>
-                <div class="menu-item toggle-item" id="menu-toggle-arcademode">
-                    <span>Idle Arcade Mode</span>
-                    <span class="check-icon" style="color: var(--accent); font-weight: bold;">✓</span>
-                </div>
+
                 <div class="menu-item divider"></div>
                 <div class="menu-item-header"
                     style="padding: 6px 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">
@@ -252,152 +235,58 @@
         <!-- Main Pane -->
         <div class="editor-pane" id="pane-1" style="display: flex; flex-direction: row; height: 100%;">
             <!-- Empty State -->
-            <div id="empty-state" style="display: none;">
-                <!-- Canvas for game elements -->
-                <canvas id="game-canvas"></canvas>
-
-                <!-- CRT Scanline overlay -->
-                <div class="game-crt-overlay"></div>
-
-                <!-- Glassmorphic HUD: Top Left (Score & Highscore & Boss Signal) -->
-                <div class="game-hud-panel game-hud-top-left">
-                    <div class="hud-label">SCORE</div>
-                    <div class="hud-value" id="game-score">000000</div>
-                    <div class="hud-label-small" style="margin-top: 4px;">HIGHSCORE</div>
-                    <div class="hud-value-small" id="game-highscore">000000</div>
-                    <div class="hud-label-small" id="hud-boss-progress-label-container" style="margin-top: 6px; display: flex; justify-content: space-between; width: 100%;">
-                        <span id="hud-boss-progress-label">BOSS SIGNAL</span>
-                        <span id="hud-boss-progress-value" style="color: #00d2ff; text-shadow: 0 0 4px rgba(0, 210, 255, 0.3);">0%</span>
+            <div id="empty-state" style="display: none; align-items: center; justify-content: center;">
+                <div class="console-content" id="empty-state-dashboard">
+                    <div class="console-header">
+                        <div class="console-logo">LIGHTPAD</div>
+                        <div class="console-tagline" id="console-tagline">No files open — start coding to begin</div>
                     </div>
-                    <div class="boss-progress-bar-container" style="width: 100%; height: 3px; background: rgba(255, 255, 255, 0.05); border-radius: 1px; margin-top: 2px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.02);">
-                        <div id="hud-boss-progress-bar" style="width: 0%; height: 100%; background: #00d2ff; box-shadow: 0 0 6px rgba(0, 240, 255, 0.5); transition: width 0.3s ease;"></div>
-                    </div>
-                </div>
-
-                <!-- Glassmorphic HUD: Top Right (Energy & Combo) -->
-                <div class="game-hud-panel game-hud-top-right">
-                    <div class="hud-label">ENERGY</div>
-                    <div class="game-energy-bar" id="game-energy-bar">
-                        <div class="energy-segment active"></div>
-                        <div class="energy-segment active"></div>
-                        <div class="energy-segment active"></div>
-                        <div class="energy-segment active"></div>
-                        <div class="energy-segment active"></div>
-                        <div class="energy-segment active"></div>
-                        <div class="energy-segment active"></div>
-                        <div class="energy-segment active"></div>
-                        <div class="energy-segment active"></div>
-                        <div class="energy-segment active"></div>
-                    </div>
-                    <div class="hud-label-small" style="margin-top: 6px;">COMBO</div>
-                    <div class="hud-value-accent" id="game-combo">x1.0</div>
-                </div>
-
-                <!-- Glassmorphic HUD: Bottom Left (Music Visualizer / BGM Toggle) -->
-                <div class="game-hud-panel game-hud-bottom-left" id="game-music-panel" title="Click to Toggle Retro Synth Music">
-                    <div class="visualizer-container">
-                        <svg class="music-icon" id="game-music-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
-                            <path d="M9 18V5l12-2v13" />
-                            <circle cx="6" cy="18" r="3" />
-                            <circle cx="18" cy="16" r="3" />
-                        </svg>
-                        <div class="visualizer-bars" id="visualizer-bars">
-                            <div class="v-bar" style="height: 4px;"></div>
-                            <div class="v-bar" style="height: 8px;"></div>
-                            <div class="v-bar" style="height: 12px;"></div>
-                            <div class="v-bar" style="height: 6px;"></div>
-                            <div class="v-bar" style="height: 10px;"></div>
-                            <div class="v-bar" style="height: 14px;"></div>
-                            <div class="v-bar" style="height: 5px;"></div>
-                            <div class="v-bar" style="height: 9px;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Glassmorphic HUD: Bottom Right (Controls) -->
-                <div class="game-hud-panel game-hud-bottom-right">
-                    <div class="hud-controls-title">CONTROLS</div>
-                    <div class="hud-controls-item"><span>WASD / ARROWS</span><span>- MOVE</span></div>
-                    <div class="hud-controls-item"><span>P</span><span>- PAUSE</span></div>
-                </div>
-
-                <!-- Screens overlay (Idle, Paused, Game Over) -->
-                <div class="game-screen-overlay" id="game-screen-overlay">
-                    <div class="game-screen-content console-content" id="game-screen-idle">
-                        <div class="console-header">
-                            <div class="console-logo">LIGHTPAD</div>
-                            <div class="console-tagline" id="console-tagline">No files open — start coding or play while idle</div>
-                        </div>
-                        
-                        <div class="console-body">
-                            <!-- Quick Actions Column -->
-                            <div class="console-column quick-actions-col">
-                                <div class="console-section-title">QUICK ACTIONS</div>
-                                <div class="console-buttons">
-                                    <button class="console-btn-action" id="console-btn-new">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
-                                            <path d="M12 5v14M5 12h14" />
-                                        </svg>
-                                        <span>New File</span>
-                                        <span class="btn-shortcut">Ctrl+N</span>
-                                    </button>
-                                    <button class="console-btn-action" id="console-btn-open">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
-                                            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-                                        </svg>
-                                        <span>Open File</span>
-                                        <span class="btn-shortcut">Ctrl+O</span>
-                                    </button>
-                                    <button class="console-btn-action" id="console-btn-url">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
-                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                                        </svg>
-                                        <span>Open from URL</span>
-                                    </button>
-                                    <button class="console-btn-action" id="console-btn-session">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
-                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                            <polyline points="7 3 7 8 15 8"></polyline>
-                                        </svg>
-                                        <span>Load Workspace</span>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Recent Files Column -->
-                            <div class="console-column recents-col" id="console-recents-col">
-                                <div class="console-section-title">RECENT FILES</div>
-                                <div class="console-list" id="console-recents-list">
-                                    <!-- Populated dynamically via JS -->
-                                    <div class="console-no-recents">No recent files</div>
-                                </div>
+                    
+                    <div class="console-body">
+                        <!-- Quick Actions Column -->
+                        <div class="console-column quick-actions-col">
+                            <div class="console-section-title">QUICK ACTIONS</div>
+                            <div class="console-buttons">
+                                <button class="console-btn-action" id="console-btn-new">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
+                                        <path d="M12 5v14M5 12h14" />
+                                    </svg>
+                                    <span>New File</span>
+                                    <span class="btn-shortcut">Ctrl+N</span>
+                                </button>
+                                <button class="console-btn-action" id="console-btn-open">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
+                                        <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                    </svg>
+                                    <span>Open File</span>
+                                    <span class="btn-shortcut">Ctrl+O</span>
+                                </button>
+                                <button class="console-btn-action" id="console-btn-url">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                    </svg>
+                                    <span>Open from URL</span>
+                                </button>
+                                <button class="console-btn-action" id="console-btn-session">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                        <polyline points="7 3 7 8 15 8"></polyline>
+                                    </svg>
+                                    <span>Load Workspace</span>
+                                </button>
                             </div>
                         </div>
                         
-                        <!-- Arcade Mode / Mini Game Starter Section -->
-                        <div class="console-footer" id="console-arcade-starter">
-                            <div class="retro-status-tag game-tag">IDLE ARCADE MODE ENABLED</div>
-                            <button class="console-play-btn" id="console-btn-play-game">
-                                [ PRESS ENTER OR CLICK TO PLAY ]
-                            </button>
-                            <div class="retro-subtitle-text">WASD / ARROWS TO MOVE · SPACE TO SHOOT · P TO PAUSE</div>
-                        </div>
-                    </div>
-                    <div class="game-screen-content" id="game-screen-paused" style="display: none;">
-                        <div class="retro-title-text">[ GAME PAUSED ]</div>
-                        <div class="retro-subtitle-text">PRESS P TO RESUME</div>
-                    </div>
-                    <div class="game-screen-content" id="game-screen-over" style="display: none;">
-                        <div class="retro-title-text system-error">[ SYSTEM CORRUPTED ]</div>
-                        <div class="retro-stats-box">
-                            <div>FINAL SCORE: <span id="game-final-score" style="color: var(--accent);">000000</span></div>
-                            <div id="game-checkpoint-info" style="margin-top: 8px; font-size: 10px; color: #ffd700; display: none;">
-                                CHECKPOINT: LEVEL <span id="game-checkpoint-level">0</span> (SCORE <span id="game-checkpoint-score">000000</span>)
+                        <!-- Recent Files Column -->
+                        <div class="console-column recents-col" id="console-recents-col">
+                            <div class="console-section-title">RECENT FILES</div>
+                            <div class="console-list" id="console-recents-list">
+                                <!-- Populated dynamically via JS -->
+                                <div class="console-no-recents">No recent files</div>
                             </div>
                         </div>
-                        <div class="retro-subtitle-text" id="game-over-instructions" style="margin-top: 15px; line-height: 1.4;">PRESS ENTER TO REBOOT</div>
                     </div>
                 </div>
             </div>

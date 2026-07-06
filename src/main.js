@@ -5,10 +5,9 @@ if (window.__lightpadHarness) {
     window.__lightpadHarness.state = state;
 }
 import { undo, redo } from "@codemirror/commands";
-import './quill-init.js';
 
 // Static imports to keep UI interactions synchronous and responsive
-import { createNewTab, switchTab, closeTab, closeMultipleTabs, closedTabsHistory, spawnTodoList, spawnDocProcess, handleExternalFileChange, toggleGameView } from './editor-manager.js';
+import { createNewTab, switchTab, closeTab, closeMultipleTabs, closedTabsHistory, spawnTodoList, spawnDocProcess, handleExternalFileChange } from './editor-manager.js';
 import { renameActiveFile, deleteActiveFile, openFile, saveFile } from './file-io.js';
 import { toggleQuickOpen, toggleGlobalSearch, handleGlobalKeyboard, setupOverlays, setupFileDrop } from './overlays.js';
 import { setupSettingsMenu, toggleWordWrap } from './settings-manager.js';
@@ -28,14 +27,30 @@ function renderMarkdownPreview(content = null) {
     if (!state.isMarkdownPreviewEnabled) return;
     const preview = document.getElementById('markdown-preview');
     if (!preview) return;
-    let text = content;
-    if (text === null) {
-        text = state.editorView ? state.editorView.state.doc.toString() : '';
-    }
-    try {
-        preview.innerHTML = DOMPurify.sanitize(marked.parse(text));
-    } catch (e) {
-        console.error("Markdown parsing failed", e);
+    
+    const doRender = () => {
+        let text = content;
+        if (text === null) {
+            text = state.editorView ? state.editorView.state.doc.toString() : '';
+        }
+        try {
+            preview.innerHTML = window.DOMPurify.sanitize(window.marked.parse(text));
+        } catch (e) {
+            console.error("Markdown parsing failed", e);
+        }
+    };
+
+    if (typeof window.marked === 'undefined' || typeof window.DOMPurify === 'undefined') {
+        Promise.all([
+            import('marked'),
+            import('dompurify')
+        ]).then(([markedMod, purifyMod]) => {
+            window.marked = markedMod.marked;
+            window.DOMPurify = purifyMod.default || purifyMod;
+            doRender();
+        }).catch(e => console.error("Failed to load markdown dependencies dynamically", e));
+    } else {
+        doRender();
     }
 }
 window.renderMarkdownPreview = renderMarkdownPreview;
@@ -133,11 +148,7 @@ function handleToggleAndSpawnShortcuts(e) {
         spawnDocProcess(); 
         return true; 
     }
-    if ((e.ctrlKey || e.metaKey) && e.key === '3') { 
-        e.preventDefault(); 
-        toggleGameView(); 
-        return true; 
-    }
+
     if (e.altKey && e.key.toLowerCase() === 'z') { 
         e.preventDefault(); 
         toggleWordWrap(); 
@@ -263,9 +274,7 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-doc')?.addEventListener('click', () => {
         spawnDocProcess();
     });
-    document.getElementById('btn-game')?.addEventListener('click', () => {
-        toggleGameView();
-    });
+
     document.getElementById('btn-open-url')?.addEventListener('click', () => {
         document.getElementById('open-url-modal').style.display = 'flex';
         document.getElementById('open-url-input').focus();
@@ -314,6 +323,30 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Wire up Console action buttons (No File Open dashboard)
+    document.getElementById('console-btn-new')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        createNewTab();
+    });
+    document.getElementById('console-btn-open')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openFile();
+    });
+    document.getElementById('console-btn-url')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('open-url-modal').style.display = 'flex';
+        document.getElementById('open-url-input').focus();
+    });
+    document.getElementById('console-btn-session')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const { loadExplicitSession } = await import('./session-manager.js');
+        await loadExplicitSession();
+    });
 
     // Extracted module setups
     setupSettingsMenu();

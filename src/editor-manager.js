@@ -140,7 +140,7 @@ function createUpdateListener(id) {
                     autoSaveDiskDebounced(tab);
                 }
 
-                if (state.isMarkdownPreviewEnabled && id === state.activeTabId && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+                if (state.isMarkdownPreviewEnabled && id === state.activeTabId) {
                     if (state.renderMarkdownPreview) state.renderMarkdownPreview(currentContent);
                 }
 
@@ -216,15 +216,7 @@ export async function createNewTab(path = null, content = '', isTodo = null, isD
 
 export async function switchTab(id) {
     const prevTabId = state.activeTabId;
-    if (prevTabId === 'tab-arcade') {
-        const gameTabExists = state.tabs.some(t => t.isGame);
-        const { pauseGameOnTabLeave, stopGame } = await import('./game.js');
-        if (gameTabExists) {
-            pauseGameOnTabLeave();
-        } else {
-            stopGame();
-        }
-    }
+
 
     // Save previous tab's editor state before switching
     if (state.editorView && state.activeTabId) {
@@ -451,46 +443,4 @@ export async function spawnDocProcess() {
     saveSessionDebounced();
 }
 
-export async function toggleGameView() {
-    let arcadeTab = state.tabs.find(t => t.isGame);
-    if (!arcadeTab) {
-        arcadeTab = {
-            id: 'tab-arcade',
-            path: null,
-            title: 'Arcade Game',
-            isUnsaved: false,
-            isTodo: false,
-            isDoc: false,
-            isGame: true,
-            savedContent: '',
-            manualLanguage: null,
-            autoLanguage: null,
-            state: null
-        };
-        state.tabs.push(arcadeTab);
-        const { renderTabs } = await import('./tabs-ui.js');
-        renderTabs();
-    }
 
-    if (state.activeTabId === 'tab-arcade') {
-        const nonGameTabs = state.tabs.filter(t => !t.isGame);
-        if (nonGameTabs.length > 0) {
-            const targetTabId = state.lastActiveTabId || nonGameTabs[0].id;
-            const tabExists = nonGameTabs.some(t => t.id === targetTabId);
-            await switchTab(tabExists ? targetTabId : nonGameTabs[0].id);
-        } else {
-            await closeTab('tab-arcade');
-        }
-    } else {
-        if (state.activeTabId && state.activeTabId !== 'tab-arcade') {
-            state.lastActiveTabId = state.activeTabId;
-        }
-        if (!state.isArcadeModeEnabled) {
-            state.isArcadeModeEnabled = true;
-            localStorage.setItem('lightpad-arcademode', 'true');
-            const { updateCheckmarks } = await import('./settings-manager.js');
-            updateCheckmarks();
-        }
-        await switchTab('tab-arcade');
-    }
-}

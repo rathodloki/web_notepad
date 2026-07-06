@@ -1,6 +1,6 @@
 {
   "name": "lightpad",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "description": "Lightweight Notepad",
   "scripts": {
     "dev": "vite",
@@ -33,11 +33,11 @@
     "@codemirror/state": "^6.5.4",
     "@codemirror/view": "^6.39.15",
     "@lezer/highlight": "^1.2.3",
+    "dompurify": "^3.4.11",
+    "marked": "^18.0.5",
     "quill": "^2.0.3",
     "quill-blot-formatter": "^1.0.5",
     "quill-image-drop-and-paste": "^2.0.1"
   }
 }
-
-
 

@@ -240,6 +240,44 @@ function updateActiveTabUI() {
     requestAnimationFrame(updateScrollShadows);
 }
 
+function populateConsoleRecents() {
+    const listContainer = document.getElementById('console-recents-list');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    const recents = state.fileHistory.slice(0, 4);
+    if (recents.length === 0) {
+        listContainer.innerHTML = '<div class="console-no-recents">No recent files</div>';
+        return;
+    }
+
+    recents.forEach(path => {
+        const item = document.createElement('div');
+        item.className = 'console-recent-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'recent-name';
+        nameSpan.textContent = getFilename(path);
+
+        const pathSpan = document.createElement('span');
+        pathSpan.className = 'recent-path';
+        pathSpan.textContent = path;
+        pathSpan.title = path;
+
+        item.appendChild(nameSpan);
+        item.appendChild(pathSpan);
+
+        item.onclick = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const { openFileFromHistory } = await import('./file-io.js');
+            await openFileFromHistory(path);
+        };
+
+        listContainer.appendChild(item);
+    });
+}
+
 /**
  * Handles all UI activation for a tab: container visibility, editor/quill swap, status bar.
  * Extracted from editor-manager.js to reduce God Node coupling.
@@ -250,28 +288,7 @@ export function activateTabUI(tab) {
     const emptyState = document.getElementById('empty-state');
     const editorWrapper = document.getElementById('editor-wrapper');
 
-    if (tab.isGame) {
-        if (editorWrapper) editorWrapper.style.display = 'none';
-        if (emptyState) {
-            emptyState.style.display = 'flex';
-            import('./game.js').then(m => m.initGame());
-        }
 
-        const mdPreview = document.getElementById('markdown-preview');
-        if (mdPreview) mdPreview.style.display = 'none';
-        state.isMarkdownPreviewEnabled = false;
-
-        updateActiveTabUI();
-
-        // Status updates
-        import('./status-bar.js').then(m => {
-            m.updateTitle();
-            m.updateLanguageStatus();
-            const statusCursor = document.getElementById('status-cursor');
-            if (statusCursor) statusCursor.textContent = '';
-        });
-        return;
-    }
 
     if (emptyState) emptyState.style.display = 'none';
     if (editorWrapper) editorWrapper.style.display = 'flex';
@@ -280,17 +297,22 @@ export function activateTabUI(tab) {
         editorContainer.style.display = 'none';
         quillWrapper.style.display = 'flex';
 
-        if (!state.quillView) {
-            import('./quill-init.js').then(m => m.initializeQuill());
-        }
-
-        if (state.quillView) {
+        const setupQuillContent = () => {
             const fallback = tab.savedContent !== undefined && tab.savedContent !== null ? tab.savedContent : '';
             state.quillView.root.innerHTML = fallback;
             setTimeout(() => {
                 state.quillView.focus();
                 import('./quill-init.js').then(m => m.applyDocZoom());
             }, 50);
+        };
+
+        if (!state.quillView) {
+            import('./quill-init.js').then(m => {
+                m.initializeQuill();
+                setupQuillContent();
+            });
+        } else {
+            setupQuillContent();
         }
     } else {
         editorContainer.style.display = 'flex';
@@ -335,7 +357,7 @@ export function deactivateTabUI() {
     if (editorWrapper) editorWrapper.style.display = 'none';
     if (emptyState) {
         emptyState.style.display = 'flex';
-        import('./game.js').then(m => m.initGame());
+        populateConsoleRecents();
     }
 
     const mdPreview = document.getElementById('markdown-preview');

@@ -50,10 +50,11 @@ export const customTheme = EditorView.theme({
         fontWeight: "bold"
     },
     ".cm-gutters": {
-        backgroundColor: "transparent",
+        backgroundColor: "#0f0f12 !important",
         color: "rgba(255, 255, 255, 0.28) !important",
         border: "none",
-        borderRight: "1px solid var(--border)"
+        borderRight: "1px solid var(--border)",
+        zIndex: 5
     },
     ".cm-lineNumbers .cm-gutterElement": {
         padding: "0 8px 0 16px",
